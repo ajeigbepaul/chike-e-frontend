@@ -5,15 +5,19 @@ import { getToken } from "next-auth/jwt";
 
 // Role-based route configuration
 const protectedRoutes: Record<string, string[]> = {
-  // Static routes
+  // Admin routes
   "/admin": ["admin"],
-  "/dashboard": ["admin", "manager", "user"], // Updated to include user role
-  "/profile": ["admin", "manager", "user"],
+  "/admin/dashboard": ["admin"],
+  "/admin/users": ["admin"],
+  "/admin/orders": ["admin"],
+  "/admin/reports": ["admin"],
+  "/admin/reports/sales": ["admin"],
+  "/admin/users/:id": ["admin"],
+  "/admin/orders/:id": ["admin"],
 
-  // Dynamic routes - use :param format
-  "/users/:id": ["admin", "manager"], // User management
-  "/projects/:projectId": ["admin", "manager", "user"], // Project access
-  "/organizations/:orgId/settings": ["admin"], // Org settings
+  // User routes
+  "/": ["user"],
+  "/profile": ["user"],
 };
 
 export async function middleware(request: NextRequest) {
@@ -54,6 +58,13 @@ export async function middleware(request: NextRequest) {
       // Only redirect if not in verification flow
       if (!hasVerificationParams) {
         console.log("Redirecting authenticated user from auth page");
+        // Redirect admin users to admin dashboard
+        if (token.role === "admin") {
+          return NextResponse.redirect(
+            new URL("/admin/dashboard", request.url)
+          );
+        }
+        // Redirect regular users to dashboard
         return NextResponse.redirect(new URL("/", request.url));
       }
     }
@@ -95,7 +106,16 @@ export async function middleware(request: NextRequest) {
     );
   }
 
-  // Find matching route pattern
+  // Special handling for admin routes
+  if (path.startsWith("/admin")) {
+    if (userRole !== "admin") {
+      console.log("User role not allowed, redirecting to unauthorized");
+      return NextResponse.redirect(new URL("/unauthorized", request.nextUrl));
+    }
+    return NextResponse.next();
+  }
+
+  // For non-admin routes, check against protected routes
   const [matchingRoute, params] = findMatchingRoute(path);
 
   if (matchingRoute) {
@@ -161,9 +181,6 @@ async function checkUserAccess(
 ): Promise<boolean> {
   // Admins can access everything
   if (userRole === "admin") return true;
-
-  // Managers can access all user resources
-  if (userRole === "manager") return true;
 
   // Regular users can only access their own resources
   return userId === resourceId;

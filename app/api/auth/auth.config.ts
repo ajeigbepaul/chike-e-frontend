@@ -1,5 +1,6 @@
 import { NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
+import { getSession } from "next-auth/react";
 import axios from "axios";
 
 // Use the same API URL as the rest of the application
@@ -114,6 +115,24 @@ export const authOptions: NextAuthOptions = {
         };
       }
       return session;
+    },
+    async redirect({ url, baseUrl }) {
+      // Handle role-based redirection
+      if (url.startsWith(baseUrl)) {
+        // If the URL is a callback URL, extract the original destination
+        const callbackUrl = new URL(url).searchParams.get("callbackUrl");
+        if (callbackUrl) {
+          return callbackUrl;
+        }
+
+        // If no callback URL, redirect based on role
+        const session = await getSession();
+        if (session?.user?.role === "admin") {
+          return `${baseUrl}/admin/dashboard`;
+        }
+        return `${baseUrl}/`;
+      }
+      return url;
     },
   },
   pages: {
