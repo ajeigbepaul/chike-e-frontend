@@ -185,7 +185,9 @@ const vendorService = {
    * @param page Optional page number for pagination
    * @param limit Optional limit of vendors per page
    */
-  getVendors: async (page?: number, limit?: number): Promise<ApiResponse<{ vendors: Vendor[], total: number }>> => {
+  getVendors: async (page?: number, limit?: number): Promise<ApiResponse<{
+    data: any; vendors: Vendor[], total: number 
+}>> => {
     try {
       let url = "/admin/vendors";
       if (page !== undefined && limit !== undefined) {

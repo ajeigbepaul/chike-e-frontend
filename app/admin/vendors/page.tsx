@@ -16,7 +16,10 @@ import { useToast } from "@/components/ui/use-toast";
 import { PlusIcon, SearchIcon, RefreshCw, Eye } from "lucide-react";
 import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
-import vendorService, { VendorInviteRequest, Vendor } from "@/services/api/vendor";
+import vendorService, {
+  VendorInviteRequest,
+  Vendor,
+} from "@/services/api/vendor";
 import { format } from "date-fns";
 import Spinner from "@/components/Spinner";
 
@@ -43,22 +46,24 @@ export default function VendorsPage() {
   const fetchVendors = async () => {
     setIsLoading(true);
     setError(null);
-    
+
     try {
       const response = await vendorService.getVendors();
-      
+      console.log(response, "response");
+
       if (!response.success) {
-        throw new Error(response.message || 'Failed to fetch vendors');
+        throw new Error(response.message || "Failed to fetch vendors");
       }
-      
-      if (response.data && response.data.vendors) {
-        setVendors(response.data.vendors);
+
+      if (response.data?.data?.vendors) {
+        console.log(response.data.data.vendors, "response.data.data.vendors");
+        setVendors(response.data.data.vendors);
       } else {
         setVendors([]);
       }
     } catch (err: any) {
-      console.error('Error fetching vendors:', err);
-      setError(err.message || 'Failed to load vendors. Please try again.');
+      console.error("Error fetching vendors:", err);
+      setError(err.message || "Failed to load vendors. Please try again.");
       setVendors([]);
     } finally {
       setIsLoading(false);
@@ -70,11 +75,14 @@ export default function VendorsPage() {
     fetchVendors();
   }, []);
 
-  const filteredVendors = vendors.filter(
-    (vendor) =>
-      vendor.name.toLowerCase().includes(search.toLowerCase()) ||
-      vendor.email.toLowerCase().includes(search.toLowerCase())
-  );
+  console.log(vendors);
+  const filteredVendors = search
+    ? vendors.filter(
+        (vendor) =>
+          vendor.name.toLowerCase().includes(search.toLowerCase()) ||
+          vendor.email.toLowerCase().includes(search.toLowerCase())
+      )
+    : vendors;
 
   const handleRefresh = () => {
     fetchVendors();
@@ -113,11 +121,16 @@ export default function VendorsPage() {
   };
 
   // Handle vendor status update
-  const handleStatusUpdate = async (vendorId: string, status: "active" | "inactive") => {
+  const handleStatusUpdate = async (
+    vendorId: string,
+    status: "active" | "inactive"
+  ) => {
     try {
       setIsLoading(true);
-      const response = await vendorService.updateVendorStatus(vendorId, { status });
-      
+      const response = await vendorService.updateVendorStatus(vendorId, {
+        status,
+      });
+
       if (response.success) {
         toast({
           title: "Success",
@@ -145,12 +158,14 @@ export default function VendorsPage() {
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-bold">Vendor Management</h1>
         <div className="flex gap-2">
-          <Button 
-            variant="outline" 
+          <Button
+            variant="outline"
             onClick={handleRefresh}
             disabled={isLoading}
           >
-            <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
+            <RefreshCw
+              className={`h-4 w-4 mr-2 ${isLoading ? "animate-spin" : ""}`}
+            />
             Refresh
           </Button>
           <Button onClick={() => setShowInviteDialog(true)}>
@@ -173,10 +188,13 @@ export default function VendorsPage() {
       </div>
 
       {error && (
-        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded relative" role="alert">
+        <div
+          className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded relative"
+          role="alert"
+        >
           <span className="block sm:inline">{error}</span>
-          <Button 
-            variant="link" 
+          <Button
+            variant="link"
             className="absolute top-0 bottom-0 right-0 px-4 py-3"
             onClick={handleRefresh}
           >
@@ -219,11 +237,11 @@ export default function VendorsPage() {
                   <TableCell>
                     <Badge
                       variant={
-                        vendor.status === "active" 
-                          ? "default" 
-                          : vendor.status === "pending" 
-                            ? "secondary" 
-                            : "outline"
+                        vendor.status === "active"
+                          ? "default"
+                          : vendor.status === "pending"
+                          ? "secondary"
+                          : "outline"
                       }
                     >
                       {vendor.status}
@@ -232,11 +250,11 @@ export default function VendorsPage() {
                   <TableCell>{vendor.products}</TableCell>
                   <TableCell>${vendor.sales.toLocaleString()}</TableCell>
                   <TableCell>
-                    {format(new Date(vendor.joinedDate), 'MMM d, yyyy')}
+                    {format(new Date(vendor.joinedDate), "MMM d, yyyy")}
                   </TableCell>
                   <TableCell>
-                    <Button 
-                      variant="outline" 
+                    <Button
+                      variant="outline"
                       size="sm"
                       onClick={() => handleViewVendor(vendor.id)}
                     >

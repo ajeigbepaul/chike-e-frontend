@@ -31,7 +31,7 @@ const inviteSchema = z.object({
   email: z.string().email("Please enter a valid email address"),
   name: z.string().min(2, "Name must be at least 2 characters"),
   phone: z.string().min(10, "Please enter a valid phone number").optional(),
-  role: z.enum(["vendor"]).default("vendor"),
+  role: z.literal("vendor"),
 });
 
 type InviteFormData = z.infer<typeof inviteSchema>;
@@ -66,20 +66,20 @@ export function VendorInviteDialog({
       const inviteData: VendorInviteRequest = {
         email: data.email,
         name: data.name,
-        phone: data.phone
+        phone: data.phone,
       };
-      
+
       // Call the vendor service directly or use the provided onSubmit callback
       if (onSubmit) {
         await onSubmit(inviteData);
       } else {
         const response = await vendorService.inviteVendor(inviteData);
-        
+
         if (!response.success) {
           throw new Error(response.message);
         }
       }
-      
+
       toast.success("Vendor invitation sent successfully!");
       form.reset();
       onOpenChange(false);
