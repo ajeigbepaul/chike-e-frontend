@@ -3,17 +3,11 @@
 import Spinner from "@/components/Spinner";
 import { useSession, signOut } from "next-auth/react";
 import { useRouter } from "next/navigation";
-import { useEffect } from "react";
+import Link from "next/link";
 
 export default function Home() {
   const { data: session, status } = useSession();
   const router = useRouter();
-
-  useEffect(() => {
-    if (status === "unauthenticated") {
-      router.push("/auth/signin");
-    }
-  }, [status, router]);
 
   const handleLogout = async () => {
     await signOut({ redirect: false });
@@ -31,14 +25,31 @@ export default function Home() {
       <div className="w-full max-w-4xl">
         <div className="flex justify-between items-center mb-8">
           <h1 className="text-4xl font-bold">Welcome to the Market place</h1>
-          {session && (
-            <button
-              onClick={handleLogout}
-              className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition duration-200"
-            >
-              Logout
-            </button>
-          )}
+          <div className="flex space-x-4">
+            {session ? (
+              <button
+                onClick={handleLogout}
+                className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition duration-200"
+              >
+                Logout
+              </button>
+            ) : (
+              <>
+                <Link
+                  href="/auth/signin"
+                  className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition duration-200"
+                >
+                  Sign In
+                </Link>
+                <Link
+                  href="/auth/signup"
+                  className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 transition duration-200"
+                >
+                  Sign Up
+                </Link>
+              </>
+            )}
+          </div>
         </div>
         <p className="text-lg mb-4">
           This is a market place for buying and selling products.

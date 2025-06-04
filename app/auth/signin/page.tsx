@@ -1,7 +1,7 @@
 // src/app/auth/signin/page.tsx
 "use client";
 import { useEffect, useState } from "react";
-import { signIn } from "next-auth/react";
+import { signIn, useSession } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "react-hot-toast";
 import Link from "next/link";
@@ -12,6 +12,7 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
+  const { data: session, update } = useSession();
 
   useEffect(() => {
     const verified = searchParams.get("verified");
@@ -47,8 +48,20 @@ export default function LoginPage() {
       if (result?.error) {
         toast.error(result.error);
       } else {
+        // Update the session to get the latest data
+        await update();
+        
+        // Get the updated session with the user role
+        const updatedSession = await fetch("/api/auth/session").then(res => res.json());
+        
         toast.success("Logged in successfully!");
-        router.push("/");
+        
+        // Redirect based on user role
+        if (updatedSession?.user?.role === "admin") {
+          router.push("/admin/dashboard");
+        } else {
+          router.push("/");
+        }
       }
     } catch (error: any) {
       toast.error(error.message || "An error occurred. Please try again.");
@@ -90,6 +103,14 @@ export default function LoginPage() {
               className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
               required
             />
+            <div className="text-right mt-1">
+              <Link
+                href="/auth/forgot-password"
+                className="text-sm text-blue-600 hover:text-blue-700"
+              >
+                Forgot password?
+              </Link>
+            </div>
           </div>
           <button
             type="submit"

@@ -2,286 +2,197 @@
 
 import { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import * as z from "zod";
+import { toast } from "react-hot-toast";
+import { authService } from "@/services/auth";
 import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { useToast } from "@/components/ui/use-toast";
+import { Label } from "@/components/ui/label";
+import { Icons } from "@/components/icons";
+import { cn } from "@/lib/utils";
 
-const vendorSetupSchema = z
-  .object({
-    storeName: z.string().min(3, "Store name must be at least 3 characters"),
-    description: z
-      .string()
-      .min(10, "Description must be at least 10 characters"),
-    phone: z.string().min(10, "Please enter a valid phone number"),
-    address: z.object({
-      street: z.string().min(1, "Street address is required"),
-      city: z.string().min(1, "City is required"),
-      state: z.string().min(1, "State is required"),
-      country: z.string().min(1, "Country is required"),
-      postalCode: z.string().min(1, "Postal code is required"),
-    }),
-    password: z.string().min(8, "Password must be at least 8 characters"),
-    passwordConfirm: z.string(),
-  })
-  .refine((data) => data.password === data.passwordConfirm, {
-    message: "Passwords don't match",
-    path: ["passwordConfirm"],
-  });
-
-export default function SetupVendorPage() {
+export default function VendorSetupPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { toast } = useToast();
   const [loading, setLoading] = useState(false);
-
-  const form = useForm<z.infer<typeof vendorSetupSchema>>({
-    resolver: zodResolver(vendorSetupSchema),
-    defaultValues: {
-      storeName: "",
-      description: "",
-      phone: "",
-      address: {
-        street: "",
-        city: "",
-        state: "",
-        country: "",
-        postalCode: "",
-      },
-      password: "",
-      passwordConfirm: "",
-    },
+  const [formData, setFormData] = useState({
+    password: "",
+    confirmPassword: "",
+    phone: "",
+    address: "",
+    bio: "",
   });
 
-  const onSubmit = async (data: z.infer<typeof vendorSetupSchema>) => {
-    const token = searchParams.get("token");
-    if (!token) {
-      toast({
-        title: "Error",
-        description: "Invalid setup link",
-        variant: "destructive",
-      });
-      return;
-    }
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+  };
 
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
     setLoading(true);
+
     try {
-      const response = await fetch("/api/auth/setup-vendor", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          token,
-          ...data,
-        }),
-      });
-
-      const result = await response.json();
-
-      if (!response.ok) {
-        throw new Error(result.message || "Setup failed");
+      const token = searchParams.get("token");
+      if (!token) {
+        toast.error("Invalid setup link");
+        router.push("/auth/signin");
+        return;
       }
 
-      toast({
-        title: "Setup successful",
-        description: "Your vendor account has been created",
+      if (formData.password !== formData.confirmPassword) {
+        toast.error("Passwords do not match");
+        setLoading(false);
+        return;
+      }
+
+      const response = await authService.setupVendor(token, {
+        password: formData.password,
+        phone: formData.phone,
+        address: formData.address,
+        bio: formData.bio,
       });
 
-      // Redirect to vendor dashboard
-      router.push("/vendor/dashboard");
-    } catch (err: any) {
-      toast({
-        title: "Setup failed",
-        description: err.message,
-        variant: "destructive",
-      });
+      if (response.status === "success") {
+        toast.success("Vendor setup completed successfully!");
+        router.push("/auth/signin");
+      } else {
+        toast.error(response.message || "Setup failed");
+      }
+    } catch (error: any) {
+      toast.error(error.message || "Failed to complete setup");
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
-      <Card className="p-8 max-w-2xl w-full">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-gray-50 to-gray-100 py-12 px-4 sm:px-6 lg:px-8">
+      <Card className="w-full max-w-md p-8 shadow-lg">
         <div className="text-center mb-8">
-          <h1 className="text-2xl font-bold">Complete Your Vendor Profile</h1>
-          <p className="text-gray-500">
-            Please fill in your store details to get started
+          <div className="mb-4">
+            <Icons.store className="h-12 w-12 mx-auto text-primary" />
+          </div>
+          <h2 className="text-2xl font-bold tracking-tight">
+            Complete Your Vendor Profile
+          </h2>
+          <p className="text-sm text-muted-foreground mt-2">
+            Please fill in your details to complete the setup
           </p>
         </div>
 
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <FormField
-                control={form.control}
-                name="storeName"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Store Name</FormLabel>
-                    <FormControl>
-                      <Input {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="phone"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Phone Number</FormLabel>
-                    <FormControl>
-                      <Input {...field} type="tel" />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-
-            <FormField
-              control={form.control}
-              name="description"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Store Description</FormLabel>
-                  <FormControl>
-                    <Textarea {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <div className="space-y-4">
-              <h3 className="text-lg font-medium">Store Address</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <FormField
-                  control={form.control}
-                  name="address.street"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Street Address</FormLabel>
-                      <FormControl>
-                        <Input {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="address.city"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>City</FormLabel>
-                      <FormControl>
-                        <Input {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="address.state"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>State/Province</FormLabel>
-                      <FormControl>
-                        <Input {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="address.country"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Country</FormLabel>
-                      <FormControl>
-                        <Input {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="address.postalCode"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Postal Code</FormLabel>
-                      <FormControl>
-                        <Input {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-            </div>
-
-            <div className="space-y-4">
-              <h3 className="text-lg font-medium">Create Password</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <FormField
-                  control={form.control}
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <div className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="password">Password</Label>
+                <Input
+                  id="password"
                   name="password"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Password</FormLabel>
-                      <FormControl>
-                        <Input {...field} type="password" />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
+                  type="password"
+                  value={formData.password}
+                  onChange={handleChange}
+                  required
+                  placeholder="Enter your password"
+                  className={cn(
+                    "transition-colors",
+                    formData.password && "border-green-500 focus:ring-green-500"
                   )}
                 />
+              </div>
 
-                <FormField
-                  control={form.control}
-                  name="passwordConfirm"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Confirm Password</FormLabel>
-                      <FormControl>
-                        <Input {...field} type="password" />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
+              <div className="space-y-2">
+                <Label htmlFor="confirmPassword">Confirm Password</Label>
+                <Input
+                  id="confirmPassword"
+                  name="confirmPassword"
+                  type="password"
+                  value={formData.confirmPassword}
+                  onChange={handleChange}
+                  required
+                  placeholder="Confirm your password"
+                  className={cn(
+                    "transition-colors",
+                    formData.confirmPassword &&
+                      formData.password === formData.confirmPassword
+                      ? "border-green-500 focus:ring-green-500"
+                      : formData.confirmPassword
+                      ? "border-red-500 focus:ring-red-500"
+                      : ""
                   )}
                 />
               </div>
             </div>
 
-            <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? "Setting up..." : "Complete Setup"}
-            </Button>
-          </form>
-        </Form>
+            <div className="space-y-2">
+              <Label htmlFor="phone">Phone Number</Label>
+              <Input
+                id="phone"
+                name="phone"
+                type="tel"
+                value={formData.phone}
+                onChange={handleChange}
+                required
+                placeholder="Enter your phone number"
+                className={cn(
+                  "transition-colors",
+                  formData.phone && "border-green-500 focus:ring-green-500"
+                )}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="address">Address</Label>
+              <Input
+                id="address"
+                name="address"
+                type="text"
+                value={formData.address}
+                onChange={handleChange}
+                required
+                placeholder="Enter your address"
+                className={cn(
+                  "transition-colors",
+                  formData.address && "border-green-500 focus:ring-green-500"
+                )}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="bio">Bio</Label>
+              <Textarea
+                id="bio"
+                name="bio"
+                value={formData.bio}
+                onChange={handleChange}
+                required
+                placeholder="Tell us about yourself and your business"
+                rows={4}
+                className={cn(
+                  "transition-colors resize-none",
+                  formData.bio && "border-green-500 focus:ring-green-500"
+                )}
+              />
+            </div>
+          </div>
+
+          <Button type="submit" className="w-full" disabled={loading}>
+            {loading ? (
+              <>
+                <Icons.spinner className="mr-2 h-4 w-4 animate-spin" />
+                Completing Setup...
+              </>
+            ) : (
+              "Complete Setup"
+            )}
+          </Button>
+        </form>
       </Card>
     </div>
   );

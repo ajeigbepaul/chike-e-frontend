@@ -1,4 +1,4 @@
-import { api } from "./api";
+import api from "../api";
 
 export const adminApi = {
   inviteVendor: async (data: { email: string; name: string }) => {

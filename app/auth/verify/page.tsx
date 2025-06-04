@@ -2,96 +2,57 @@
 
 import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { useToast } from "@/components/ui/use-toast";
+import { toast } from "react-hot-toast";
+import { authService } from "@/services/auth";
 
 export default function VerifyPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { toast } = useToast();
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [verifying, setVerifying] = useState(true);
 
   useEffect(() => {
     const verifyToken = async () => {
       const token = searchParams.get("token");
 
       if (!token) {
-        setError("Invalid verification link");
-        setLoading(false);
+        toast.error("Invalid verification link");
+        router.push("/auth/signin");
         return;
       }
 
       try {
-        const response = await fetch("/api/auth/verify", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ token }),
-        });
+        const response = await authService.verifyVendorInvitation(token);
 
-        const data = await response.json();
-
-        if (!response.ok) {
-          throw new Error(data.message || "Verification failed");
+        if (response.success) {
+          toast.success("Email verified successfully!");
+          router.push("/auth/setup-vendor");
+        } else {
+          toast.error(response.message || "Verification failed");
+          router.push("/auth/signin");
         }
-
-        toast({
-          title: "Verification successful",
-          description: "Please complete your vendor profile setup",
-        });
-
-        // Redirect to vendor setup page
-        router.push(`/auth/setup-vendor?token=${token}`);
-      } catch (err: any) {
-        setError(err.message);
-        toast({
-          title: "Verification failed",
-          description: err.message,
-          variant: "destructive",
-        });
+      } catch (error: any) {
+        toast.error(error.message || "Verification failed");
+        router.push("/auth/signin");
       } finally {
-        setLoading(false);
+        setVerifying(false);
       }
     };
 
     verifyToken();
-  }, [searchParams, router, toast]);
+  }, [searchParams, router]);
 
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <Card className="p-8 max-w-md w-full">
-          <div className="text-center">
-            <h1 className="text-2xl font-bold mb-4">
-              Verifying your invitation...
-            </h1>
-            <p className="text-gray-500">
-              Please wait while we verify your vendor invitation.
-            </p>
-          </div>
-        </Card>
+  return (
+    <div className="flex items-center justify-center min-h-screen bg-gray-100">
+      <div className="max-w-md w-full p-6 bg-white rounded-lg shadow-md text-center">
+        <h2 className="text-2xl font-bold mb-4">Verifying Your Email</h2>
+        {verifying ? (
+          <p className="text-gray-600">
+            Please wait while we verify your email...
+          </p>
+        ) : (
+          <p className="text-gray-600">Redirecting you to the login page...</p>
+        )}
       </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <Card className="p-8 max-w-md w-full">
-          <div className="text-center">
-            <h1 className="text-2xl font-bold mb-4 text-red-600">
-              Verification Failed
-            </h1>
-            <p className="text-gray-500 mb-6">{error}</p>
-            <Button onClick={() => router.push("/")}>Return to Home</Button>
-          </div>
-        </Card>
-      </div>
-    );
-  }
-
-  return null;
+    </div>
+  );
 }

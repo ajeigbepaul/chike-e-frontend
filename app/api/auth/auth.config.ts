@@ -2,12 +2,39 @@ import { NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import { getSession } from "next-auth/react";
 import axios from "axios";
+import { DefaultSession } from "next-auth";
 
 // Use the same API URL as the rest of the application
 const API_URL =
   process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
 
-// Define NextAuth options
+// Extend the built-in types
+declare module "next-auth" {
+  interface User {
+    accessToken?: string;
+    role: string;
+    isVerified?: boolean;
+  }
+  interface Session {
+    accessToken?: string;
+    user: {
+      id: string;
+      role: string;
+      isVerified?: boolean;
+    } & DefaultSession["user"];
+  }
+}
+
+declare module "next-auth/jwt" {
+  interface JWT {
+    accessToken?: string;
+    user: {
+      id: string;
+      role: string;
+      isVerified?: boolean;
+    } & DefaultSession["user"];
+  }
+}
 export const authOptions: NextAuthOptions = {
   providers: [
     CredentialsProvider({
@@ -23,10 +50,16 @@ export const authOptions: NextAuthOptions = {
 
         try {
           // Call your backend API for authentication
-          const response = await axios.post(`${API_URL}/auth/login`, {
-            email: credentials.email,
-            password: credentials.password,
-          });
+          const response = await axios.post(
+            `${API_URL}/auth/login`,
+            {
+              email: credentials.email,
+              password: credentials.password,
+            },
+            {
+              withCredentials: true, // Important for cookies
+            }
+          );
 
           // Handle different API response structures
           const responseData = response.data;
@@ -55,12 +88,16 @@ export const authOptions: NextAuthOptions = {
             throw new Error("User ID not found in response");
           }
 
+          // Get the JWT token from the response
+          const token = responseData.token || responseData.data?.token;
+
           return {
             id: userId,
             email: user.email,
             name: user.name,
-            role: user.role,
-            isVerified: user.isVerified || true,
+            role: user.role || "user", // Ensure role is set, default to "user"
+            isVerified: user.isVerified ?? true, // Use nullish coalescing to ensure boolean
+            accessToken: token, // Include the JWT token
           };
         } catch (error: unknown) {
           console.error("Login error:", error);
@@ -102,6 +139,7 @@ export const authOptions: NextAuthOptions = {
         token.id = user.id;
         token.role = user.role;
         token.isVerified = user.isVerified;
+        token.accessToken = user.accessToken;
       }
       return token;
     },
@@ -109,10 +147,11 @@ export const authOptions: NextAuthOptions = {
       if (token) {
         session.user = {
           ...session.user,
-          id: token.id as string,
-          role: token.role as string,
-          isVerified: token.isVerified as boolean,
+          id: token.id,
+          role: token.role,
+          isVerified: token.isVerified ?? true,
         };
+        session.accessToken = token.accessToken as string;
       }
       return session;
     },
@@ -147,4 +186,15 @@ export const authOptions: NextAuthOptions = {
     maxAge: 24 * 60 * 60, // 24 hours in seconds
   },
   secret: process.env.NEXTAUTH_SECRET,
+  cookies: {
+    sessionToken: {
+      name: `next-auth.session-token`,
+      options: {
+        httpOnly: true,
+        sameSite: "lax",
+        path: "/",
+        secure: process.env.NODE_ENV === "production",
+      },
+    },
+  },
 };

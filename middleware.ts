@@ -15,35 +15,31 @@ const protectedRoutes: Record<string, string[]> = {
   "/admin/users/:id": ["admin"],
   "/admin/orders/:id": ["admin"],
 
-  // User routes
-  "/": ["user"],
-  "/profile": ["user"],
+  // User routes - allow both user and admin roles
+  // Index route is public and accessible to all
+  "/profile": ["user", "admin", "vendor"],
+
+  // Vendor routes
+  "/vendor/dashboard": ["vendor"],
+  "/vendor/products": ["vendor"],
+  "/vendor/orders": ["vendor"],
+  "/vendor/settings": ["vendor"],
+  "/vendor/stats": ["vendor"],
 };
 
 export async function middleware(request: NextRequest) {
   const path = request.nextUrl.pathname;
   console.log("Middleware processing path:", path);
-  console.log("Search params:", request.nextUrl.search);
 
   // Allow access to public paths and API routes
   if (
     path.startsWith("/_next") ||
     path.startsWith("/api") ||
     path.startsWith("/static") ||
-    path.startsWith("/favicon.ico")
+    path.startsWith("/favicon.ico") ||
+    path === "/" || // Allow access to index page
+    (path.startsWith("/vendor/onboarding") && new URL(request.url).searchParams.has("token")) // Allow access to vendor onboarding with token
   ) {
-    return NextResponse.next();
-  }
-
-  // Check for verification parameters
-  const hasVerificationParams =
-    request.nextUrl.search.includes("verified=") ||
-    request.nextUrl.search.includes("registered=") ||
-    request.nextUrl.search.includes("error=");
-
-  // Allow access to auth pages with verification parameters
-  if (path.startsWith("/auth/") && hasVerificationParams) {
-    console.log("Allowing access to auth page with verification parameter");
     return NextResponse.next();
   }
 
@@ -55,24 +51,30 @@ export async function middleware(request: NextRequest) {
   if (path.startsWith("/auth/")) {
     if (token) {
       // If user is authenticated and trying to access auth pages
-      // Only redirect if not in verification flow
-      if (!hasVerificationParams) {
-        console.log("Redirecting authenticated user from auth page");
-        // Redirect admin users to admin dashboard
-        if (token.role === "admin") {
-          return NextResponse.redirect(
-            new URL("/admin/dashboard", request.url)
-          );
-        }
-        // Redirect regular users to dashboard
-        return NextResponse.redirect(new URL("/", request.url));
+      console.log(
+        "User is already authenticated, redirecting based on role:",
+        token.role
+      );
+
+      // Redirect based on role
+      if (token.role === "admin") {
+        return NextResponse.redirect(new URL("/admin/dashboard", request.url));
+      } else if (token.role === "vendor") {
+        return NextResponse.redirect(new URL("/vendor/dashboard", request.url));
       }
+      // For regular users, send them to the homepage
+      return NextResponse.redirect(new URL("/", request.url));
     }
     return NextResponse.next();
   }
 
   // Handle protected routes
   if (!token) {
+    // Allow index page to be accessed without authentication
+    if (path === "/") {
+      return NextResponse.next();
+    }
+
     console.log("No token found, redirecting to login");
     const url = new URL("/auth/signin", request.url);
     url.searchParams.set("callbackUrl", encodeURI(request.url));
@@ -91,28 +93,44 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  // Check role-based access for protected routes
+  // Get user role from token
   const userRole = token.role as string;
-
-  // Check if user email is verified (if applicable)
-  const isVerified = token.isVerified !== false; // Default to true if not specified
-
-  // If verification is required for this route and user is not verified
-  if (!isVerified && !path.includes("/auth/verify")) {
-    console.log("User not verified, redirecting to signin");
-    // Redirect to a page that informs the user they need to verify their email
-    return NextResponse.redirect(
-      new URL("/auth/signin?error=VerificationRequired", request.nextUrl)
-    );
-  }
+  console.log("User role for protected route:", userRole);
 
   // Special handling for admin routes
   if (path.startsWith("/admin")) {
     if (userRole !== "admin") {
-      console.log("User role not allowed, redirecting to unauthorized");
-      return NextResponse.redirect(new URL("/unauthorized", request.nextUrl));
+      console.log("Non-admin user trying to access admin route");
+      return NextResponse.redirect(new URL("/unauthorized", request.url));
     }
     return NextResponse.next();
+  }
+
+  // Special handling for vendor routes
+  if (path.startsWith("/vendor") && !path.startsWith("/vendor/onboarding")) {
+    if (userRole !== "vendor") {
+      console.log("Non-vendor user trying to access vendor route");
+      return NextResponse.redirect(new URL("/unauthorized", request.url));
+    }
+    return NextResponse.next();
+  }
+
+  // Redirect admin users to admin dashboard if they try to access non-admin routes
+  // But allow them to access the index route (homepage)
+  if (userRole === "admin" && !path.startsWith("/admin") && path !== "/") {
+    console.log(
+      "Admin user accessing non-admin route, redirecting to admin dashboard"
+    );
+    return NextResponse.redirect(new URL("/admin/dashboard", request.url));
+  }
+
+  // Redirect vendor users to vendor dashboard if they try to access non-vendor routes
+  // But allow them to access the index route (homepage)
+  if (userRole === "vendor" && !path.startsWith("/vendor") && path !== "/") {
+    console.log(
+      "Vendor user accessing non-vendor route, redirecting to vendor dashboard"
+    );
+    return NextResponse.redirect(new URL("/vendor/dashboard", request.url));
   }
 
   // For non-admin routes, check against protected routes
@@ -120,21 +138,9 @@ export async function middleware(request: NextRequest) {
 
   if (matchingRoute) {
     const allowedRoles = protectedRoutes[matchingRoute];
-
-    // Check if user has required role
     if (!allowedRoles.includes(userRole)) {
-      console.log("User role not allowed, redirecting to unauthorized");
-      return NextResponse.redirect(new URL("/unauthorized", request.nextUrl));
-    }
-
-    // Additional resource ownership checks
-    if (matchingRoute.startsWith("/users/") && params?.id) {
-      const userId: string = String(token.id);
-      const resourceId: string = String(params.id);
-      if (!(await checkUserAccess(userId, resourceId, userRole))) {
-        console.log("User access denied, redirecting to unauthorized");
-        return NextResponse.redirect(new URL("/unauthorized", request.nextUrl));
-      }
+      console.log("User role not allowed for route");
+      return NextResponse.redirect(new URL("/unauthorized", request.url));
     }
   }
 
@@ -156,9 +162,7 @@ function findMatchingRoute(
     let match = true;
     for (let i = 0; i < routeSegments.length; i++) {
       if (routeSegments[i].startsWith(":")) {
-        // It's a parameter - store the value
-        const paramName = routeSegments[i].slice(1);
-        params[paramName] = pathSegments[i];
+        params[routeSegments[i].slice(1)] = pathSegments[i];
       } else if (routeSegments[i] !== pathSegments[i]) {
         match = false;
         break;
@@ -171,19 +175,6 @@ function findMatchingRoute(
   }
 
   return [null, null];
-}
-
-// Resource ownership check
-async function checkUserAccess(
-  userId: string,
-  resourceId: string,
-  userRole: string
-): Promise<boolean> {
-  // Admins can access everything
-  if (userRole === "admin") return true;
-
-  // Regular users can only access their own resources
-  return userId === resourceId;
 }
 
 export const config = {

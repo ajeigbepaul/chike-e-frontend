@@ -17,7 +17,9 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Card } from "@/components/ui/card";
-import { toast } from "sonner";
+import { toast } from "react-hot-toast";
+import vendorService, { VendorOnboardingRequest } from "@/services/api/vendor";
+import Spinner from "@/components/Spinner";
 
 const onboardingSchema = z
   .object({
@@ -36,6 +38,7 @@ export default function VendorOnboardingPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [isLoading, setIsLoading] = useState(false);
+  const [isVerifying, setIsVerifying] = useState(true);
   const [invitation, setInvitation] = useState<any>(null);
 
   const form = useForm<z.infer<typeof onboardingSchema>>({
@@ -58,18 +61,21 @@ export default function VendorOnboardingPage() {
 
     // Verify invitation token
     const verifyInvitation = async () => {
+      setIsVerifying(true);
       try {
-        const response = await fetch(
-          `/api/vendor/verify-invitation?token=${token}`
-        );
-        if (!response.ok) {
-          throw new Error("Invalid or expired invitation");
+        const response = await vendorService.verifyInvitation(token);
+
+        if (!response.success) {
+          throw new Error(response.message || "Invalid or expired invitation");
         }
-        const data = await response.json();
-        setInvitation(data);
-      } catch (error) {
-        toast.error("Invalid or expired invitation");
+
+        setInvitation(response.data);
+      } catch (error: any) {
+        console.error("Error verifying invitation:", error);
+        toast.error(error.message || "Invalid or expired invitation");
         router.push("/");
+      } finally {
+        setIsVerifying(false);
       }
     };
 
@@ -79,33 +85,60 @@ export default function VendorOnboardingPage() {
   const onSubmit = async (data: z.infer<typeof onboardingSchema>) => {
     try {
       setIsLoading(true);
-      const response = await fetch("/api/vendor/onboarding", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          ...data,
-          token: searchParams.get("token"),
-        }),
-      });
 
-      if (!response.ok) {
-        throw new Error("Failed to complete onboarding");
+      const token = searchParams.get("token");
+      if (!token) {
+        throw new Error("Invitation token is missing");
+      }
+
+      const onboardingData: VendorOnboardingRequest = {
+        token,
+        password: data.password,
+        phone: data.phone,
+        address: data.address,
+        bio: data.bio,
+      };
+
+      const response = await vendorService.completeOnboarding(onboardingData);
+
+      if (!response.success) {
+        throw new Error(response.message || "Failed to complete onboarding");
       }
 
       toast.success("Registration completed successfully");
       router.push("/vendor/dashboard");
-    } catch (error) {
-      toast.error("Failed to complete registration");
-      console.error(error);
+    } catch (error: any) {
+      console.error("Error completing vendor onboarding:", error);
+      toast.error(error.message || "Failed to complete registration");
     } finally {
       setIsLoading(false);
     }
   };
 
+  if (isVerifying) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <Spinner />
+      </div>
+    );
+  }
+
   if (!invitation) {
-    return <div>Loading...</div>;
+    return (
+      <div className="min-h-screen flex items-center justify-center p-4">
+        <Card className="p-6">
+          <div className="text-center">
+            <h2 className="text-2xl font-bold text-red-500 mb-4">
+              Invitation Error
+            </h2>
+            <p>The invitation is invalid or has expired.</p>
+            <Button className="mt-4" onClick={() => router.push("/")}>
+              Return to Home
+            </Button>
+          </div>
+        </Card>
+      </div>
+    );
   }
 
   return (
@@ -194,7 +227,14 @@ export default function VendorOnboardingPage() {
               />
 
               <Button type="submit" className="w-full" disabled={isLoading}>
-                {isLoading ? "Completing..." : "Complete Registration"}
+                {isLoading ? (
+                  <>
+                    <Spinner className="mr-2 h-4 w-4" />
+                    Completing...
+                  </>
+                ) : (
+                  "Complete Registration"
+                )}
               </Button>
             </form>
           </Form>

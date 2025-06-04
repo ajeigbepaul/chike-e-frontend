@@ -9,6 +9,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog";
 import {
@@ -18,13 +19,19 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
+  FormDescription,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Icons } from "@/components/icons";
+import { toast } from "react-hot-toast";
+import vendorService, { VendorInviteRequest } from "@/services/api/vendor";
 
 const inviteSchema = z.object({
   email: z.string().email("Please enter a valid email address"),
   name: z.string().min(2, "Name must be at least 2 characters"),
+  phone: z.string().min(10, "Please enter a valid phone number").optional(),
+  role: z.enum(["vendor"]).default("vendor"),
 });
 
 type InviteFormData = z.infer<typeof inviteSchema>;
@@ -32,7 +39,7 @@ type InviteFormData = z.infer<typeof inviteSchema>;
 interface VendorInviteDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onSubmit: (data: InviteFormData) => Promise<void>;
+  onSubmit?: (data: VendorInviteRequest) => Promise<void>;
 }
 
 export function VendorInviteDialog({
@@ -47,14 +54,38 @@ export function VendorInviteDialog({
     defaultValues: {
       email: "",
       name: "",
+      phone: "",
+      role: "vendor",
     },
   });
 
   const handleSubmit = async (data: InviteFormData) => {
     setLoading(true);
     try {
-      await onSubmit(data);
+      // Prepare invitation data
+      const inviteData: VendorInviteRequest = {
+        email: data.email,
+        name: data.name,
+        phone: data.phone
+      };
+      
+      // Call the vendor service directly or use the provided onSubmit callback
+      if (onSubmit) {
+        await onSubmit(inviteData);
+      } else {
+        const response = await vendorService.inviteVendor(inviteData);
+        
+        if (!response.success) {
+          throw new Error(response.message);
+        }
+      }
+      
+      toast.success("Vendor invitation sent successfully!");
       form.reset();
+      onOpenChange(false);
+    } catch (error: any) {
+      console.error("Invitation error:", error);
+      toast.error(error.message || "Failed to send vendor invitation");
     } finally {
       setLoading(false);
     }
@@ -62,9 +93,16 @@ export function VendorInviteDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
+      <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>Invite New Vendor</DialogTitle>
+          <DialogTitle className="flex items-center gap-2">
+            <Icons.store className="h-5 w-5" />
+            Invite New Vendor
+          </DialogTitle>
+          <DialogDescription>
+            Send an invitation to a new vendor to join the platform. They will
+            receive an email with setup instructions.
+          </DialogDescription>
         </DialogHeader>
 
         <Form {...form}>
@@ -79,7 +117,11 @@ export function VendorInviteDialog({
                 <FormItem>
                   <FormLabel>Vendor Name</FormLabel>
                   <FormControl>
-                    <Input {...field} placeholder="Enter vendor name" />
+                    <Input
+                      {...field}
+                      placeholder="Enter vendor name"
+                      className="transition-colors"
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -97,6 +139,29 @@ export function VendorInviteDialog({
                       {...field}
                       type="email"
                       placeholder="Enter email address"
+                      className="transition-colors"
+                    />
+                  </FormControl>
+                  <FormDescription>
+                    This email will be used for login and notifications
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="phone"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Phone Number (Optional)</FormLabel>
+                  <FormControl>
+                    <Input
+                      {...field}
+                      type="tel"
+                      placeholder="Enter phone number"
+                      className="transition-colors"
                     />
                   </FormControl>
                   <FormMessage />
@@ -104,7 +169,7 @@ export function VendorInviteDialog({
               )}
             />
 
-            <DialogFooter>
+            <DialogFooter className="gap-2 sm:gap-0">
               <Button
                 type="button"
                 variant="outline"
@@ -114,7 +179,14 @@ export function VendorInviteDialog({
                 Cancel
               </Button>
               <Button type="submit" disabled={loading}>
-                {loading ? "Sending..." : "Send Invitation"}
+                {loading ? (
+                  <>
+                    <Icons.spinner className="mr-2 h-4 w-4 animate-spin" />
+                    Sending...
+                  </>
+                ) : (
+                  "Send Invitation"
+                )}
               </Button>
             </DialogFooter>
           </form>
