@@ -50,17 +50,23 @@ export default function LoginPage() {
       } else {
         // Update the session to get the latest data
         await update();
-        
+
         // Get the updated session with the user role
-        const updatedSession = await fetch("/api/auth/session").then(res => res.json());
-        
+        const updatedSession = await fetch("/api/auth/session").then((res) =>
+          res.json()
+        );
+
         toast.success("Logged in successfully!");
-        
-        // Redirect based on user role
-        if (updatedSession?.user?.role === "admin") {
-          router.push("/admin/dashboard");
-        } else {
-          router.push("/");
+
+        switch (updatedSession?.user?.role) {
+          case "admin":
+            router.push("/admin/dashboard");
+            break;
+          case "vendor":
+            router.push("/vendor/dashboard");
+            break;
+          default:
+            router.push("/");
         }
       }
     } catch (error: any) {

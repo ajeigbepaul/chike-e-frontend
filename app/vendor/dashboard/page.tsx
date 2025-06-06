@@ -78,32 +78,59 @@ export default function VendorDashboard() {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [dashboardData, setDashboardData] = useState<DashboardData | null>(null);
+  const [dashboardData, setDashboardData] = useState<DashboardData | null>(
+    null
+  );
 
   // Fetch dashboard data from the API
   const fetchDashboardData = async () => {
     setIsLoading(true);
     setError(null);
-    
+
     try {
       const response = await vendorService.getDashboardStats();
-      
+
       if (!response.success) {
-        throw new Error(response.message);
+        throw new Error(response.message || "Failed to fetch dashboard data");
       }
-      
-      setDashboardData(response.data);
+
+      // Ensure the response data has the expected structure
+      const data = response.data;
+      if (!data || typeof data !== "object") {
+        throw new Error("Invalid dashboard data structure");
+      }
+
+      // Set the dashboard data with proper type checking and defaults
+      setDashboardData({
+        stats: {
+          totalProducts: Number(data.stats?.totalProducts) || 0,
+          totalOrders: Number(data.stats?.totalOrders) || 0,
+          totalSales: Number(data.stats?.totalSales) || 0,
+          totalRevenue: Number(data.stats?.totalRevenue) || 0,
+          lowStockProducts: Number(data.stats?.lowStockProducts) || 0,
+          pendingOrders: Number(data.stats?.pendingOrders) || 0,
+        },
+        recentOrders: Array.isArray(data.recentOrders) ? data.recentOrders : [],
+        popularProducts: Array.isArray(data.popularProducts)
+          ? data.popularProducts
+          : [],
+        inventoryAlerts: Array.isArray(data.inventoryAlerts)
+          ? data.inventoryAlerts
+          : [],
+      });
     } catch (err: any) {
       console.error("Error fetching dashboard data:", err);
-      setError(err.message || "Failed to load dashboard data. Please try again.");
-      
+      setError(
+        err.message || "Failed to load dashboard data. Please try again."
+      );
+
       // Set example data for development purposes
       setDashboardData({
         stats: {
           totalProducts: 42,
           totalOrders: 128,
           totalSales: 210,
-          totalRevenue: 15750.50,
+          totalRevenue: 15750.5,
           lowStockProducts: 5,
           pendingOrders: 8,
         },
@@ -127,7 +154,7 @@ export default function VendorDashboard() {
             },
             orderDate: "2025-06-02T14:15:00.000Z",
             status: "shipped",
-            total: 79.50,
+            total: 79.5,
             items: 2,
           },
           {
@@ -209,17 +236,12 @@ export default function VendorDashboard() {
     router.push("/vendor/orders");
   };
 
-  // Handle pending orders view
-  const handleViewPendingOrders = () => {
-    router.push("/vendor/orders?status=pending");
-  };
-
   // Navigate to product inventory
   const handleViewInventory = () => {
     router.push("/vendor/products");
   };
 
-  // Loading state
+  // Show loading state immediately
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -228,18 +250,33 @@ export default function VendorDashboard() {
     );
   }
 
-  // Error state
+  // Show error state
   if (error) {
     return (
       <div className="p-6">
         <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded relative mb-6">
           <span className="block sm:inline">{error}</span>
-          <Button 
-            variant="link" 
+          <Button
+            variant="link"
             className="absolute top-0 bottom-0 right-0 px-4 py-3"
             onClick={handleRefresh}
           >
             Try again
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  // Show empty state if no data
+  if (!dashboardData) {
+    return (
+      <div className="p-6">
+        <div className="text-center">
+          <h2 className="text-lg font-semibold">No Data Available</h2>
+          <p className="text-gray-500">Please try refreshing the page</p>
+          <Button variant="outline" className="mt-4" onClick={handleRefresh}>
+            Refresh
           </Button>
         </div>
       </div>
@@ -262,101 +299,52 @@ export default function VendorDashboard() {
         </div>
       </div>
 
-      {/* Overview Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      {/* Stats Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">Total Products</CardTitle>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">
+              Total Products
+            </CardTitle>
             <Package className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{dashboardData?.stats.totalProducts || 0}</div>
+            <div className="text-2xl font-bold">
+              {dashboardData?.stats?.totalProducts || 0}
+            </div>
             <p className="text-xs text-muted-foreground">
-              Total products in your inventory
+              {dashboardData?.stats?.lowStockProducts || 0} low in stock
             </p>
           </CardContent>
         </Card>
-        
+
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Orders</CardTitle>
             <ShoppingCart className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{dashboardData?.stats.totalOrders || 0}</div>
+            <div className="text-2xl font-bold">
+              {dashboardData?.stats?.totalOrders || 0}
+            </div>
             <p className="text-xs text-muted-foreground">
-              Orders received to date
+              {dashboardData?.stats?.pendingOrders || 0} pending orders
             </p>
           </CardContent>
         </Card>
-        
+
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">Total Sales</CardTitle>
-            <Layers className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{dashboardData?.stats.totalSales || 0}</div>
-            <p className="text-xs text-muted-foreground">
-              Products sold to date
-            </p>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
             <DollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              ${dashboardData?.stats.totalRevenue.toLocaleString(undefined, {
-                minimumFractionDigits: 2,
-                maximumFractionDigits: 2
-              }) || "0.00"}
+              ${(dashboardData?.stats?.totalRevenue || 0).toFixed(2)}
             </div>
             <p className="text-xs text-muted-foreground">
-              Total revenue generated
+              {dashboardData?.stats?.totalSales || 0} total sales
             </p>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Alert Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <Card className={dashboardData?.stats.lowStockProducts ? "border-yellow-300" : ""}>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">Low Stock Alerts</CardTitle>
-            <AlertTriangle className={`h-4 w-4 ${dashboardData?.stats.lowStockProducts ? "text-yellow-500" : "text-muted-foreground"}`} />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{dashboardData?.stats.lowStockProducts || 0}</div>
-            <p className="text-xs text-muted-foreground">
-              Products with low inventory
-            </p>
-            {dashboardData?.stats.lowStockProducts ? (
-              <Button variant="link" className="p-0 h-auto mt-2" onClick={handleViewInventory}>
-                View inventory
-              </Button>
-            ) : null}
-          </CardContent>
-        </Card>
-        
-        <Card className={dashboardData?.stats.pendingOrders ? "border-blue-300" : ""}>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">Pending Orders</CardTitle>
-            <ShoppingCart className={`h-4 w-4 ${dashboardData?.stats.pendingOrders ? "text-blue-500" : "text-muted-foreground"}`} />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{dashboardData?.stats.pendingOrders || 0}</div>
-            <p className="text-xs text-muted-foreground">
-              Orders awaiting processing
-            </p>
-            {dashboardData?.stats.pendingOrders ? (
-              <Button variant="link" className="p-0 h-auto mt-2" onClick={handleViewPendingOrders}>
-                View pending orders
-              </Button>
-            ) : null}
           </CardContent>
         </Card>
       </div>
@@ -364,15 +352,17 @@ export default function VendorDashboard() {
       {/* Recent Orders */}
       <Card>
         <CardHeader>
-          <div className="flex justify-between items-center">
-            <CardTitle>Recent Orders</CardTitle>
-            <Button variant="outline" size="sm" onClick={handleViewAllOrders}>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle>Recent Orders</CardTitle>
+              <CardDescription>
+                Latest orders from your customers
+              </CardDescription>
+            </div>
+            <Button variant="outline" onClick={handleViewAllOrders}>
               View All
             </Button>
           </div>
-          <CardDescription>
-            Latest customer orders for your products
-          </CardDescription>
         </CardHeader>
         <CardContent>
           <Table>
@@ -382,166 +372,153 @@ export default function VendorDashboard() {
                 <TableHead>Customer</TableHead>
                 <TableHead>Date</TableHead>
                 <TableHead>Status</TableHead>
-                <TableHead>Items</TableHead>
-                <TableHead className="text-right">Amount</TableHead>
+                <TableHead className="text-right">Total</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {dashboardData?.recentOrders.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={6} className="text-center py-4">No recent orders found</TableCell>
+              {dashboardData?.recentOrders?.map((order) => (
+                <TableRow key={order.id}>
+                  <TableCell>{order.id}</TableCell>
+                  <TableCell>
+                    <div>
+                      <div className="font-medium">{order.customer.name}</div>
+                      <div className="text-sm text-muted-foreground">
+                        {order.customer.email}
+                      </div>
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    {format(new Date(order.orderDate), "MMM d, yyyy")}
+                  </TableCell>
+                  <TableCell>
+                    <Badge
+                      variant={
+                        order.status === "delivered"
+                          ? "default"
+                          : order.status === "cancelled"
+                          ? "destructive"
+                          : "secondary"
+                      }
+                    >
+                      {order.status}
+                    </Badge>
+                  </TableCell>
+                  <TableCell className="text-right">
+                    ${order.total.toFixed(2)}
+                  </TableCell>
                 </TableRow>
-              ) : (
-                dashboardData?.recentOrders.map((order) => (
-                  <TableRow key={order.id}>
-                    <TableCell className="font-medium">{order.id}</TableCell>
-                    <TableCell>{order.customer.name}</TableCell>
-                    <TableCell>{format(new Date(order.orderDate), 'MMM d, yyyy')}</TableCell>
-                    <TableCell>
-                      <Badge
-                        variant={
-                          order.status === "delivered" 
-                            ? "default" 
-                            : order.status === "shipped" 
-                              ? "secondary" 
-                              : order.status === "pending"
-                                ? "outline"
-                                : order.status === "cancelled"
-                                  ? "destructive"
-                                  : "secondary"
-                        }
-                      >
-                        {order.status}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>{order.items}</TableCell>
-                    <TableCell className="text-right">
-                      ${order.total.toLocaleString(undefined, {
-                        minimumFractionDigits: 2,
-                        maximumFractionDigits: 2
-                      })}
-                    </TableCell>
-                  </TableRow>
-                ))
-              )}
+              ))}
             </TableBody>
           </Table>
         </CardContent>
       </Card>
 
-      {/* Inventory Alerts */}
-      {dashboardData?.inventoryAlerts && dashboardData.inventoryAlerts.length > 0 && (
-        <Card className="border-yellow-300">
-          <CardHeader>
-            <div className="flex justify-between items-center">
-              <CardTitle className="flex items-center">
-                <AlertTriangle className="h-5 w-5 mr-2 text-yellow-500" />
-                Inventory Alerts
-              </CardTitle>
-              <Button variant="outline" size="sm" onClick={handleViewInventory}>
-                Manage Inventory
-              </Button>
-            </div>
-            <CardDescription>
-              Products with low stock levels that need attention
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Product</TableHead>
-                  <TableHead>Price</TableHead>
-                  <TableHead>Current Stock</TableHead>
-                  <TableHead>Category</TableHead>
-                  <TableHead>Status</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {dashboardData.inventoryAlerts.map((product) => (
-                  <TableRow key={product.id}>
-                    <TableCell className="font-medium">{product.name}</TableCell>
-                    <TableCell>${product.price.toFixed(2)}</TableCell>
-                    <TableCell className="text-red-500 font-bold">{product.stock}</TableCell>
-                    <TableCell>{product.category}</TableCell>
-                    <TableCell>
-                      <Badge
-                        variant={
-                          product.status === "active" 
-                            ? "default" 
-                            : product.status === "inactive" 
-                              ? "secondary" 
-                              : "outline"
-                        }
-                      >
-                        {product.status}
-                      </Badge>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </CardContent>
-        </Card>
-      )}
-
       {/* Popular Products */}
       <Card>
         <CardHeader>
-          <div className="flex justify-between items-center">
-            <CardTitle>Popular Products</CardTitle>
-            <Button variant="outline" size="sm" onClick={handleViewInventory}>
-              View All Products
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle>Popular Products</CardTitle>
+              <CardDescription>Your best-selling products</CardDescription>
+            </div>
+            <Button variant="outline" onClick={handleViewInventory}>
+              View Inventory
             </Button>
           </div>
-          <CardDescription>
-            Your best-selling products
-          </CardDescription>
         </CardHeader>
         <CardContent>
           <Table>
             <TableHeader>
               <TableRow>
                 <TableHead>Product</TableHead>
+                <TableHead>Category</TableHead>
                 <TableHead>Price</TableHead>
                 <TableHead>Stock</TableHead>
-                <TableHead>Category</TableHead>
                 <TableHead>Status</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {dashboardData?.popularProducts.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={5} className="text-center py-4">No products found</TableCell>
+              {dashboardData?.popularProducts?.map((product) => (
+                <TableRow key={product.id}>
+                  <TableCell>{product.name}</TableCell>
+                  <TableCell>{product.category}</TableCell>
+                  <TableCell>${product.price.toFixed(2)}</TableCell>
+                  <TableCell>{product.stock}</TableCell>
+                  <TableCell>
+                    <Badge
+                      variant={
+                        product.status === "active"
+                          ? "default"
+                          : product.status === "inactive"
+                          ? "destructive"
+                          : "secondary"
+                      }
+                    >
+                      {product.status}
+                    </Badge>
+                  </TableCell>
                 </TableRow>
-              ) : (
-                dashboardData?.popularProducts.map((product) => (
-                  <TableRow key={product.id}>
-                    <TableCell className="font-medium">{product.name}</TableCell>
-                    <TableCell>${product.price.toFixed(2)}</TableCell>
-                    <TableCell>{product.stock}</TableCell>
-                    <TableCell>{product.category}</TableCell>
-                    <TableCell>
-                      <Badge
-                        variant={
-                          product.status === "active" 
-                            ? "default" 
-                            : product.status === "inactive" 
-                              ? "secondary" 
-                              : "outline"
-                        }
-                      >
-                        {product.status}
-                      </Badge>
-                    </TableCell>
-                  </TableRow>
-                ))
-              )}
+              ))}
             </TableBody>
           </Table>
         </CardContent>
       </Card>
+
+      {/* Inventory Alerts */}
+      {dashboardData?.inventoryAlerts &&
+        dashboardData.inventoryAlerts.length > 0 && (
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle>Low Stock Alerts</CardTitle>
+                  <CardDescription>
+                    Products that need attention
+                  </CardDescription>
+                </div>
+                <Button variant="outline" onClick={handleViewInventory}>
+                  View Inventory
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Product</TableHead>
+                    <TableHead>Category</TableHead>
+                    <TableHead>Price</TableHead>
+                    <TableHead>Stock</TableHead>
+                    <TableHead>Status</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {dashboardData?.inventoryAlerts?.map((product) => (
+                    <TableRow key={product.id}>
+                      <TableCell>{product.name}</TableCell>
+                      <TableCell>{product.category}</TableCell>
+                      <TableCell>${product.price.toFixed(2)}</TableCell>
+                      <TableCell>{product.stock}</TableCell>
+                      <TableCell>
+                        <Badge
+                          variant={
+                            product.status === "active"
+                              ? "default"
+                              : product.status === "inactive"
+                              ? "destructive"
+                              : "secondary"
+                          }
+                        >
+                          {product.status}
+                        </Badge>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        )}
     </div>
   );
 }
-
