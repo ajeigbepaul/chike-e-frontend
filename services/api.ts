@@ -23,10 +23,15 @@ api.interceptors.request.use(
   async (config) => {
     // Get session from NextAuth
     const session = (await getSession()) as CustomSession;
+    console.log('API Interceptor: Session', session);
+    console.log('API Interceptor: Access Token', session?.accessToken);
 
     // Add the JWT token to the Authorization header if it exists
     if (session?.accessToken) {
       config.headers.Authorization = `Bearer ${session.accessToken}`;
+      console.log('API Interceptor: Authorization header set');
+    } else {
+      console.log('API Interceptor: No access token found in session.');
     }
 
     return config;
@@ -46,8 +51,10 @@ api.interceptors.response.use(
     if (error.response?.status === 401 && !originalRequest._retry) {
       originalRequest._retry = true;
 
-      // Redirect to login page if session expired
-      window.location.href = "/auth/signin";
+      // Only redirect to login if we're not already on the login page
+      if (!window.location.pathname.includes('/auth/signin')) {
+        window.location.href = "/auth/signin";
+      }
       return Promise.reject(error);
     }
 

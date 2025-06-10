@@ -13,6 +13,7 @@ import {
   ChevronDown,
   ChevronUp,
   Tag,
+  Layers,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -35,6 +36,15 @@ export function Sidebar() {
       name: "Dashboard",
       href: "/admin/dashboard",
       icon: <LayoutDashboard className="h-5 w-5" />,
+    },
+    {
+      name: "Categories",
+      href: "/admin/categories",
+      icon: <Layers className="h-5 w-5" />,
+      subItems: [
+        { name: "All Categories", href: "/admin/categories" },
+        { name: "Add New", href: "/admin/categories/new" },
+      ],
     },
     {
       name: "Products",
