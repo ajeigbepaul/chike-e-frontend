@@ -1,6 +1,8 @@
 import axios from "axios";
 import { getSession } from "next-auth/react";
 import { Session } from "next-auth";
+import { signOut } from "next-auth/react";
+import { toast } from "react-hot-toast";
 
 interface CustomSession extends Session {
   accessToken?: string;
@@ -47,13 +49,30 @@ api.interceptors.response.use(
   async (error) => {
     const originalRequest = error.config;
 
-    // Handle 401 Unauthorized errors
+    // Handle JWT expiration and 401 Unauthorized errors
     if (error.response?.status === 401 && !originalRequest._retry) {
       originalRequest._retry = true;
 
-      // Only redirect to login if we're not already on the login page
-      if (!window.location.pathname.includes('/auth/signin')) {
-        window.location.href = "/auth/signin";
+      // Check if the error is due to JWT expiration
+      const isTokenExpired = error.response?.data?.message?.toLowerCase().includes('jwt expired') ||
+                           error.response?.data?.error?.toLowerCase().includes('jwt expired');
+
+      if (isTokenExpired) {
+        // Sign out the user
+        await signOut({ redirect: false });
+        
+        // Show a toast notification
+        toast.error('Your session has expired. Please log in again.');
+        
+        // Redirect to login page if not already there
+        if (!window.location.pathname.includes('/auth/signin')) {
+          window.location.href = "/auth/signin";
+        }
+      } else {
+        // Handle other 401 errors
+        if (!window.location.pathname.includes('/auth/signin')) {
+          window.location.href = "/auth/signin";
+        }
       }
       return Promise.reject(error);
     }

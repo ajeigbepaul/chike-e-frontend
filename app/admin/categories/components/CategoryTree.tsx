@@ -160,11 +160,11 @@ export default function CategoryTree({
   isUpdating
 }: CategoryTreeProps) {
   // Get top-level categories
-  const topLevelCategories = categories.filter(cat => !cat.parent);
+  const categoryTree = buildCategoryTree(categories);
 
   return (
     <div className="space-y-2">
-      {topLevelCategories.map((category) => (
+      {categoryTree.map((category) => (
         <TreeNode
           key={category._id}
           category={category}
@@ -182,11 +182,14 @@ export default function CategoryTree({
 
 function buildCategoryTree(categories: Category[]): Category[] {
   const map: { [key: string]: Category & { subcategories: Category[] } } = {};
-  const roots: Category[] = [];
+  const roots: (Category & { subcategories: Category[] })[] = [];
 
   // Initialize map and subcategories
   categories.forEach(cat => {
-    map[cat._id] = { ...cat, subcategories: [] };
+    map[cat._id] = { 
+      ...cat, 
+      subcategories: cat.subcategories || [] 
+    };
   });
 
   // Build the tree
@@ -197,6 +200,17 @@ function buildCategoryTree(categories: Category[]): Category[] {
       roots.push(map[cat._id]);
     }
   });
+
+  // Sort root categories by order
+  roots.sort((a, b) => a.order - b.order);
+
+  // Recursively sort subcategories
+  function sortSubcategories(category: Category & { subcategories: Category[] }) {
+    category.subcategories.sort((a, b) => a.order - b.order);
+    category.subcategories.forEach(sub => sortSubcategories(sub as Category & { subcategories: Category[] }));
+  }
+
+  roots.forEach(sortSubcategories);
 
   return roots;
 } 

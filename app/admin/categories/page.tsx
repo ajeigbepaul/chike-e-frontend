@@ -3,13 +3,13 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Plus, Upload, Download } from 'lucide-react';
-import CategoryForm from './components/CategoryForm';
+import { CategoryForm } from './components/CategoryForm';
 import CategoryTree from './components/CategoryTree';
 import { useToast } from '@/components/ui/use-toast';
 import { Category } from './types';
-import categoryService from '@/services/api/category';
+import categoryService, { CreateCategoryData } from '@/services/api/category';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 // import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 
 function buildCategoryTree(categories: Category[]): Category[] {
@@ -60,7 +60,7 @@ export default function CategoriesPage() {
   console.log('Fetched categories (flat):', categories);
 
   const createCategoryMutation = useMutation({
-    mutationFn: (formData: Partial<Category>) => categoryService.createCategory(formData as any),
+    mutationFn: (formData: CreateCategoryData) => categoryService.createCategory(formData),
     onSuccess: (response) => {
       if (response.success) {
         toast({
@@ -276,7 +276,7 @@ export default function CategoriesPage() {
     if (selectedCategory) {
       updateCategoryMutation.mutate({ _id: selectedCategory._id, data: formData });
     } else {
-      createCategoryMutation.mutate(formData);
+      createCategoryMutation.mutate(formData as CreateCategoryData);
     }
   };
 
@@ -342,13 +342,18 @@ export default function CategoriesPage() {
 
       {isFormOpen && (
         <CategoryForm
-          initialData={selectedCategory}
+          initialData={selectedCategory === null ? undefined : {
+            name: selectedCategory.name,
+            isActive: selectedCategory.isActive,
+            order: selectedCategory.order,
+          }}
           onSubmit={handleFormSubmit}
           onCancel={() => {
             setIsFormOpen(false);
             setSelectedCategory(null);
           }}
           isSubmitting={createCategoryMutation.isPending || updateCategoryMutation.isPending}
+          isEdit={!!selectedCategory}
         />
       )}
 

@@ -26,10 +26,12 @@ type Attribute = {
 };
 
 type Variant = {
-  sku: string;
-  price: string;
-  inventory: string;
-  attributes: Record<string, string>;
+  attributes: Array<{
+    name: string;
+    value: string;
+  }>;
+  price: number;
+  quantity: number;
 };
 
 type ProductVariantFormProps = {
@@ -53,15 +55,14 @@ export function ProductVariantForm({
     const attributeValues = attributes.map((attr) => attr.values);
 
     const generateCombinations = (
-      current: Record<string, string>,
+      current: Array<{ name: string; value: string }>,
       index: number
     ) => {
       if (index === attributeNames.length) {
         newVariants.push({
-          sku: "",
-          price: "",
-          inventory: "",
-          attributes: { ...current },
+          attributes: [...current],
+          price: 0,
+          quantity: 0,
         });
         return;
       }
@@ -70,19 +71,20 @@ export function ProductVariantForm({
       const values = attributeValues[index];
 
       for (const value of values) {
-        current[attrName] = value;
+        current.push({ name: attrName, value });
         generateCombinations(current, index + 1);
+        current.pop();
       }
     };
 
-    generateCombinations({}, 0);
+    generateCombinations([], 0);
     onChange(newVariants);
   };
 
   const handleVariantChange = (
     index: number,
-    field: keyof Variant,
-    newValue: string
+    field: 'price' | 'quantity',
+    newValue: number
   ) => {
     const newVariants = [...value];
     newVariants[index] = {
@@ -132,9 +134,8 @@ export function ProductVariantForm({
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>SKU</TableHead>
               <TableHead>Price</TableHead>
-              <TableHead>Inventory</TableHead>
+              <TableHead>Quantity</TableHead>
               {attributes.map((attr) => (
                 <TableHead key={attr.name}>{attr.name}</TableHead>
               ))}
@@ -146,19 +147,10 @@ export function ProductVariantForm({
               <TableRow key={index}>
                 <TableCell>
                   <Input
-                    value={variant.sku}
-                    onChange={(e) =>
-                      handleVariantChange(index, "sku", e.target.value)
-                    }
-                    placeholder="SKU"
-                  />
-                </TableCell>
-                <TableCell>
-                  <Input
                     type="number"
                     value={variant.price}
                     onChange={(e) =>
-                      handleVariantChange(index, "price", e.target.value)
+                      handleVariantChange(index, "price", Number(e.target.value))
                     }
                     placeholder="Price"
                   />
@@ -166,16 +158,16 @@ export function ProductVariantForm({
                 <TableCell>
                   <Input
                     type="number"
-                    value={variant.inventory}
+                    value={variant.quantity}
                     onChange={(e) =>
-                      handleVariantChange(index, "inventory", e.target.value)
+                      handleVariantChange(index, "quantity", Number(e.target.value))
                     }
-                    placeholder="Inventory"
+                    placeholder="Quantity"
                   />
                 </TableCell>
                 {attributes.map((attr) => (
                   <TableCell key={attr.name}>
-                    {variant.attributes[attr.name]}
+                    {variant.attributes.find(a => a.name === attr.name)?.value}
                   </TableCell>
                 ))}
                 <TableCell>

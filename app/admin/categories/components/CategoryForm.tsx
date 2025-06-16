@@ -1,106 +1,108 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import { useForm, type SubmitHandler } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
 import { Switch } from '@/components/ui/switch';
-import { Label } from '@/components/ui/label';
-import { Category } from '../types';
-import { ChevronRight, Folder } from 'lucide-react';
+import { Category } from '@/app/admin/categories/types';
+
+interface CategoryFormData {
+  name: string;
+  isActive: boolean;
+  order: number;
+}
 
 interface CategoryFormProps {
-  initialData?: Partial<Category> | null;
-  onSubmit: (data: Partial<Category>) => void;
+  initialData?: CategoryFormData | null;
+  onSubmit: SubmitHandler<CategoryFormData>;
+  isEdit: boolean;
   onCancel: () => void;
   isSubmitting?: boolean;
 }
 
-export default function CategoryForm({
-  initialData,
-  onSubmit,
-  onCancel,
-  isSubmitting = false,
-}: CategoryFormProps) {
-  const [formData, setFormData] = useState<Partial<Category>>({
-    name: initialData?.name || '',
-    isActive: initialData?.isActive ?? true,
-    order: initialData?.order || 0,
+const formSchema = z.object({
+  name: z.string().min(1, "Name is required"),
+  isActive: z.boolean(),
+  order: z.number().min(0),
+});
+
+type FormData = z.infer<typeof formSchema>;
+
+export function CategoryForm({ initialData, onSubmit, isEdit, onCancel, isSubmitting }: CategoryFormProps) {
+  const form = useForm<FormData>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      name: initialData?.name || "",
+      isActive: initialData?.isActive ?? true,
+      order: initialData?.order || 0,
+    },
   });
 
-  useEffect(() => {
-    if (initialData) {
-      setFormData({
-        name: initialData.name || '',
-        isActive: initialData.isActive ?? true,
-        order: initialData.order || 0,
-      });
-    }
-  }, [initialData]);
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    onSubmit(formData);
-  };
-
-  const handleOrderChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value;
-    if (value === '' || !isNaN(Number(value))) {
-      setFormData({ ...formData, order: value === '' ? 0 : Number(value) });
-    }
-  };
-
   return (
-    <form onSubmit={handleSubmit} className="space-y-4 mb-6 p-4 border rounded-lg">
-      <div className="grid grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <Label htmlFor="name">Name</Label>
-          <Input
-            id="name"
-            value={formData.name}
-            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-            required
-          />
-        </div>
-
-        <div className="space-y-2">
-          <Label htmlFor="order">Display Order</Label>
-          <Input
-            id="order"
-            type="number"
-            min="0"
-            value={formData.order || 0}
-            onChange={handleOrderChange}
-          />
-        </div>
-
-        <div className="flex items-center space-x-2">
-          <Switch
-            id="isActive"
-            checked={formData.isActive}
-            onCheckedChange={(checked) => setFormData({ ...formData, isActive: checked })}
-          />
-          <Label htmlFor="isActive">Active</Label>
-        </div>
-      </div>
-
-      <div className="flex justify-end space-x-2">
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+        <FormField
+          control={form.control}
+          name="name"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Category Name</FormLabel>
+              <FormControl>
+                <Input {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="isActive"
+          render={({ field }) => (
+            <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+              <div className="space-y-0.5">
+                <FormLabel className="text-base">
+                  Active
+                </FormLabel>
+              </div>
+              <FormControl>
+                <Switch
+                  checked={field.value}
+                  onCheckedChange={field.onChange}
+                />
+              </FormControl>
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="order"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Order</FormLabel>
+              <FormControl>
+                <Input type="number" {...field} onChange={e => field.onChange(Number(e.target.value))} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <Button type="submit" disabled={isSubmitting}>
+          {isEdit ? "Update Category" : "Create Category"}
+        </Button>
         <Button type="button" variant="outline" onClick={onCancel} disabled={isSubmitting}>
           Cancel
         </Button>
-        <Button 
-          type="submit" 
-          disabled={isSubmitting}
-        >
-          {initialData ? 'Update Category' : 'Create Category'}
-        </Button>
-      </div>
-    </form>
+      </form>
+    </Form>
   );
 } 
