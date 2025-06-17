@@ -13,7 +13,7 @@ body {
   height: 100vh;
 }
 
-/* For WebKit browsers (Chrome, Safari) */
+/* Scrollbar styling */
 ::-webkit-scrollbar {
   width: 8px;
 }
@@ -61,10 +61,12 @@ body {
   --color-secondary: var(--secondary);
   --color-primary-foreground: var(--primary-foreground);
   --color-primary: var(--primary);
+  
   --color-popover-foreground: var(--popover-foreground);
   --color-popover: var(--popover);
   --color-card-foreground: var(--card-foreground);
   --color-card: var(--card);
+  --color-brand-yellow: var(--brand-yellow);
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
@@ -72,72 +74,86 @@ body {
 }
 
 :root {
-  --radius: 0.625rem;
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.129 0.042 264.695);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.129 0.042 264.695);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.129 0.042 264.695);
-  --primary: oklch(0.208 0.042 265.755);
-  --primary-foreground: oklch(0.984 0.003 247.858);
-  --secondary: oklch(0.968 0.007 247.896);
-  --secondary-foreground: oklch(0.208 0.042 265.755);
-  --muted: oklch(0.968 0.007 247.896);
-  --muted-foreground: oklch(0.554 0.046 257.417);
-  --accent: oklch(0.968 0.007 247.896);
-  --accent-foreground: oklch(0.208 0.042 265.755);
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.929 0.013 255.508);
-  --input: oklch(0.929 0.013 255.508);
-  --ring: oklch(0.704 0.04 256.788);
-  --chart-1: oklch(0.646 0.222 41.116);
-  --chart-2: oklch(0.6 0.118 184.704);
-  --chart-3: oklch(0.398 0.07 227.392);
-  --chart-4: oklch(0.828 0.189 84.429);
-  --chart-5: oklch(0.769 0.188 70.08);
-  --sidebar: oklch(0.984 0.003 247.858);
-  --sidebar-foreground: oklch(0.129 0.042 264.695);
-  --sidebar-primary: oklch(0.208 0.042 265.755);
-  --sidebar-primary-foreground: oklch(0.984 0.003 247.858);
-  --sidebar-accent: oklch(0.968 0.007 247.896);
-  --sidebar-accent-foreground: oklch(0.208 0.042 265.755);
-  --sidebar-border: oklch(0.929 0.013 255.508);
-  --sidebar-ring: oklch(0.704 0.04 256.788);
+  --radius: 0.5rem;
+  
+  /* Light theme colors */
+  --background: #ffffff;
+  --foreground: #1a1a1a;
+  --card: #ffffff;
+  --card-foreground: #1a1a1a;
+  --popover: #ffffff;
+  --popover-foreground: #1a1a1a;
+  --primary: #2563eb;  /* Blue-600 */
+  --primary-foreground: #ffffff;
+  --secondary: #f3f4f6; /* Gray-100 */
+  --secondary-foreground: #111827; /* Gray-900 */
+  --muted: #f3f4f6; /* Gray-100 */
+  --muted-foreground: #6b7280; /* Gray-500 */
+  --accent: #f3f4f6; /* Gray-100 */
+  --accent-foreground: #111827; /* Gray-900 */
+  --destructive: #ef4444; /* Red-500 */
+  --border: #e5e7eb; /* Gray-200 */
+  --input: #e5e7eb; /* Gray-200 */
+  --ring: #93c5fd; /* Blue-300 */
+  
+  /* Brand colors */
+  --brand-yellow: #F7B50E;
+  
+  /* Chart colors */
+  --chart-1: #3b82f6; /* Blue-500 */
+  --chart-2: #10b981; /* Emerald-500 */
+  --chart-3: #f59e0b; /* Amber-500 */
+  --chart-4: #6366f1; /* Indigo-500 */
+  --chart-5: #ec4899; /* Pink-500 */
+  
+  /* Sidebar colors */
+  --sidebar: #ffffff;
+  --sidebar-foreground: #1a1a1a;
+  --sidebar-primary: #2563eb; /* Blue-600 */
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #f3f4f6; /* Gray-100 */
+  --sidebar-accent-foreground: #111827; /* Gray-900 */
+  --sidebar-border: #e5e7eb; /* Gray-200 */
+  --sidebar-ring: #93c5fd; /* Blue-300 */
 }
 
 .dark {
-  --background: oklch(0.129 0.042 264.695);
-  --foreground: oklch(0.984 0.003 247.858);
-  --card: oklch(0.208 0.042 265.755);
-  --card-foreground: oklch(0.984 0.003 247.858);
-  --popover: oklch(0.208 0.042 265.755);
-  --popover-foreground: oklch(0.984 0.003 247.858);
-  --primary: oklch(0.929 0.013 255.508);
-  --primary-foreground: oklch(0.208 0.042 265.755);
-  --secondary: oklch(0.279 0.041 260.031);
-  --secondary-foreground: oklch(0.984 0.003 247.858);
-  --muted: oklch(0.279 0.041 260.031);
-  --muted-foreground: oklch(0.704 0.04 256.788);
-  --accent: oklch(0.279 0.041 260.031);
-  --accent-foreground: oklch(0.984 0.003 247.858);
-  --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.551 0.027 264.364);
-  --chart-1: oklch(0.488 0.243 264.376);
-  --chart-2: oklch(0.696 0.17 162.48);
-  --chart-3: oklch(0.769 0.188 70.08);
-  --chart-4: oklch(0.627 0.265 303.9);
-  --chart-5: oklch(0.645 0.246 16.439);
-  --sidebar: oklch(0.208 0.042 265.755);
-  --sidebar-foreground: oklch(0.984 0.003 247.858);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.984 0.003 247.858);
-  --sidebar-accent: oklch(0.279 0.041 260.031);
-  --sidebar-accent-foreground: oklch(0.984 0.003 247.858);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.551 0.027 264.364);
+  /* Dark theme colors */
+  --background: #0f172a; /* Slate-900 */
+  --foreground: #f8fafc; /* Slate-50 */
+  --card: #1e293b; /* Slate-800 */
+  --card-foreground: #f8fafc; /* Slate-50 */
+  --popover: #1e293b; /* Slate-800 */
+  --popover-foreground: #f8fafc; /* Slate-50 */
+  --primary: #60a5fa; /* Blue-400 */
+  --primary-foreground: #1e40af; /* Blue-800 */
+  --secondary: #334155; /* Slate-700 */
+  --secondary-foreground: #f8fafc; /* Slate-50 */
+  --muted: #334155; /* Slate-700 */
+  --muted-foreground: #94a3b8; /* Slate-400 */
+  --accent: #334155; /* Slate-700 */
+  --accent-foreground: #f8fafc; /* Slate-50 */
+  --destructive: #7f1d1d; /* Red-900 */
+  --border: #1e293b; /* Slate-800 */
+  --input: #1e293b; /* Slate-800 */
+  --ring: #1e40af; /* Blue-800 */
+  
+  /* Dark chart colors */
+  --chart-1: #60a5fa; /* Blue-400 */
+  --chart-2: #34d399; /* Emerald-400 */
+  --chart-3: #fbbf24; /* Amber-400 */
+  --chart-4: #818cf8; /* Indigo-400 */
+  --chart-5: #f472b6; /* Pink-400 */
+  
+  /* Dark sidebar colors */
+  --sidebar: #1e293b; /* Slate-800 */
+  --sidebar-foreground: #f8fafc; /* Slate-50 */
+  --sidebar-primary: #60a5fa; /* Blue-400 */
+  --sidebar-primary-foreground: #1e40af; /* Blue-800 */
+  --sidebar-accent: #334155; /* Slate-700 */
+  --sidebar-accent-foreground: #f8fafc; /* Slate-50 */
+  --sidebar-border: #1e293b; /* Slate-800 */
+  --sidebar-ring: #1e40af; /* Blue-800 */
 }
 
 @layer base {
@@ -146,5 +162,42 @@ body {
   }
   body {
     @apply bg-background text-foreground;
+    font-feature-settings: "rlig" 1, "calt" 1;
   }
+}
+
+/* Add to your CSS */
+.overflow-indicator {
+  position: sticky;
+  bottom: 0;
+  height: 20px;
+  background: linear-gradient(to top, white, transparent);
+  pointer-events: none;
+}
+
+/* Add to your CSS */
+.dropdown-scroll {
+  scroll-behavior: smooth;
+  scrollbar-width: thin;
+}
+
+/* Add these to your global CSS */
+.submenu {
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.submenu.right-full {
+  left: auto;
+  right: 100%;
+  margin-left: 0;
+  margin-right: -1px;
+}
+
+/* Optional: Add this for smoother appearance */
+.submenu.opacity-100 {
+  transform: translateX(0);
+}
+
+.submenu.opacity-0 {
+  transform: translateX(5px);
 }

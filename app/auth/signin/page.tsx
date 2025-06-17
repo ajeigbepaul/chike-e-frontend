@@ -112,7 +112,7 @@ export default function LoginPage() {
             <div className="text-right mt-1">
               <Link
                 href="/auth/forgot-password"
-                className="text-sm text-blue-600 hover:text-blue-700"
+                className="text-sm text-brand-yellow hover:text-yellow-600"
               >
                 Forgot password?
               </Link>
@@ -121,7 +121,7 @@ export default function LoginPage() {
           <button
             type="submit"
             disabled={isLoading}
-            className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700 transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full bg-brand-yellow text-white py-2 rounded hover:bg-yellow-600 transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {isLoading ? "Logging in..." : "Login"}
           </button>
@@ -130,7 +130,7 @@ export default function LoginPage() {
           Don't have an account?{" "}
           <Link
             href="/auth/signup"
-            className="text-blue-600 hover:text-blue-700"
+            className="text-brand-yellow hover:text-yellow-500"
           >
             Sign up
           </Link>
