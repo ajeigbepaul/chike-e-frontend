@@ -4,6 +4,7 @@ import "./globals.css";
 import { NextAuthProvider } from "@/providers/auth-provider";
 import { ClientProviders } from "@/components/ClientProviders";
 import { Header } from "@/components/storefront/Header";
+import Footer from "@/components/storefront/Footer";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -28,12 +29,16 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        className={`${geistSans.variable} ${geistMono.variable} antialiased bg-white text-gray-900 min-h-screen flex flex-col`}
       >
         <NextAuthProvider>
           <ClientProviders>
             <Header />
-            {children}
+            <main className="flex-grow">
+              {children}
+            </main>
+            {/* Footer would go here */}
+            <Footer/>
           </ClientProviders>
         </NextAuthProvider>
       </body>

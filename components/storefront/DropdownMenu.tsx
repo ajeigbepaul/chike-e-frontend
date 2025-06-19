@@ -24,9 +24,14 @@ export function DropdownMenu({ trigger, children, align = 'right' }: DropdownMen
 
   return (
     <div className="relative" ref={dropdownRef}>
-      <button onClick={() => setIsOpen(!isOpen)} className="focus:outline-none">
+      <div
+        onClick={() => setIsOpen(!isOpen)}
+        className="focus:outline-none cursor-pointer"
+        role="button"
+        tabIndex={0}
+      >
         {trigger}
-      </button>
+      </div>
       {isOpen && (
         <div className={`absolute ${align === 'right' ? 'right-0' : 'left-0'} mt-2 w-48 bg-white rounded-md shadow-lg z-50 py-1`}>
           {children}
