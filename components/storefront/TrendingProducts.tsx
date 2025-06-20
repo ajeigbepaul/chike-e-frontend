@@ -10,7 +10,7 @@ const products = [
   {
     id: 1,
     title: 'Galvanized steel, 40kg',
-    image: '/feature1.jpg',
+    image: '/cat1.svg',
     price: '₦25,000',
     unit: 'm3',
     rating: 4.8,
@@ -20,7 +20,7 @@ const products = [
   {
     id: 2,
     title: 'Square steel pipes',
-    image: '/feature2.jpg',
+    image: '/cat2.svg',
     price: '₦25,000',
     unit: 'm3',
     rating: 4.8,
@@ -30,7 +30,7 @@ const products = [
   {
     id: 3,
     title: 'Galvanized steel, 40kg',
-    image: '/feature3.jpg',
+    image: '/cat3.svg',
     price: '₦25,000',
     unit: 'm3',
     rating: 4.8,
@@ -40,7 +40,7 @@ const products = [
   {
     id: 4,
     title: 'Galvanized steel, 40kg',
-    image: '/feature4.jpg',
+    image: '/cat1.svg',
     price: '₦25,000',
     unit: 'm3',
     rating: 4.8,
@@ -50,7 +50,7 @@ const products = [
   {
     id: 5,
     title: 'Galvanized steel, 40kg',
-    image: '/feature1.jpg',
+    image: '/cat1.svg',
     price: '₦25,000',
     unit: 'm3',
     rating: 4.8,

@@ -2,8 +2,8 @@ import Image from 'next/image';
 import { ChevronDown } from 'lucide-react';
 
 const Footer = () => (
-  <footer className="bg-white border-t border-gray-200 pt-8 pb-4 px-4 sm:px-8">
-    <div className="max-w-6xl mx-auto">
+  <footer className="bg-white pt-8 pb-4 px-4 sm:px-8">
+    <div className="max-w-6xl mx-auto px-4">
       {/* Logo and heading */}
       <div className="flex flex-col gap-6">
         <div className="flex items-center gap-2 mb-2">
@@ -12,7 +12,7 @@ const Footer = () => (
             <span className="text-brand-yellow">Decor</span><span className="text-gray-900">BM</span>
           </span>
         </div>
-        <hr className="border-gray-300 my-2" />
+        <hr className="border-gray-800 my-2" />
         <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-6 mt-2 leading-tight">
           GET THE LATEST<br />NEWS AND UPDATES
         </h2>

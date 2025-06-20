@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
-import { Search, ShoppingBag, User, ChevronDown, ChevronRight, LogOut, Settings, Upload, Bell, LogIn } from 'lucide-react';
+import { Search, ShoppingBag, User, ChevronDown, ChevronRight, LogOut, Settings, Upload, Bell, LogIn, Heart } from 'lucide-react';
 import { useDispatch, useSelector } from 'react-redux';
 import { RootState } from '@/store/store';
 import { toggleCart } from '@/store/cartSlice';
@@ -166,6 +166,27 @@ export function Header() {
                     <User className="mr-2 h-4 w-4" />
                     My Account
                   </Link>
+                  <Link
+                    href="/account/orders"
+                    className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-brand-yellow/10"
+                  >
+                    <ShoppingBag className="mr-2 h-4 w-4" />
+                    Orders
+                  </Link>
+                  <Link
+                    href="/account/wishlist"
+                    className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-brand-yellow/10"
+                  >
+                    <Heart className="mr-2 h-4 w-4" />
+                    Wishlist
+                  </Link>
+                  <Link
+                    href="/account/inbox"
+                    className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-brand-yellow/10"
+                  >
+                    <Bell className="mr-2 h-4 w-4" />
+                    Inbox
+                  </Link>
                   <button
                     className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-brand-yellow/10"
                     onClick={handleSignOut}
@@ -284,6 +305,27 @@ export function Header() {
                     onClick={() => setMobileMenuOpen(false)}
                   >
                     My Account
+                  </Link>
+                  <Link
+                    href="/orders"
+                    className="block px-4 py-2 text-gray-900 hover:bg-gray-100"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    Orders
+                  </Link>
+                  <Link
+                    href="/wishlist"
+                    className="block px-4 py-2 text-gray-900 hover:bg-gray-100"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    Wishlist
+                  </Link>
+                  <Link
+                    href="/inbox"
+                    className="block px-4 py-2 text-gray-900 hover:bg-gray-100"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    Inbox
                   </Link>
                   <button
                     className="w-full flex items-center px-4 py-2 text-gray-900 hover:bg-gray-100"
