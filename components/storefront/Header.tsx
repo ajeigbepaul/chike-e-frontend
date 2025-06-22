@@ -12,7 +12,7 @@ import { CategoryDropdown } from './CategoryDropdown';
 import Image from 'next/image';
 import logo from '@/public/logo.svg';
 import { useSession, signOut } from 'next-auth/react';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import categoryService from '@/services/api/category';
 
@@ -27,6 +27,7 @@ export function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const searchRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
+  const pathname = usePathname();
 
   // Detect mobile viewport
   useEffect(() => {
@@ -91,10 +92,10 @@ export function Header() {
 
             {/* Desktop Navigation */}
             <nav className="hidden md:flex ml-10 space-x-8">
-              <Link href="/" className="text-gray-900 hover:text-brand-yellow transition-colors">
+              <Link href="/" className={`${pathname === '/' ? 'text-brand-yellow' : 'text-gray-900'} hover:text-brand-yellow transition-colors`}>
                 Home
               </Link>
-              <Link href="/about" className="text-gray-900 hover:text-brand-yellow transition-colors">
+              <Link href="/about" className={`${pathname === '/about' ? 'text-brand-yellow' : 'text-gray-900'} hover:text-brand-yellow transition-colors`}>
                 About
               </Link>
               <CategoryDropdown
@@ -102,9 +103,9 @@ export function Header() {
                 isMobile={isMobile}
                 setIsMobile={setIsMobile}
               />
-              <Link href="/contact" className="text-gray-900 hover:text-brand-yellow transition-colors">
+              {/* <Link href="/contact" className="text-gray-900 hover:text-brand-yellow transition-colors">
                 Contact
-              </Link>
+              </Link> */}
             </nav>
           </div>
 
@@ -256,14 +257,14 @@ export function Header() {
             <div className="pt-2 pb-3 space-y-1">
               <Link
                 href="/"
-                className="block px-4 py-2 text-gray-900 hover:bg-gray-100"
+                className={`block px-4 py-2 ${pathname === '/' ? 'text-brand-yellow' : 'text-gray-900'} hover:bg-gray-100`}
                 onClick={() => setMobileMenuOpen(false)}
               >
                 Home
               </Link>
               <Link
                 href="/about"
-                className="block px-4 py-2 text-gray-900 hover:bg-gray-100"
+                className={`block px-4 py-2 ${pathname === '/about' ? 'text-brand-yellow' : 'text-gray-900'} hover:bg-gray-100`}
                 onClick={() => setMobileMenuOpen(false)}
               >
                 About Us
@@ -278,7 +279,7 @@ export function Header() {
               />
               <Link
                 href="/contact"
-                className="block px-4 py-2 text-gray-900 hover:bg-gray-100"
+                className={`block px-4 py-2 ${pathname === '/contact' ? 'text-brand-yellow' : 'text-gray-900'} hover:bg-gray-100`}
                 onClick={() => setMobileMenuOpen(false)}
               >
                 Contact
@@ -301,28 +302,28 @@ export function Header() {
                 <>
                   <Link
                     href="/account"
-                    className="block px-4 py-2 text-gray-900 hover:bg-gray-100"
+                    className={`block px-4 py-2 ${pathname === '/account' ? 'text-brand-yellow' : 'text-gray-900'} hover:bg-gray-100`}
                     onClick={() => setMobileMenuOpen(false)}
                   >
                     My Account
                   </Link>
                   <Link
                     href="/orders"
-                    className="block px-4 py-2 text-gray-900 hover:bg-gray-100"
+                    className={`block px-4 py-2 ${pathname === '/orders' ? 'text-brand-yellow' : 'text-gray-900'} hover:bg-gray-100`}
                     onClick={() => setMobileMenuOpen(false)}
                   >
                     Orders
                   </Link>
                   <Link
                     href="/wishlist"
-                    className="block px-4 py-2 text-gray-900 hover:bg-gray-100"
+                    className={`block px-4 py-2 ${pathname === '/wishlist' ? 'text-brand-yellow' : 'text-gray-900'} hover:bg-gray-100`}
                     onClick={() => setMobileMenuOpen(false)}
                   >
                     Wishlist
                   </Link>
                   <Link
                     href="/inbox"
-                    className="block px-4 py-2 text-gray-900 hover:bg-gray-100"
+                    className={`block px-4 py-2 ${pathname === '/inbox' ? 'text-brand-yellow' : 'text-gray-900'} hover:bg-gray-100`}
                     onClick={() => setMobileMenuOpen(false)}
                   >
                     Inbox

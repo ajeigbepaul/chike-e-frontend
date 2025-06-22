@@ -7,9 +7,13 @@ export default function AccountLayout({ children }: { children: React.ReactNode 
   return (
     <>
       {/* <Header /> */}
-      <div className="flex min-h-[80vh] bg-[#FAFAFA] px-20 py-10">
-        <AccountSideNav />
-        <main className="flex-1 px-6">{children}</main>
+      <div className="relative">
+        <div className="flex min-h-[80vh] bg-[#FAFAFA] px-20 py-10 relative">
+          <div className="relative w-64">
+            <AccountSideNav />
+          </div>
+          <main className="flex-1 px-6">{children}</main>
+        </div>
       </div>
       {/* <Footer /> */}
     </>

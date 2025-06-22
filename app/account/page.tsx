@@ -16,10 +16,10 @@ export default function AccountPage() {
 
   return (
     <div className="max-w-6xl mx-auto py-2">
-      <h1 className="text-3xl font-bold mb-6">Account Overview</h1>
+      <h1 className="text-2xl font-semibold mb-6">Account Overview</h1>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Account Details */}
-        <div className="bg-white rounded-xl border p-6 flex flex-col gap-2">
+        <div className="bg-white rounded-lg border p-6 flex flex-col gap-2">
           <h2 className="font-semibold text-lg mb-2">ACCOUNT DETAILS</h2>
           <div className="text-gray-900 font-medium">{user.name}</div>
           <div className="text-gray-500">{user.email}</div>
@@ -38,18 +38,18 @@ export default function AccountPage() {
           <div className="text-gray-500">{user.address.phone}</div>
         </div>
         {/* Store Credit */}
-        <div className="bg-white rounded-xl border p-6 flex flex-col gap-2">
+        {/* <div className="bg-white rounded-xl border p-6 flex flex-col gap-2">
           <h2 className="font-semibold text-lg mb-2">JUMIA STORE CREDIT</h2>
           <div className="flex items-center gap-2 text-blue-800 font-semibold">
             <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="14" rx="2" /><path d="M16 3v4M8 3v4M2 11h20" /></svg>
             Jumia store credit balance: ₦ {user.storeCredit}
           </div>
-        </div>
+        </div> */}
         {/* Newsletter Preferences */}
-        <div className="bg-white rounded-xl border p-6 flex flex-col gap-2">
+        {/* <div className="bg-white rounded-xl border p-6 flex flex-col gap-2">
           <h2 className="font-semibold text-lg mb-2">NEWSLETTER PREFERENCES</h2>
           <div className="text-gray-700">Manage your email communications to stay updated with the latest news and offers.</div>
-        </div>
+        </div> */}
       </div>
     </div>
   );

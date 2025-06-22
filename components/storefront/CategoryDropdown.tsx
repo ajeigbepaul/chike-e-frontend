@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import { ChevronRight, ChevronDown } from 'lucide-react';
 import { Category } from '@/app/admin/categories/types';
+import { usePathname } from 'next/navigation';
 
 interface CategoryDropdownProps {
   categories: Category[];
@@ -18,6 +19,7 @@ export function CategoryDropdown({ categories, trigger,isMobile,setIsMobile }: C
   const [activePath, setActivePath] = useState<string[]>([]);
   const [hoverPath, setHoverPath] = useState<string[]>([]);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const pathname = usePathname();
 //   const [isMobile,setIsMobile]=useState(false)
 
    // Check mobile view on mount and resize
@@ -286,14 +288,14 @@ return (
         >
           <Link 
             href="/products" 
-            className="text-foreground hover:text-brand-yellow transition-colors"
+            className={`${pathname.startsWith('/products') ? 'text-brand-yellow' : 'text-foreground'} hover:text-brand-yellow transition-colors`}
           >
             Products
           </Link>
           
           <button 
             onClick={() => setIsOpen(!isOpen)}
-            className="p-1 text-foreground hover:text-brand-yellow transition-colors focus:outline-none"
+            className={`p-1 ${pathname.startsWith('/products') ? 'text-brand-yellow' : 'text-foreground'} hover:text-brand-yellow transition-colors focus:outline-none`}
             aria-expanded={isOpen}
             aria-label="Toggle products dropdown"
           >
