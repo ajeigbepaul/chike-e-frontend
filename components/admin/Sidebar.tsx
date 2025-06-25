@@ -47,6 +47,15 @@ export function Sidebar() {
       ],
     },
     {
+      name: "Brands",
+      href: "/admin/brands",
+      icon: <Tag className="h-5 w-5" />,
+      subItems: [
+        { name: "All Brands", href: "/admin/brands" },
+        { name: "Add New", href: "/admin/brands/new" },
+      ],
+    },
+    {
       name: "Products",
       href: "/admin/products",
       icon: <Package className="h-5 w-5" />,

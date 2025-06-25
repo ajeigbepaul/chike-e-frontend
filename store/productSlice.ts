@@ -1,5 +1,5 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
-import { ProductFormData, CategoryType, AttributeType } from '@/types/product';
+import { ProductFormData, CategoryType, AttributeType, Brand } from '@/types/product';
 
 const STEPS = [
   { id: 'details', label: 'Basic Details' },
@@ -16,6 +16,7 @@ interface ProductFormState {
   completedSteps: Record<string, boolean>;
   formData: ProductFormData;
   categories: CategoryType[];
+  brands: Brand[];
   attributeSets: AttributeType[];
   isSubmitting: boolean;
   coverImageUrl: string | null;
@@ -37,6 +38,7 @@ const initialState: ProductFormState = {
     priceUnit: 'piece',
     serialNumber: '',
     category: '',
+    brand: '',
     dimensions: {
       length: 0,
       width: 0,
@@ -58,6 +60,7 @@ const initialState: ProductFormState = {
     imageCover: ''
   },
   categories: [],
+  brands: [],
   attributeSets: [],
   isSubmitting: false,
   coverImageUrl: null,
@@ -66,7 +69,7 @@ const initialState: ProductFormState = {
 };
 
 const productSlice = createSlice({
-  name: 'productForm',
+  name: 'product',
   initialState,
   reducers: {
     setActiveTab: (state, action: PayloadAction<string>) => {
@@ -75,17 +78,14 @@ const productSlice = createSlice({
     setProductId: (state, action: PayloadAction<string | null>) => {
       state.productId = action.payload;
     },
-    completeStep: (state, action: PayloadAction<string>) => {
-      state.completedSteps[action.payload] = true;
-      // Recalculate progress whenever a step is completed
-      const completedCount = Object.values(state.completedSteps).filter(Boolean).length;
-      state.progress = Math.round((completedCount / STEPS.length) * 100);
-    },
     updateFormData: (state, action: PayloadAction<Partial<ProductFormData>>) => {
       state.formData = { ...state.formData, ...action.payload };
     },
     setCategories: (state, action: PayloadAction<CategoryType[]>) => {
       state.categories = action.payload;
+    },
+    setBrands: (state, action: PayloadAction<Brand[]>) => {
+      state.brands = action.payload;
     },
     setAttributeSets: (state, action: PayloadAction<AttributeType[]>) => {
       state.attributeSets = action.payload;
@@ -99,28 +99,55 @@ const productSlice = createSlice({
     setAdditionalImageUrls: (state, action: PayloadAction<string[]>) => {
       state.additionalImageUrls = action.payload;
     },
-    setSpecifications: (
-      state,
-      action: PayloadAction<Array<{ key: string; value: string }>>
-    ) => {
+    addSpecification: (state, action: PayloadAction<{ key: string; value: string }>) => {
+      state.specifications.push(action.payload);
+    },
+    removeSpecification: (state, action: PayloadAction<number>) => {
+      state.specifications.splice(action.payload, 1);
+    },
+    updateSpecification: (state, action: PayloadAction<{ index: number; spec: { key: string; value: string } }>) => {
+      state.specifications[action.payload.index] = action.payload.spec;
+    },
+    setSpecifications: (state, action: PayloadAction<Array<{ key: string; value: string }>>) => {
       state.specifications = action.payload;
     },
-    resetForm: () => initialState,
+    completeStep: (state, action: PayloadAction<string>) => {
+      state.completedSteps[action.payload] = true;
+      // Calculate progress
+      const totalSteps = Object.keys(state.completedSteps).length;
+      const completedSteps = Object.values(state.completedSteps).filter(Boolean).length;
+      state.progress = Math.round((completedSteps / totalSteps) * 100);
+    },
+    resetForm: (state) => {
+      return { ...initialState };
+    },
+    setCompletedStep: (state, action: PayloadAction<{ step: string; completed: boolean }>) => {
+      state.completedSteps[action.payload.step] = action.payload.completed;
+      // Calculate progress
+      const totalSteps = Object.keys(state.completedSteps).length;
+      const completedSteps = Object.values(state.completedSteps).filter(Boolean).length;
+      state.progress = Math.round((completedSteps / totalSteps) * 100);
+    },
   },
 });
 
 export const {
   setActiveTab,
   setProductId,
-  completeStep,
   updateFormData,
   setCategories,
+  setBrands,
   setAttributeSets,
   setIsSubmitting,
   setCoverImageUrl,
   setAdditionalImageUrls,
+  addSpecification,
+  removeSpecification,
+  updateSpecification,
   setSpecifications,
+  completeStep,
   resetForm,
+  setCompletedStep,
 } = productSlice.actions;
 
 export default productSlice.reducer;

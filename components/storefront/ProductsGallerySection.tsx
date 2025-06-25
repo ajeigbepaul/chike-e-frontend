@@ -1,9 +1,18 @@
 "use client"
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { ChevronDown, ChevronUp } from "lucide-react";
 import categoryService from "@/services/api/category";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import type { Category } from "@/app/admin/categories/types";
+import Link from 'next/link';
+import ProductCard, { ProductCardSkeleton } from './ProductCard';
+import { getProducts } from '@/services/api/products';
+import type { Product } from '@/types/product';
+import wishlistService from '@/services/api/wishlist';
+import toast from "react-hot-toast";
+import { useDispatch } from 'react-redux';
+import { addToCart } from '@/store/cartSlice';
+// import { useToast } from '@/components/ui/use-toast';
 
 const brands = ["Brand A", "Brand B", "Brand C"];
 const colours = ["Red", "Blue", "Green", "Yellow"];
@@ -102,7 +111,11 @@ function MobileCategoryDropdown({ categories, open, setOpen }: {
   ) : null;
 }
 
-export default function ProductSidebar() {
+interface ProductsGallerySectionProps {
+  initialProducts?: Product[];
+}
+
+export default function ProductsGallerySection({ initialProducts }: ProductsGallerySectionProps) {
   const { data: categories = [] } = useQuery({
     queryKey: ["categories"],
     queryFn: async () => {
@@ -133,20 +146,75 @@ export default function ProductSidebar() {
     });
   };
 
-  // --- Product grid mock data ---
-  const products = Array.from({ length: 12 }).map((_, i) => ({
-    id: i + 1,
-    title: i === 1 ? 'Square steel pipes' : 'Galvanized steel, 40kg',
-    image: `/feature${(i % 4) + 1}.jpg`,
-    price: 25000 + i * 1000,
-    unit: 'm3',
-    rating: 4.8 - (i % 3) * 0.2,
-    reviews: 4800 - i * 100,
-    isFavorite: i % 3 === 0,
-    color: ['Red', 'Blue', 'Green', 'Yellow'][i % 4],
-    brand: ['Brand A', 'Brand B', 'Brand C'][i % 3],
-    type: ['Indoor', 'Outdoor', 'Construction'][i % 3],
-  }));
+  // Remove initialProducts and useState for products
+  const { data: productsResponse, isLoading, isError } = useQuery({
+    queryKey: ['products'],
+    queryFn: () => getProducts(1, 20),
+    initialData: initialProducts
+      ? {
+          products: initialProducts,
+          pagination: {
+            total: initialProducts.length,
+            page: 1,
+            limit: initialProducts.length,
+            pages: 1,
+          },
+        }
+      : undefined,
+  });
+  const products: Product[] = productsResponse?.products || [];
+
+  // const { toast } = useToast();
+  const [wishlist, setWishlist] = useState<Set<string>>(new Set());
+
+  // Fetch wishlist on mount
+  useEffect(() => {
+    (async () => {
+      try {
+        const res = await wishlistService.getWishlist();
+        // Assuming res.data is an array of wishlist items with productId or product._id
+        const ids = (res.data || []).map((item: any) => item.productId?._id || item.productId || item.product?._id || item.product);
+        setWishlist(new Set(ids));
+      } catch (error: any) {
+        // Optionally show error toast
+      }
+    })();
+  }, []);
+
+  const handleFavoriteToggle = async (productId: string) => {
+    if (wishlist.has(productId)) {
+      // Remove from wishlist
+      setWishlist(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(productId);
+        return newSet;
+      });
+      try {
+        await wishlistService.removeFromWishlist(productId);
+        toast.success('Removed from wishlist');
+      } catch (error: any) {
+        toast.error(error.message);
+        setWishlist(prev => new Set(prev).add(productId)); // revert
+      }
+    } else {
+      // Add to wishlist
+      setWishlist(prev => new Set(prev).add(productId));
+      try {
+        await wishlistService.addToWishlist(productId);
+        toast.success('Added to wishlist' );
+      } catch (error: any) {
+        toast.error(error.message);
+        setWishlist(prev => {
+          const newSet = new Set(prev);
+          newSet.delete(productId);
+          return newSet;
+        }); // revert
+      }
+    }
+  };
+
+  // Filtering logic
+  const filteredProducts = products; // Remove filters that reference non-existent properties
 
   // Filter arrays
   const colorOptions = ['Red', 'Blue', 'Green', 'Yellow'];
@@ -171,34 +239,22 @@ export default function ProductSidebar() {
   const [selectedReview, setSelectedReview] = useState("");
   const [selectedPrice, setSelectedPrice] = useState("");
 
-  // Filter and sort products based on selected filters
-  let displayedProducts = [...products];
-  if (selectedColor) {
-    displayedProducts = displayedProducts.filter(p => p.color === selectedColor);
-  }
-  if (selectedBrand) {
-    displayedProducts = displayedProducts.filter(p => p.brand === selectedBrand);
-  }
-  if (selectedType) {
-    displayedProducts = displayedProducts.filter(p => p.type === selectedType);
-  }
-  if (selectedReview === 'review-desc') {
-    displayedProducts.sort((a, b) => b.rating - a.rating);
-  } else if (selectedReview === 'review-asc') {
-    displayedProducts.sort((a, b) => a.rating - b.rating);
-  }
-  if (selectedPrice === 'price-desc') {
-    displayedProducts.sort((a, b) => b.price - a.price);
-  } else if (selectedPrice === 'price-asc') {
-    displayedProducts.sort((a, b) => a.price - b.price);
-  }
+  const queryClient = useQueryClient();
+  useEffect(() => {
+    queryClient.prefetchQuery({
+      queryKey: ['products', 2],
+      queryFn: () => getProducts(2, 20),
+    });
+  }, [queryClient]);
+
+  const dispatch = useDispatch();
 
   return (
     <div className="max-w-6xl mx-auto px-2 flex flex-col ">
       {/* Header with total and filter */}
       <div className="w-full flex flex-wrap items-center justify-between gap-4 py-4">
         <div>
-          <h2 className="text-2xl font-bold">{displayedProducts.length} products</h2>
+          <h2 className="text-2xl font-bold">{filteredProducts.length} products</h2>
         </div>
         <div className="flex flex-wrap gap-2 items-center justify-end">
           {/* Color filter */}
@@ -359,42 +415,33 @@ export default function ProductSidebar() {
       </div>
       {/* Product grid */}
       <main>
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-6">
-          {displayedProducts.map((product) => (
-            <div key={product.id} className="relative bg-white rounded-xl  overflow-hidden group flex flex-col h-full">
-              <div className="relative h-48 w-full">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={product.image}
-                  alt={product.title}
-                  className="object-cover w-full h-full"
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+          {isLoading
+            ? Array.from({ length: 8 }).map((_, i) => <ProductCardSkeleton key={i} />)
+            : filteredProducts.map((product) => (
+                <ProductCard
+                  key={product._id}
+                  id={product._id}
+                  title={product.name}
+                  image={product.imageCover}
+                  price={product.price.toLocaleString()}
+                  unit={product.priceUnit}
+                  rating={product.rating || 0}
+                  reviews={product.reviews ? product.reviews.length.toString() : '0'}
+                  isFavorite={wishlist.has(product._id)}
+                  onFavoriteToggle={() => handleFavoriteToggle(product._id)}
+                  onAddToCart={() => {
+                    dispatch(addToCart({
+                      id: product._id,
+                      name: product.name,
+                      price: product.price,
+                      quantity: 1,
+                      image: product.imageCover
+                    }));
+                    toast.success('Added to cart');
+                  }}
                 />
-                <button className="absolute top-2 right-2 bg-white/80 rounded-full p-1 text-brand-yellow hover:bg-brand-yellow hover:text-white transition">
-                  {/* Heart icon placeholder */}
-                  <svg className="w-5 h-5" fill={product.isFavorite ? '#F7B50E' : 'none'} stroke="#F7B50E" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 016.364 0L12 7.636l1.318-1.318a4.5 4.5 0 116.364 6.364L12 21.364l-7.682-7.682a4.5 4.5 0 010-6.364z" /></svg>
-                </button>
-              </div>
-              <div className="p-4 flex-1 flex flex-col justify-between">
-                <div className="flex items-center justify-between mb-1 w-full">
-                  <div className="flex items-center gap-1 text-sm text-gray-500">
-                    {/* Star icon placeholder */}
-                    <svg className="w-4 h-4 text-yellow-400" fill="#F7B50E" viewBox="0 0 24 24"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z" /></svg>
-                    <span className="font-semibold text-gray-900">{product.rating}</span>
-                    <span>({product.reviews} reviews)</span>
-                  </div>
-                  <button className="ml-2 bg-gray-100 hover:bg-brand-yellow text-brand-yellow hover:text-white rounded-full p-2 transition flex items-center justify-center w-10 h-10">
-                    {/* Shopping cart icon placeholder */}
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2 9m13-9l2 9m-5-9V6a2 2 0 10-4 0v3" /></svg>
-                  </button>
-                </div>
-                <h3 className="text-base font-semibold text-gray-900 mb-1 truncate">{product.title}</h3>
-                <div className="flex items-center text-sm text-gray-700 font-medium mb-1">
-                  <span>{product.price.toLocaleString()}/ <span className="text-xs">{product.unit}</span></span>
-                  <span className="text-xs text-gray-400 ml-2 mt-1">Delivery: 7 - 9 days</span>
-                </div>
-              </div>
-            </div>
-          ))}
+              ))}
         </div>
       </main>
       </div>

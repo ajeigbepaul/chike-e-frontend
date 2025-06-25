@@ -12,6 +12,12 @@ export interface Weight {
   unit?: string;
 }
 
+export interface Brand {
+  _id: string;
+  name: string;
+  createdAt?: string;
+}
+
 export interface Product {
   _id: string;
   name: string;
@@ -22,6 +28,7 @@ export interface Product {
   priceDiscount?: number;
   category: Category | string;
   subCategories?: string[];
+  brand?: Brand | string;
   quantity: number;
   imageCover: string;
   images?: string[];
@@ -62,6 +69,9 @@ export interface Product {
     price: number;
     quantity: number;
   }>;
+  rating?: number;
+  reviews?: any[];
+  isFavorite?: boolean;
 }
 
 export type CategoryType = Category;
@@ -75,6 +85,7 @@ export interface ProductFormData {
   priceDiscount?: number;
   priceUnit: string;
   category: string;
+  brand?: string;
   images: string[];
   imageCover: string;
   quantity: number;

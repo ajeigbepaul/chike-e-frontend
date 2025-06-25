@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { Search, ShoppingBag, User, ChevronDown, ChevronRight, LogOut, Settings, Upload, Bell, LogIn, Heart } from 'lucide-react';
 import { useDispatch, useSelector } from 'react-redux';
 import { RootState } from '@/store/store';
-import { toggleCart } from '@/store/cartSlice';
+import { toggleCart, clearCart } from '@/store/cartSlice';
 import { DropdownMenu } from './DropdownMenu';
 import { SearchSuggestions } from './SearchSuggestions';
 import { CategoryDropdown } from './CategoryDropdown';
@@ -15,6 +15,9 @@ import { useSession, signOut } from 'next-auth/react';
 import { useRouter, usePathname } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import categoryService from '@/services/api/category';
+import wishlistService from '@/services/api/wishlist';
+import { Badge } from '@/components/ui/badge';
+import notificationService from '@/services/api/notification';
 
 export function Header() {
   const dispatch = useDispatch();
@@ -57,7 +60,26 @@ export function Header() {
     },
   });
 
+  // Fetch wishlist using React Query for global sync
+  const { data: wishlistData } = useQuery({
+    queryKey: ['wishlist'],
+    queryFn: () => wishlistService.getWishlist(),
+    enabled: !!session,
+  });
+  const wishlistCount = wishlistData?.data?.length || 0;
+
+  // Fetch unread notifications count
+  const { data: unreadCount } = useQuery({
+    queryKey: ['unread-notifications'],
+    queryFn: notificationService.getUnreadCount,
+    enabled: !!session,
+  });
+
   const handleSignOut = async () => {
+    dispatch(clearCart());
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('cart');
+    }
     await signOut({ redirect: false });
   };
 
@@ -131,7 +153,7 @@ export function Header() {
 
             <button 
               className="p-2 text-gray-600 hover:text-brand-yellow transition-colors relative"
-              onClick={() => dispatch(toggleCart())}
+              onClick={() => router.push('/cart')}
             >
               <ShoppingBag className="h-5 w-5" />
               {cartItemCount > 0 && (
@@ -176,17 +198,23 @@ export function Header() {
                   </Link>
                   <Link
                     href="/account/wishlist"
-                    className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-brand-yellow/10"
+                    className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-brand-yellow/10 relative"
                   >
                     <Heart className="mr-2 h-4 w-4" />
                     Wishlist
+                    {wishlistCount > 0 && (
+                      <Badge variant="secondary" className="ml-2">{wishlistCount}</Badge>
+                    )}
                   </Link>
                   <Link
                     href="/account/inbox"
-                    className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-brand-yellow/10"
+                    className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-brand-yellow/10 relative"
                   >
                     <Bell className="mr-2 h-4 w-4" />
                     Inbox
+                    {unreadCount > 0 && (
+                      <Badge variant="secondary" className="ml-2 bg-red-500 text-white">{unreadCount}</Badge>
+                    )}
                   </Link>
                   <button
                     className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-brand-yellow/10"
@@ -204,7 +232,7 @@ export function Header() {
           <div className="md:hidden flex items-center space-x-4">
             <button 
               className="p-2 text-gray-600 hover:text-brand-yellow"
-              onClick={() => dispatch(toggleCart())}
+              onClick={() => router.push('/cart')}
             >
               <ShoppingBag className="h-5 w-5" />
               {cartItemCount > 0 && (

@@ -61,4 +61,14 @@ export const getProducts = async (page = 1, limit = 10): Promise<{ products: Pro
 
 export const deleteProduct = async (id: string): Promise<void> => {
   await api.delete(`/products/${id}`);
+};
+
+export const getTopProducts = async (): Promise<Array<{ name: string; image: string; totalSold: number; totalRevenue: number }>> => {
+  const response = await api.get('/admin/dashboard');
+  return response.data.data.topProducts;
+};
+
+export const getRelatedProducts = async (id: string): Promise<Product[]> => {
+  const response = await api.get(`/products/${id}/related`);
+  return response.data.data;
 }; 

@@ -19,6 +19,7 @@ import categoryService from "@/services/api/category";
 import { createProduct, updateProduct } from "@/services/api/products";
 import { useSelector } from "react-redux";
 import { RootState } from "@/store/store";
+import brandService from "@/services/api/brand";
 
 const STEPS = [
   { id: 'details', label: 'Basic Details', required: ['name', 'description', 'price', 'category', 'imageCover', 'quantity', 'priceUnit'] },
@@ -75,6 +76,15 @@ export function ProductForm({
     },
     enabled: initialCategories.length === 0, // Only fetch if no initial categories provided
     initialData: initialCategories,
+  });
+
+  const { data: brandsResponse, isLoading: isBrandsLoading, isError: isBrandsError } = useQuery({
+    queryKey: ['brands'],
+    queryFn: async () => {
+      const response = await brandService.getAllBrands();
+      if (!response.success) throw new Error(response.message);
+      return response.data || [];
+    },
   });
 
   const handleRefreshCategories = async () => {
@@ -134,7 +144,8 @@ export function ProductForm({
         completeStep(activeTab);
         updateFormData({
           ...data,
-          category: typeof data.category === 'object' ? data.category._id : data.category
+          category: typeof data.category === 'object' ? data.category._id : data.category,
+          brand: typeof data.brand === 'object' ? data.brand._id : data.brand,
         });
         
         if (progress === 100) {
@@ -334,6 +345,7 @@ export function ProductForm({
         submissionFormData.append('serialNumber', formData.serialNumber);
       }
       submissionFormData.append('category', formData.category || '');
+      submissionFormData.append('brand', formData.brand || '');
   
     // Handle dimensions with guaranteed values
     const dimensions = {
@@ -617,6 +629,29 @@ submissionFormData.append('weight[unit]', weight.unit);
           />
         </>
       )}
+                </div>
+
+                <div>
+                  <label className="text-sm font-medium">Brand</label>
+                  {isBrandsLoading ? (
+                    <div className="flex items-center h-10">Loading brands...</div>
+                  ) : isBrandsError ? (
+                    <div className="text-red-500 text-sm">Failed to load brands</div>
+                  ) : (
+                    <select
+                      name="brand"
+                      className="w-full rounded-md border border-input bg-background px-3 py-2"
+                      value={formData.brand || ''}
+                      onChange={e => updateFormData({ brand: e.target.value })}
+                    >
+                      <option value="">Select brand</option>
+                      {brandsResponse?.map((brand) => (
+                        <option key={brand._id} value={brand._id}>
+                          {brand.name}
+                        </option>
+                      ))}
+                    </select>
+                  )}
                 </div>
 
                 <div>
