@@ -1,34 +1,41 @@
 import ProductCard, { ProductCardSkeleton } from './ProductCard';
-import React, { useState } from 'react';
-import { getProducts } from '@/services/api/products';
-import { useQuery } from '@tanstack/react-query';
+import React from 'react';
 import type { Product } from '@/types/product';
 
-const categories = [
-  'Reviews',
-  'Indoor',
-  'Outdoor',
-  'Construction',
-  'Plumbing',
-  'Kitchen ware',
-];
+// const categories = [
+//   'Reviews',
+//   'Indoor',
+//   'Outdoor',
+//   'Construction',
+//   'Plumbing',
+//   'Kitchen ware',
+// ];
 
-const FeaturedProducts = () => {
-  const [activeCategory, setActiveCategory] = useState(categories[0]);
-  const { data: productsResponse, isLoading, isError } = useQuery({
-    queryKey: ['products'],
-    queryFn: () => getProducts(1, 20),
-  });
-  const products: Product[] = productsResponse?.products || [];
+interface FeaturedProductsProps {
+  products: Product[];
+  wishlist: Set<string>;
+  onAddToCart: (product: Product) => void;
+  onToggleWishlist: (product: Product) => void;
+  isLoggedIn: boolean;
+  onRequireLogin: () => void;
+}
 
-  const handleFavoriteToggle = (id: string) => {};
+const FeaturedProducts = ({
+  products,
+  wishlist,
+  onAddToCart,
+  onToggleWishlist,
+  isLoggedIn,
+  onRequireLogin,
+}: FeaturedProductsProps) => {
+  // const [activeCategory, setActiveCategory] = useState(categories[0]);
 
   return (
     <section className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-4">
       <div className="flex items-center justify-between mb-2">
         <h2 className="text-3xl md:text-4xl font-bold text-gray-900">Top selling products</h2>
       </div>
-      <div className="flex gap-6 mb-2 flex-wrap">
+      {/* <div className="flex gap-6 mb-2 flex-wrap">
         {categories.map((cat) => (
           <button
             key={cat}
@@ -42,10 +49,10 @@ const FeaturedProducts = () => {
             {cat}
           </button>
         ))}
-      </div>
-      <hr className="border-gray-200 mb-4" />
+      </div> */}
+      {/* <hr className="border-gray-200 mb-4" /> */}
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-        {isLoading
+        {products.length === 0
           ? Array.from({ length: 4 }).map((_, i) => <ProductCardSkeleton key={i} />)
           : products.map((product) => (
               <ProductCard
@@ -57,8 +64,11 @@ const FeaturedProducts = () => {
                 unit={product.priceUnit}
                 rating={product.rating || 0}
                 reviews={product.reviews ? product.reviews.length.toString() : '0'}
-                isFavorite={product.isFavorite}
-                onFavoriteToggle={() => handleFavoriteToggle(product._id)}
+                isFavorite={wishlist.has(product._id)}
+                onFavoriteToggle={() => onToggleWishlist(product)}
+                onAddToCart={() => onAddToCart(product)}
+                isLoggedIn={isLoggedIn}
+                onRequireLogin={onRequireLogin}
               />
             ))}
       </div>

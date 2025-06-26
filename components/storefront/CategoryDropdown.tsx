@@ -9,26 +9,18 @@ import { usePathname } from 'next/navigation';
 interface CategoryDropdownProps {
   categories: Category[];
   trigger?: React.ReactNode;
-  isMobile:boolean;
-
+  isMobile: boolean;
   setIsMobile: React.Dispatch<React.SetStateAction<boolean>>;
+  onCategorySelect?: (categoryId: string) => void;
 }
 
-export function CategoryDropdown({ categories, trigger,isMobile,setIsMobile }: CategoryDropdownProps) {
+export function CategoryDropdown({ categories, trigger, isMobile, setIsMobile, onCategorySelect }: CategoryDropdownProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [activePath, setActivePath] = useState<string[]>([]);
   const [hoverPath, setHoverPath] = useState<string[]>([]);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const pathname = usePathname();
-//   const [isMobile,setIsMobile]=useState(false)
 
-   // Check mobile view on mount and resize
-// useEffect(()=>{
-//     const checkMobile=()=>setIsMobile(window.innerWidth < 768);
-//     checkMobile();
-//     window.addEventListener('resize',checkMobile);
-//     return ()=>window.removeEventListener('resize',checkMobile)
-// },[])
   // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -82,17 +74,16 @@ export function CategoryDropdown({ categories, trigger,isMobile,setIsMobile }: C
     return hoverPath.includes(categoryId);
   };
 
-//   Toggle category expansion (mobile)
-const toggleCategory = (categoryId:string)=>{
+  // Toggle category expansion (mobile)
+  const toggleCategory = (categoryId: string) => {
     setActivePath(prev => {
-        if(prev.includes(categoryId)){
-
-            return prev.filter(id=>id !== categoryId);
-        }else{
-           return [...prev,categoryId]
-        }
+      if (prev.includes(categoryId)) {
+        return prev.filter(id => id !== categoryId);
+      } else {
+        return [...prev, categoryId]
+      }
     })
-}
+  }
 
   // Get the hover path for a category
   const getHoverPath = (category: Category): string[] => {
@@ -106,67 +97,7 @@ const toggleCategory = (categoryId:string)=>{
   };
 
   // Recursive component to render category levels
-
-// const renderCategoryLevel = (categoryList: Category[], level = 0, parentPath: string[] = []) => {
-//     return (
-//       <div 
-//         className={`py-1 ${level > 0 ? 'min-w-[240px]' : ''}`}
-//         onMouseLeave={() => level > 0 && setHoverPath(parentPath)}
-//       >
-//         {categoryList.map((category) => {
-//           const currentPath = [...parentPath, category._id];
-//           const shouldShow = level === 0 || isInHoverPath(category._id);
-          
-//           return (
-//             <div
-//               key={category._id}
-//               className="relative group"
-//               onMouseEnter={() => setHoverPath(getHoverPath(category))}
-//               ref={node => {
-//                 if (node && level >= 2) {
-//                   const rect = node.getBoundingClientRect();
-//                   const wouldOverflow = rect.right + 240 > window.innerWidth;
-//                   if (wouldOverflow) {
-//                     node.querySelector('.submenu')?.classList.remove('left-full');
-//                     node.querySelector('.submenu')?.classList.add('right-full');
-//                   }
-//                 }
-//               }}
-//             >
-//               <Link
-//                 href={`/products?category=${category._id}`}
-//                 className={`flex items-center justify-between px-4 py-2 text-sm text-gray-700 hover:bg-brand-yellow/10 hover:text-brand-yellow transition-colors whitespace-nowrap ${
-//                   isInHoverPath(category._id) ? 'bg-brand-yellow/10 text-brand-yellow' : ''
-//                 }`}
-//                 onClick={() => setIsOpen(false)}
-//               >
-//                 <span>{category.name}</span>
-//                 {category.subcategories && category.subcategories.length > 0 && (
-//                   <ChevronRight className="h-4 w-4 ml-2 flex-shrink-0" />
-//                 )}
-//               </Link>
-              
-//               {/* Subcategories mega menu */}
-//               {category.subcategories && category.subcategories.length > 0 && shouldShow && (
-//                 <div
-//                   className={`submenu absolute left-full top-0 bg-white border border-gray-200 rounded-md shadow-lg z-50 min-w-[240px] ${
-//                     isInHoverPath(category._id) ? 'opacity-100 visible' : 'opacity-0 invisible'
-//                   }`}
-//                   style={{ 
-//                     marginLeft: level >= 2 ? '0' : '-1px',
-//                   }}
-//                 >
-//                   {renderCategoryLevel(category.subcategories, level + 1, currentPath)}
-//                 </div>
-//               )}
-//             </div>
-//           );
-//         })}
-//       </div>
-//     );
-//   };
-// Recursive component to render category levels
-const renderCategoryLevel = (categoryList: Category[], level = 0, parentPath: string[] = []) => {
+  const renderCategoryLevel = (categoryList: Category[], level = 0, parentPath: string[] = []) => {
     return (
       <div 
         className={`py-1 ${level > 0 ? 'min-w-[240px]' : ''}`}
@@ -182,18 +113,26 @@ const renderCategoryLevel = (categoryList: Category[], level = 0, parentPath: st
               key={category._id}
               className="relative group"
               onMouseEnter={() => !isMobile && setHoverPath(getHoverPath(category))}
-             
             >
               <div className="flex items-center">
-                <Link
-                  href={`/products?category=${category._id}`}
-                  className={`flex-1 px-4 py-2 text-sm text-gray-700 hover:bg-brand-yellow/10 hover:text-brand-yellow transition-colors whitespace-nowrap ${
-                    isInHoverPath(category._id) && !isMobile ? 'bg-brand-yellow/10 text-brand-yellow' : ''
-                  }`}
-                  onClick={() => setIsOpen(false)}
-                >
-                  {category.name}
-                </Link>
+                {onCategorySelect ? (
+                  <button
+                    className={`flex-1 px-4 py-2 text-sm text-gray-700 hover:bg-brand-yellow/10 hover:text-brand-yellow transition-colors whitespace-nowrap text-left`}
+                    onClick={() => { onCategorySelect(category._id); setIsOpen(false); }}
+                  >
+                    {category.name}
+                  </button>
+                ) : (
+                  <Link
+                    href={`/products?category=${category._id}`}
+                    className={`flex-1 px-4 py-2 text-sm text-gray-700 hover:bg-brand-yellow/10 hover:text-brand-yellow transition-colors whitespace-nowrap ${
+                      isInHoverPath(category._id) && !isMobile ? 'bg-brand-yellow/10 text-brand-yellow' : ''
+                    }`}
+                    onClick={() => setIsOpen(false)}
+                  >
+                    {category.name}
+                  </Link>
+                )}
                 {category.subcategories && category.subcategories.length > 0 && (
                   <button
                     className="p-2"
@@ -237,45 +176,8 @@ const renderCategoryLevel = (categoryList: Category[], level = 0, parentPath: st
       </div>
     );
   };
-  
 
-return (
-    // <div className="relative" ref={dropdownRef}>
-    //   <div 
-    //     className="flex items-center"
-    //     onMouseLeave={() => !isOpen && setHoverPath([])}
-    //   >
-    //     {/* Main Products link - no hover behavior */}
-    //     <Link 
-    //       href="/products" 
-    //       className="text-foreground hover:text-brand-yellow transition-colors"
-    //     >
-    //       Products
-    //     </Link>
-        
-    //     {/* Caret icon - click to toggle dropdown */}
-    //     <button 
-    //       onClick={() => setIsOpen(!isOpen)}
-    //       className="p-1 text-foreground hover:text-brand-yellow transition-colors focus:outline-none"
-    //       aria-expanded={isOpen}
-    //       aria-label="Toggle products dropdown"
-    //     >
-    //       <ChevronDown className={`h-4 w-4 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
-    //     </button>
-    //   </div>
-      
-    //   {isOpen && (
-    //     <div 
-    //       className="absolute top-full left-0 mt-1 bg-white border border-gray-200 rounded-md shadow-lg z-50 min-w-[200px]"
-    //       onMouseLeave={() => {
-    //         setIsOpen(false);
-    //         setHoverPath([]);
-    //       }}
-    //     >
-    //       {renderCategoryLevel(categoryTree)}
-    //     </div>
-    //   )}
-    // </div>
+  return (
     <div className="relative" ref={dropdownRef}>
       {trigger ? (
         <div onClick={() => setIsOpen(!isOpen)}>

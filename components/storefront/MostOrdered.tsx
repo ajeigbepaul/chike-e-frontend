@@ -1,20 +1,27 @@
 import ProductCard, { ProductCardSkeleton } from './ProductCard';
 import React from 'react';
-import { getProducts } from '@/services/api/products';
-import { useQuery } from '@tanstack/react-query';
+
 import type { Product } from '@/types/product';
-import Image from 'next/image';
-import { Heart, Star, ShoppingCart } from 'lucide-react';
 
-const MostOrderedProducts = () => {
-  const { data: productsResponse, isLoading, isError } = useQuery({
-    queryKey: ['products'],
-    queryFn: () => getProducts(1, 20),
-  });
-  const products: Product[] = productsResponse?.products || [];
-  const largeProduct: Product | undefined = products[0];
 
-  const handleFavoriteToggle = (id: string) => {};
+interface MostOrderedProductsProps {
+  products: Product[];
+  wishlist: Set<string>;
+  onAddToCart: (product: Product) => void;
+  onToggleWishlist: (product: Product) => void;
+  isLoggedIn: boolean;
+  onRequireLogin: () => void;
+}
+
+const MostOrderedProducts = ({
+  products,
+  wishlist,
+  onAddToCart,
+  onToggleWishlist,
+  isLoggedIn,
+  onRequireLogin,
+}: MostOrderedProductsProps) => {
+  // const largeProduct: Product | undefined = products[0];
 
   return (
     <section className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
@@ -36,10 +43,10 @@ const MostOrderedProducts = () => {
         </button>
       </div>
       {/* Gallery */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         {/* Left: 4 small products in 2x2 grid */}
-        <div className="grid grid-cols-2 grid-rows-2 gap-4 h-full">
-          {isLoading
+       
+          {products.length === 0
             ? Array.from({ length: 4 }).map((_, i) => <ProductCardSkeleton key={i} />)
             : products.map((product) => (
                 <ProductCard
@@ -49,35 +56,19 @@ const MostOrderedProducts = () => {
                   image={product.imageCover}
                   price={product.price.toLocaleString()}
                   unit={product.priceUnit}
-                  rating={0}
-                  reviews="0"
-                  isFavorite={false}
-                  onFavoriteToggle={() => handleFavoriteToggle(product._id)}
+                  rating={product.rating || 0}
+                  reviews={product.reviews ? product.reviews.length.toString() : '0'}
+                  isFavorite={wishlist.has(product._id)}
+                  onFavoriteToggle={() => onToggleWishlist(product)}
+                  onAddToCart={() => onAddToCart(product)}
+                  isLoggedIn={isLoggedIn}
+                  onRequireLogin={onRequireLogin}
                 />
               ))}
         </div>
         {/* Right: 1 large product */}
-        <div className="flex flex-col h-full justify-center">
-          {isLoading ? (
-            <div className="flex flex-col h-full bg-white rounded-xl shadow-sm overflow-hidden animate-pulse">
-              <div className="relative w-full h-80 md:h-full rounded-xl overflow-hidden bg-gray-200" />
-              <div className="p-5 flex-1 flex flex-col justify-between">
-                <div className="flex items-center justify-between mb-1 w-full">
-                  <div className="flex items-center gap-1 text-sm text-gray-400">
-                    <div className="w-4 h-4 bg-gray-300 rounded" />
-                    <div className="w-8 h-4 bg-gray-300 rounded" />
-                    <div className="w-16 h-4 bg-gray-200 rounded" />
-                  </div>
-                  <div className="ml-2 w-10 h-10 bg-gray-200 rounded-full" />
-                </div>
-                <div className="h-6 w-3/4 bg-gray-200 rounded mb-2" />
-                <div className="flex items-center gap-2">
-                  <div className="h-5 w-24 bg-gray-200 rounded" />
-                  <div className="h-4 w-20 bg-gray-100 rounded" />
-                </div>
-              </div>
-            </div>
-          ) : largeProduct ? (
+        {/* <div className="flex flex-col h-full justify-center">
+          {largeProduct ? (
             <div className="flex flex-col h-full bg-white rounded-xl shadow-sm overflow-hidden">
               <div className="relative w-full h-80 md:h-full rounded-xl overflow-hidden">
                 <Image
@@ -87,7 +78,7 @@ const MostOrderedProducts = () => {
                   className="object-cover w-full h-full"
                 />
                 <button className="absolute top-2 right-2 bg-white/80 rounded-full p-1 text-brand-yellow hover:bg-brand-yellow hover:text-white transition">
-                  <Heart fill={largeProduct.isFavorite ? '#F7B50E' : 'none'} className="w-5 h-5" />
+                  <Heart fill={wishlist.has(largeProduct._id) ? '#F7B50E' : 'none'} className="w-5 h-5" />
                 </button>
               </div>
               <div className="p-5 flex-1 flex flex-col justify-between">
@@ -109,8 +100,8 @@ const MostOrderedProducts = () => {
               </div>
             </div>
           ) : null}
-        </div>
-      </div>
+        </div> */}
+     
     </section>
   );
 };

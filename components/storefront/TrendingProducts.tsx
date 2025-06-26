@@ -8,16 +8,25 @@ import { getProducts } from '@/services/api/products';
 import { useQuery } from '@tanstack/react-query';
 import type { Product } from '@/types/product';
 
-const TrendingProducts = () => {
+interface TrendingProductsProps {
+  products: Product[];
+  wishlist: Set<string>;
+  onAddToCart: (product: Product) => void;
+  onToggleWishlist: (product: Product) => void;
+  isLoggedIn: boolean;
+  onRequireLogin: () => void;
+}
+
+const TrendingProducts = ({
+  products,
+  wishlist,
+  onAddToCart,
+  onToggleWishlist,
+  isLoggedIn,
+  onRequireLogin,
+}: TrendingProductsProps) => {
   const prevRef = useRef<HTMLButtonElement>(null);
   const nextRef = useRef<HTMLButtonElement>(null);
-  const { data: productsResponse, isLoading, isError } = useQuery({
-    queryKey: ['products'],
-    queryFn: () => getProducts(1, 20),
-  });
-  const products: Product[] = productsResponse?.products || [];
-
-  const handleFavoriteToggle = (id: string) => {};
 
   return (
     <section className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
@@ -62,7 +71,7 @@ const TrendingProducts = () => {
         }}
         className="mb-8"
       >
-        {isLoading
+        {products.length === 0
           ? Array.from({ length: 4 }).map((_, i) => <ProductCardSkeleton key={i} />)
           : products.map(product => (
               <SwiperSlide key={product._id}>
@@ -74,8 +83,11 @@ const TrendingProducts = () => {
                   unit={product.priceUnit}
                   rating={product.rating || 0}
                   reviews={product.reviews ? product.reviews.length.toString() : '0'}
-                  isFavorite={product.isFavorite}
-                  onFavoriteToggle={() => handleFavoriteToggle(product._id)}
+                  isFavorite={wishlist.has(product._id)}
+                  onFavoriteToggle={() => onToggleWishlist(product)}
+                  onAddToCart={() => onAddToCart(product)}
+                  isLoggedIn={isLoggedIn}
+                  onRequireLogin={onRequireLogin}
                 />
               </SwiperSlide>
             ))}

@@ -71,4 +71,14 @@ export const getTopProducts = async (): Promise<Array<{ name: string; image: str
 export const getRelatedProducts = async (id: string): Promise<Product[]> => {
   const response = await api.get(`/products/${id}/related`);
   return response.data.data;
+};
+
+export const getMostOrderedProducts = async (): Promise<Product[]> => {
+  const response = await api.get('/products/most-ordered');
+  return response.data.data.products;
+};
+
+export const getAutocompleteSuggestions = async (query: string): Promise<Array<{ name: string; slug: string; imageCover: string; category?: string; brand?: string }>> => {
+  const response = await api.get(`/products/autocomplete?query=${encodeURIComponent(query)}`);
+  return response.data.data.suggestions;
 }; 

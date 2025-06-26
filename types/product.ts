@@ -72,6 +72,7 @@ export interface Product {
   rating?: number;
   reviews?: any[];
   isFavorite?: boolean;
+  createdAt: string;
 }
 
 export type CategoryType = Category;

@@ -15,6 +15,8 @@ export default function ProductCard({
   onAddToCart,
   blurDataURL,
   priority = false,
+  isLoggedIn = false,
+  onRequireLogin,
 }: {
   id: string | number;
   title: string;
@@ -28,9 +30,11 @@ export default function ProductCard({
   onAddToCart?: () => void;
   blurDataURL?: string;
   priority?: boolean;
+  isLoggedIn?: boolean;
+  onRequireLogin?: () => void;
 }) {
   return (
-    <Link href={`/product/${id}`} className="relative bg-white rounded-xl shadow-sm overflow-hidden group flex flex-col h-full hover:shadow-lg transition-shadow">
+    <Link href={`/product/${id}`} className="relative bg-white rounded-xl border shadow-sm overflow-hidden group flex flex-col h-full hover:shadow-lg transition-shadow">
       <div className="relative h-56 w-full">
         <Image
           src={image}
@@ -49,7 +53,11 @@ export default function ProductCard({
           className="absolute top-2 right-2 bg-white/80 rounded-full p-1 text-brand-yellow hover:bg-brand-yellow hover:text-white transition z-10"
           onClick={e => {
             e.preventDefault();
-            onFavoriteToggle && onFavoriteToggle();
+            if (isLoggedIn) {
+              onFavoriteToggle && onFavoriteToggle();
+            } else if (onRequireLogin) {
+              onRequireLogin();
+            }
           }}
         >
           <Heart fill={isFavorite ? '#F7B50E' : 'none'} className="w-5 h-5" />
@@ -67,7 +75,11 @@ export default function ProductCard({
             className="ml-2 bg-gray-100 hover:bg-brand-yellow text-brand-yellow hover:text-white rounded-full p-2 transition flex items-center justify-center w-10 h-10"
             onClick={e => {
               e.preventDefault();
-              onAddToCart && onAddToCart();
+              if (isLoggedIn) {
+                onAddToCart && onAddToCart();
+              } else if (onRequireLogin) {
+                onRequireLogin();
+              }
             }}
           >
             <ShoppingCart className="w-5 h-5" />

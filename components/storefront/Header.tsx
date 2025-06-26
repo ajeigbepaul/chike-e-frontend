@@ -12,7 +12,7 @@ import { CategoryDropdown } from './CategoryDropdown';
 import Image from 'next/image';
 import logo from '@/public/logo.svg';
 import { useSession, signOut } from 'next-auth/react';
-import { useRouter, usePathname } from 'next/navigation';
+import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import categoryService from '@/services/api/category';
 import wishlistService from '@/services/api/wishlist';
@@ -31,6 +31,7 @@ export function Header() {
   const searchRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
   const pathname = usePathname();
+  const searchParams = useSearchParams();
 
   // Detect mobile viewport
   useEffect(() => {
@@ -94,6 +95,17 @@ export function Header() {
     router.push(`/search?q=${encodeURIComponent(suggestion)}`);
   };
 
+  // Handler to update category filter in URL
+  const handleHeaderCategorySelect = (categoryId:string) => {
+    const params = new URLSearchParams(searchParams.toString());
+    if (categoryId) {
+      params.set('category', categoryId);
+    } else {
+      params.delete('category');
+    }
+    router.push(`/products?${params.toString()}`);
+  };
+
   return (
     <header className="sticky top-0 z-50 bg-white shadow-sm">
       <div className="max-w-6xl mx-auto px-4 sm:px-6">
@@ -120,14 +132,27 @@ export function Header() {
               <Link href="/about" className={`${pathname === '/about' ? 'text-brand-yellow' : 'text-gray-900'} hover:text-brand-yellow transition-colors`}>
                 About
               </Link>
-              <CategoryDropdown
-                categories={categories}
-                isMobile={isMobile}
-                setIsMobile={setIsMobile}
-              />
-              {/* <Link href="/contact" className="text-gray-900 hover:text-brand-yellow transition-colors">
-                Contact
-              </Link> */}
+              {/* Products nav: always show link, only show dropdown/caret on /products */}
+              <div className="relative flex items-center">
+                <Link href="/products" className={`${pathname.startsWith('/products') ? 'text-brand-yellow' : 'text-gray-900'} hover:text-brand-yellow transition-colors`}>
+                  Products
+                </Link>
+                {pathname.startsWith('/products') && (
+                  <CategoryDropdown
+                    categories={categories}
+                    isMobile={isMobile}
+                    setIsMobile={setIsMobile}
+                    onCategorySelect={handleHeaderCategorySelect}
+                    trigger={
+                      <button
+                        className={`p-1 ${pathname.startsWith('/products') ? 'text-brand-yellow' : 'text-gray-900'} hover:text-brand-yellow transition-colors focus:outline-none`}
+                      >
+                        <ChevronDown className="h-4 w-4" />
+                      </button>
+                    }
+                  />
+                )}
+              </div>
             </nav>
           </div>
 
@@ -301,6 +326,7 @@ export function Header() {
                 categories={categories}
                 isMobile={true}
                 setIsMobile={setIsMobile}
+                onCategorySelect={handleHeaderCategorySelect}
                 trigger={
                   <div className="px-4 flex items-center">Products</div>
                 }

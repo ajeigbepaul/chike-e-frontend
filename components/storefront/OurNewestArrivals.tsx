@@ -4,10 +4,28 @@ import { Navigation } from 'swiper/modules';
 import 'swiper/css';
 import 'swiper/css/navigation';
 import { useRef } from 'react';
+import type { Product } from '@/types/product';
+import ProductCard from '@/components/storefront/ProductCard';
+
+interface OurNewestArrivalsProps {
+  products: Product[];
+  wishlist: Set<string>;
+  onAddToCart: (product: Product) => void;
+  onToggleWishlist: (product: Product) => void;
+  isLoggedIn: boolean;
+  onRequireLogin: () => void;
+}
 
 const sliderImages = ['/cat1.svg', '/cat3.svg', '/cat2.svg'];
 
-const OurNewestArrivals = () => {
+const OurNewestArrivals = ({
+  products,
+  wishlist,
+  onAddToCart,
+  onToggleWishlist,
+  isLoggedIn,
+  onRequireLogin,
+}: OurNewestArrivalsProps) => {
   const prevRef = useRef<HTMLButtonElement>(null);
   const nextRef = useRef<HTMLButtonElement>(null);
 
@@ -50,13 +68,32 @@ const OurNewestArrivals = () => {
               slidesPerView={1}
               className="h-full"
             >
-              {sliderImages.map((img, idx) => (
-                <SwiperSlide key={idx}>
-                  <div className="relative w-full h-80 md:h-[420px] rounded-2xl overflow-hidden">
-                    <Image src={img} alt={`Newest Arrival ${idx + 1}`} fill className="object-cover w-full h-full" />
-                  </div>
-                </SwiperSlide>
-              ))}
+              {products.length === 0
+                ? Array.from({ length: 3 }).map((_, idx) => (
+                    <SwiperSlide key={idx}>
+                      <div className="relative w-full h-80 md:h-[420px] rounded-2xl overflow-hidden">
+                        {/* Skeleton or placeholder */}
+                      </div>
+                    </SwiperSlide>
+                  ))
+                : products.map((product, idx) => (
+                    <SwiperSlide key={product._id}>
+                      <ProductCard
+                        id={product._id}
+                        title={product.name}
+                        image={product.imageCover}
+                        price={product.price.toLocaleString()}
+                        unit={product.priceUnit}
+                        rating={product.rating || 0}
+                        reviews={product.reviews ? product.reviews.length.toString() : '0'}
+                        isFavorite={wishlist.has(product._id)}
+                        onFavoriteToggle={() => onToggleWishlist(product)}
+                        onAddToCart={() => onAddToCart(product)}
+                        isLoggedIn={isLoggedIn}
+                        onRequireLogin={onRequireLogin}
+                      />
+                    </SwiperSlide>
+                  ))}
             </Swiper>
           </div>
         </div>

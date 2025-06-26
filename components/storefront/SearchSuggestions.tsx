@@ -1,11 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
-
-interface SearchSuggestion {
-  id: string;
-  name: string;
-  category: string;
-}
+import { useQuery } from '@tanstack/react-query';
+import { getAutocompleteSuggestions } from '@/services/api/products';
 
 export function SearchSuggestions({
   query,
@@ -14,34 +10,25 @@ export function SearchSuggestions({
   query: string;
   onSelect: (suggestion: string) => void;
 }) {
-  const [suggestions, setSuggestions] = useState<SearchSuggestion[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
+  const [debouncedQuery, setDebouncedQuery] = useState(query);
   const suggestionsRef = useRef<HTMLDivElement>(null);
 
+  // Debounce the query
   useEffect(() => {
-    if (query.length > 2) {
-      setIsLoading(true);
-      // Simulate API call
-      const timer = setTimeout(() => {
-        setSuggestions([
-          { id: '1', name: 'Modern Chair', category: 'Furniture' },
-          { id: '2', name: 'Wooden Table', category: 'Furniture' },
-          { id: '3', name: 'Leather Sofa', category: 'Furniture' },
-          { id: '4', name: 'Floor Lamp', category: 'Lighting' },
-        ].filter(item => 
-          item.name.toLowerCase().includes(query.toLowerCase()) || 
-          item.category.toLowerCase().includes(query.toLowerCase())
-        ));
-        setIsLoading(false);
-      }, 300);
-
-      return () => clearTimeout(timer);
-    } else {
-      setSuggestions([]);
-    }
+    const handler = setTimeout(() => {
+      setDebouncedQuery(query);
+    }, 250);
+    return () => clearTimeout(handler);
   }, [query]);
 
-  if (suggestions.length === 0 || query.length <= 2) return null;
+  const { data: suggestions = [], isLoading } = useQuery({
+    queryKey: ['autocomplete', debouncedQuery],
+    queryFn: () => debouncedQuery.length > 2 ? getAutocompleteSuggestions(debouncedQuery) : [],
+    enabled: debouncedQuery.length > 2,
+    staleTime: 60 * 1000, // 1 minute
+  });
+
+  if (!suggestions.length || query.length <= 2) return null;
 
   return (
     <div 
@@ -52,15 +39,26 @@ export function SearchSuggestions({
         <div className="p-3 text-center text-gray-500">Loading...</div>
       ) : (
         <ul className="py-1">
-          {suggestions.map((item) => (
-            <li key={item.id}>
+          {suggestions.map((item, index) => (
+            <li key={item.slug || index}>
               <Link
-                href={`/products/${item.id}`}
-                className="block px-4 py-2 hover:bg-gray-100 transition-colors"
+                href={`/products/${item.slug}`}
+                className="flex items-center gap-3 px-4 py-2 hover:bg-gray-100 transition-colors"
                 onClick={() => onSelect(item.name)}
               >
-                <div className="font-medium">{item.name}</div>
-                <div className="text-sm text-gray-500">{item.category}</div>
+                {item.imageCover && (
+                  <img src={item.imageCover} alt={item.name} className="w-8 h-8 object-cover rounded" />
+                )}
+                <div>
+                  <div className="font-medium">{item.name}</div>
+                  {(item.category || item.brand) && (
+                    <div className="text-xs text-gray-500">
+                      {item.category && <span>Category: {item.category}</span>}
+                      {item.category && item.brand && <span> &middot; </span>}
+                      {item.brand && <span>Brand: {item.brand}</span>}
+                    </div>
+                  )}
+                </div>
               </Link>
             </li>
           ))}
