@@ -4,6 +4,7 @@ interface CustomerAddress {
   name: string;
   address: string;
   phone: string;
+  email?: string;
 }
 
 interface DeliveryDetails {

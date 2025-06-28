@@ -21,9 +21,16 @@ export default function OrdersPage() {
     queryFn: orderService.getMyOrders,
   });
 
+  // Sort orders by creation date (newest first)
+  const sortedOrders = [...orders].sort((a: any, b: any) => {
+    const dateA = new Date(a.createdAt || 0);
+    const dateB = new Date(b.createdAt || 0);
+    return dateB.getTime() - dateA.getTime(); // Descending order (newest first)
+  });
+
   const filtered = activeTab === "all"
-    ? orders
-    : orders.filter((o: any) => (o.status || '').replace(" ", "-").toLowerCase() === activeTab);
+    ? sortedOrders
+    : sortedOrders.filter((o: any) => (o.status || '').replace(" ", "-").toLowerCase() === activeTab);
 
   return (
     <div className="max-w-4xl mx-auto py-8">

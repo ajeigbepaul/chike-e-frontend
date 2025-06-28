@@ -17,6 +17,7 @@ export default function ProductCard({
   priority = false,
   isLoggedIn = false,
   onRequireLogin,
+  quantity = 1,
 }: {
   id: string | number;
   title: string;
@@ -32,6 +33,7 @@ export default function ProductCard({
   priority?: boolean;
   isLoggedIn?: boolean;
   onRequireLogin?: () => void;
+  quantity?: number;
 }) {
   return (
     <Link href={`/product/${id}`} className="relative bg-white rounded-xl border shadow-sm overflow-hidden group flex flex-col h-full hover:shadow-lg transition-shadow">
@@ -48,6 +50,9 @@ export default function ProductCard({
           loading={priority ? undefined : 'lazy'}
           priority={priority}
         />
+        {quantity === 0 && (
+          <span className="absolute top-2 left-2 bg-red-500 text-white text-xs px-2 py-1 rounded z-10">Out of stock</span>
+        )}
         <button
           type="button"
           className="absolute top-2 right-2 bg-white/80 rounded-full p-1 text-brand-yellow hover:bg-brand-yellow hover:text-white transition z-10"
@@ -72,17 +77,23 @@ export default function ProductCard({
           </div>
           <button
             type="button"
-            className="ml-2 bg-gray-100 hover:bg-brand-yellow text-brand-yellow hover:text-white rounded-full p-2 transition flex items-center justify-center w-10 h-10"
+            className={`ml-2 bg-gray-100 hover:bg-brand-yellow text-brand-yellow hover:text-white rounded-full p-2 transition flex items-center justify-center w-10 h-10 ${quantity === 0 ? 'opacity-50 cursor-not-allowed' : ''}`}
             onClick={e => {
               e.preventDefault();
+              if (quantity === 0) return;
               if (isLoggedIn) {
                 onAddToCart && onAddToCart();
               } else if (onRequireLogin) {
                 onRequireLogin();
               }
             }}
+            disabled={quantity === 0}
           >
-            <ShoppingCart className="w-5 h-5" />
+            {quantity === 0 ? (
+              <span className="text-xs font-semibold">Out</span>
+            ) : (
+              <ShoppingCart className="w-5 h-5" />
+            )}
           </button>
         </div>
         <h3 className="text-base font-semibold text-gray-900 mb-1 truncate">{title}</h3>

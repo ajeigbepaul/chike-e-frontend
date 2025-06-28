@@ -65,7 +65,15 @@ export function ProductTable({ products, pagination, onPageChange, isLoading }: 
                   </TableCell>
                   <TableCell className="font-medium">{product.name}</TableCell>
                   <TableCell>₦{product.price}</TableCell>
-                  <TableCell>{product.quantity}</TableCell>
+                  <TableCell>
+                    {product.quantity === 0 ? (
+                      <span className="px-2 py-1 rounded-full text-xs bg-red-100 text-red-800 font-semibold">Out of stock</span>
+                    ) : product.quantity <= 5 ? (
+                      <span className="px-2 py-1 rounded-full text-xs bg-yellow-100 text-yellow-800 font-semibold">Stock is low</span>
+                    ) : (
+                      product.quantity
+                    )}
+                  </TableCell>
                   <TableCell>
                     {typeof product.category === 'object' && product.category !== null
                       ? product.category.name

@@ -587,6 +587,7 @@ export default function ProductsGallerySection({ initialProducts }: ProductsGall
                     }}
                     isLoggedIn={isLoggedIn}
                     onRequireLogin={() => router.push('/auth/signin')}
+                    quantity={product.quantity || 0}
                   />
                 ))
               )

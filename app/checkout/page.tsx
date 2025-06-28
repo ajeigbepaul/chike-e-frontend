@@ -1,17 +1,32 @@
 "use client";
-import React, { useState, Fragment } from "react";
+import React, { useState, Fragment, useEffect } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import Link from "next/link";
 import Image from "next/image";
-import orderService from '@/services/api/order';
+import orderService, { initializePayment, verifyPayment } from '@/services/api/order';
 import { clearCart } from '@/store/cartSlice';
 import { clearCheckout, setCustomerAddress, setDeliveryDetails, setPaymentMethod } from '@/store/checkoutSlice';
 import toast from 'react-hot-toast';
 import { RootState } from '@/store/store';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { CheckCircle, ChevronRight } from 'lucide-react';
+import { CheckCircle, ChevronRight, AlertCircle } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import dynamic from 'next/dynamic';
+
+// Dynamically import PaystackPayment to avoid SSR issues
+const PaystackPayment = dynamic(
+  () => import('@/components/PaystackPayment').then((mod) => ({ default: mod.PaystackPayment })),
+  { 
+    ssr: false,
+    loading: () => (
+      <button className="w-full py-3 rounded-md font-medium bg-gray-400 text-gray-700 cursor-not-allowed">
+        Loading Payment...
+      </button>
+    )
+  }
+);
+
 
 const Checkout = () => {
   const dispatch = useDispatch();
@@ -19,11 +34,25 @@ const Checkout = () => {
   const { items } = useSelector((state: RootState) => state.cart);
   const { customerAddress, deliveryDetails, paymentMethod } = useSelector((state: RootState) => state.checkout);
   const [isModalOpen, setIsModalOpen] = useState<string | null>(null);
+  const [pendingOrderId, setPendingOrderId] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [showOrderConfirmation, setShowOrderConfirmation] = useState(false);
+  const [isProcessingPayment, setIsProcessingPayment] = useState(false);
 
   const vat = 5000;
   const Delivery = 20000;
   const itemsTotal = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
   const total = itemsTotal + vat + Delivery;
+
+  // Debug: Let's verify the calculation step by step
+  console.log('=== CART CALCULATION DEBUG ===');
+  console.log('Items in cart:', items);
+  console.log('Items total calculation:', itemsTotal);
+  console.log('VAT:', vat);
+  console.log('Delivery:', Delivery);
+  console.log('Final total:', total);
+  console.log('Expected total should be:', itemsTotal + 5000 + 20000);
+  console.log('=== END DEBUG ===');
 
   const openModal = (type: string) => setIsModalOpen(type);
   const closeModal = () => setIsModalOpen(null);
@@ -32,6 +61,7 @@ const Checkout = () => {
     name: customerAddress?.name || "",
     address: customerAddress?.address || "",
     phone: customerAddress?.phone || "",
+    email: customerAddress?.email || "",
   });
 
   const [deliveryForm, setDeliveryForm] = useState({
@@ -42,7 +72,7 @@ const Checkout = () => {
   const [paymentForm, setPaymentForm] = useState(paymentMethod || "");
 
   const handleSaveCustomerAddress = () => {
-    if (!customerForm.name || !customerForm.address || !customerForm.phone) {
+    if (!customerForm.name || !customerForm.address || !customerForm.phone || !customerForm.email) {
       alert("Please fill all fields.");
       return;
     }
@@ -68,40 +98,91 @@ const Checkout = () => {
     closeModal();
   };
 
+
   const handleConfirmOrder = async () => {
-    if (!customerAddress || !deliveryDetails || !paymentMethod) return;
+    if (!customerAddress || !deliveryDetails || !paymentMethod) {
+      toast.error('Please complete all checkout steps');
+      return;
+    }
+
+    setIsLoading(true);
     try {
       const orderItems = items.map(item => ({
         product: item.id,
         quantity: item.quantity,
         price: item.price,
-        // Add color/size if needed
       }));
+      
       const orderPayload = {
         orderItems,
         shippingAddress: {
           street: customerAddress.address,
-          // Add more fields as needed
         },
         paymentMethod,
-        taxPrice: 0,
-        shippingPrice: 0,
+        taxPrice: vat,
+        shippingPrice: Delivery,
         totalPrice: total,
       };
-      await orderService.createOrder(orderPayload);
-      dispatch(clearCart());
-      dispatch(clearCheckout());
-      toast.success('Order placed successfully!');
-      router.push('/checkout/success');
-      // Optionally redirect to a success page
+      
+      // Create order first
+      console.log('Creating order with payload:', orderPayload);
+      const orderRes = await orderService.createOrder(orderPayload);
+      console.log('Order creation response:', orderRes);
+      const orderId = orderRes.data?.order?._id || orderRes.data?.order?.id;
+      console.log('Extracted Order ID:', orderId);
+      setPendingOrderId(orderId);
+      setIsLoading(false);
+      
+      console.log('=== ORDER CREATION COMPLETE ===');
+      console.log('Pending Order ID:', orderId);
+      console.log('Payment Method:', paymentMethod);
+      console.log('Should show PaystackPayment:', paymentMethod === 'card');
+      console.log('=== END ORDER DEBUG ===');
+      
+      // Show order confirmation modal
+      setShowOrderConfirmation(true);
+      
     } catch (err: any) {
-      toast.error(err?.response?.data?.message || 'Order failed');
+      setIsLoading(false);
+      console.error('Order creation failed:', err);
+      toast.error(err?.response?.data?.message || 'Order creation failed');
     }
   };
 
-  const handleOpenPaymentModal = () => {
-    setPaymentForm(paymentMethod || "");
-    setIsModalOpen("payment");
+  const handleCancelOrder = async () => {
+    if (!pendingOrderId) return;
+    
+    try {
+      setIsLoading(true);
+      // Delete the order
+      await orderService.deleteOrder(pendingOrderId);
+      setPendingOrderId(null);
+      setShowOrderConfirmation(false);
+      toast.success('Order cancelled successfully');
+    } catch (error: any) {
+      console.error('Failed to cancel order:', error);
+      toast.error('Failed to cancel order. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleProceedToPayment = () => {
+    setShowOrderConfirmation(false);
+    setIsProcessingPayment(true);
+  };
+
+  const handlePaymentSuccess = () => {
+    dispatch(clearCart());
+    dispatch(clearCheckout());
+    setPendingOrderId(null);
+    setShowOrderConfirmation(false);
+    setIsProcessingPayment(false);
+    router.push('/checkout/success');
+  };
+
+  const handlePaymentClose = () => {
+    setIsProcessingPayment(false);
   };
 
   // Helper to display payment method label
@@ -117,6 +198,28 @@ const Checkout = () => {
         return value;
     }
   };
+
+  // Prefill from localStorage on mount
+  useEffect(() => {
+    const saved = localStorage.getItem('checkoutInfo');
+    if (saved) {
+      const { customerAddress, deliveryDetails, paymentMethod } = JSON.parse(saved);
+      if (customerAddress) dispatch(setCustomerAddress(customerAddress));
+      if (deliveryDetails) dispatch(setDeliveryDetails(deliveryDetails));
+      if (paymentMethod) dispatch(setPaymentMethod(paymentMethod));
+    }
+  }, [dispatch]);
+
+  // Save to localStorage whenever info changes
+  useEffect(() => {
+    if (customerAddress && deliveryDetails && paymentMethod) {
+      localStorage.setItem('checkoutInfo', JSON.stringify({
+        customerAddress,
+        deliveryDetails,
+        paymentMethod,
+      }));
+    }
+  }, [customerAddress, deliveryDetails, paymentMethod]);
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-8 bg-background min-h-screen theme-transition">
@@ -219,7 +322,7 @@ const Checkout = () => {
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={handleOpenPaymentModal}
+                onClick={() => openModal("payment")}
                 className="flex items-center gap-1"
               >
                 {paymentMethod ? "Edit" : "Add"}
@@ -234,7 +337,7 @@ const Checkout = () => {
               <p className="text-muted-foreground mt-2">No payment method selected</p>
             )}
           </div>
-          <Link href="/products" className="inline-block mt-6 text-secondary hover:underline">
+          <Link href="/products" className="inline-block text-gray-700 mt-6  hover:underline">
             Continue shopping
           </Link>
         </div>
@@ -259,16 +362,16 @@ const Checkout = () => {
               <span className="text-brand-yellow">₦{total.toLocaleString(undefined, { maximumFractionDigits: 2 })}</span>
             </div>
           </div>
-          <div>
+          {/* <div>
             <label className="block text-sm font-semibold mb-1">Notes (Optional)</label>
             <textarea
               className="w-full border rounded p-2 mb-2"
               rows={2}
               placeholder="Write a note"
-              // value={note}
-              // onChange={e => setNote(e.target.value)}
+              value={note}
+              onChange={e => setNote(e.target.value)}
             />
-          </div>
+          </div> */}
           <div>
             <input
               type="text"
@@ -279,19 +382,90 @@ const Checkout = () => {
             />
             <Button variant="outline" className="w-full border border-yellow-400 text-yellow-600 py-2 rounded font-semibold hover:bg-yellow-50 mb-2">APPLY COUPON</Button>
           </div>
-          {/* <Button disabled className="w-full bg-gray-900 text-white py-3 rounded-full font-semibold text-lg opacity-60 cursor-not-allowed mb-2">Checkout</Button> */}
-          <Button 
-            className="w-full py-3 rounded-md font-medium bg-brand-yellow text-gray-900 hover:bg-yellow-400 transition-colors duration-200"
-            disabled={!customerAddress || !deliveryDetails || !paymentMethod}
-            onClick={handleConfirmOrder}
-          >
-            Confirm Order
-          </Button>
+          {/* Show different buttons based on payment method and order status */}
+          {!pendingOrderId ? (
+            <Button 
+              className="w-full py-3 rounded-md font-medium bg-brand-yellow text-gray-900 hover:bg-yellow-400 transition-colors duration-200"
+              disabled={!customerAddress || !deliveryDetails || !paymentMethod || isLoading}
+              onClick={handleConfirmOrder}
+            >
+              {isLoading ? 'Creating Order...' : 'Confirm Order'}
+            </Button>
+          ) : isProcessingPayment && paymentMethod === 'card' ? (
+            <PaystackPayment
+              email={customerAddress?.email || customerForm.email || 'user@example.com'}
+              amount={total}
+              orderId={pendingOrderId}
+              onSuccess={handlePaymentSuccess}
+              onClose={handlePaymentClose}
+              disabled={isLoading}
+            >
+              {isLoading ? 'Processing...' : `Pay ₦${total.toLocaleString()}`}
+            </PaystackPayment>
+          ) : (
+            <div className="text-center text-green-600">
+              <CheckCircle className="w-8 h-8 mx-auto mb-2" />
+              <p>Order created successfully!</p>
+            </div>
+          )}
           <p className="text-xs text-muted-foreground mt-3 text-center">
             By proceeding, you agree to our Terms & Conditions
           </p>
         </div>
       </div>
+
+      {/* Order Confirmation Modal */}
+      <Dialog open={showOrderConfirmation} onOpenChange={setShowOrderConfirmation}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <CheckCircle className="w-6 h-6 text-green-500" />
+              Order Confirmed Successfully!
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 mt-4">
+            <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+              <div className="flex items-start gap-3">
+                <AlertCircle className="w-5 h-5 text-green-600 mt-0.5" />
+                <div>
+                  <h4 className="font-medium text-green-800">Order #{pendingOrderId}</h4>
+                  <p className="text-sm text-green-700 mt-1">
+                    Your order has been created successfully. You can now proceed with payment or cancel the order.
+                  </p>
+                </div>
+              </div>
+            </div>
+            
+            <div className="space-y-2">
+              <div className="flex justify-between text-sm">
+                <span>Total Amount:</span>
+                <span className="font-semibold">₦{total.toLocaleString()}</span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span>Payment Method:</span>
+                <span>{getPaymentMethodLabel(paymentMethod)}</span>
+              </div>
+            </div>
+          </div>
+          <DialogFooter className="mt-6 flex gap-3">
+            <Button
+              variant="outline"
+              onClick={handleCancelOrder}
+              disabled={isLoading}
+              className="flex-1"
+            >
+              {isLoading ? 'Canceling...' : 'Cancel Order'}
+            </Button>
+            <Button
+              onClick={handleProceedToPayment}
+              className="flex-1 bg-brand-yellow text-gray-900 hover:bg-yellow-400"
+            >
+              {paymentMethod === 'card' ? 'Proceed to Payment' : 'Complete Order'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       {/* Customer Address Modal */}
       <Dialog open={isModalOpen === "customer"} onOpenChange={open => setIsModalOpen(open ? "customer" : null)}>
         <DialogContent>
@@ -318,6 +492,13 @@ const Checkout = () => {
               value={customerForm.phone}
               onChange={(e) => setCustomerForm({ ...customerForm, phone: e.target.value })}
               placeholder="Phone Number"
+              className="w-full p-3 border border-border rounded-lg bg-input-background text-foreground"
+            />
+            <input
+              type="email"
+              value={customerForm.email}
+              onChange={(e) => setCustomerForm({ ...customerForm, email: e.target.value })}
+              placeholder="Email Address"
               className="w-full p-3 border border-border rounded-lg bg-input-background text-foreground"
             />
           </div>
