@@ -29,6 +29,10 @@ const protectedRoutes: Record<string, string[]> = {
 
 export async function middleware(request: NextRequest) {
   const path = request.nextUrl.pathname;
+  // Skip static files with extensions
+  if (/\.[^\/]+$/.test(path)) {
+    return NextResponse.next();
+  }
   console.log("Middleware processing path:", path);
 
   // Allow access to public paths and API routes
@@ -179,11 +183,6 @@ function findMatchingRoute(
 
 export const config = {
   matcher: [
-    // Exclude:
-    // - _next/static (static files)
-    // - _next/image (image optimization files)
-    // - favicon.ico (favicon file)
-    // - all files with an extension (e.g., .svg, .png, .jpg, .css, .js, etc.)
-    "/((?!_next/static|_next/image|favicon.ico|.*\\.(svg|png|jpg|jpeg|webp|gif|ico|css|js|woff|woff2|ttf|eot)).*)",
+    "/((?!api|_next|static|favicon.ico).*)",
   ],
 };
