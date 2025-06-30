@@ -179,13 +179,11 @@ function findMatchingRoute(
 
 export const config = {
   matcher: [
-    /*
-     * Match all request paths except for the ones starting with:
-     * - _next/static (static files)
-     * - _next/image (image optimization files)
-     * - favicon.ico (favicon file)
-     * - public folder
-     */
-    "/((?!_next/static|_next/image|favicon.ico|public/).*)",
+    // Exclude:
+    // - _next/static (static files)
+    // - _next/image (image optimization files)
+    // - favicon.ico (favicon file)
+    // - all files with an extension (e.g., .svg, .png, .jpg, .css, .js, etc.)
+    "/((?!_next/static|_next/image|favicon.ico|.*\\.(svg|png|jpg|jpeg|webp|gif|ico|css|js|woff|woff2|ttf|eot)).*)",
   ],
 };
