@@ -42,6 +42,10 @@ export async function middleware(request: NextRequest) {
     path.startsWith("/static") ||
     path.startsWith("/favicon.ico") ||
     path === "/" || // Allow access to index page
+    path === "/about" ||
+    path === "/products" ||
+    path.startsWith("/products") || // for dynamic product pages
+    path.startsWith("/auth/") || // allow auth pages
     (path.startsWith("/vendor/onboarding") && new URL(request.url).searchParams.has("token")) // Allow access to vendor onboarding with token
   ) {
     return NextResponse.next();
