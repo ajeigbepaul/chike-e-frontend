@@ -41,12 +41,18 @@ export async function middleware(request: NextRequest) {
     path.startsWith("/api") ||
     path.startsWith("/static") ||
     path.startsWith("/favicon.ico") ||
-    path === "/" || // Allow access to index page
+    path === "/" ||
     path === "/about" ||
     path === "/products" ||
-    path.startsWith("/products") || // for dynamic product pages
-    path.startsWith("/auth/") || // allow auth pages
-    (path.startsWith("/vendor/onboarding") && new URL(request.url).searchParams.has("token")) // Allow access to vendor onboarding with token
+    path.startsWith("/products") ||
+    path === "/checkout" ||
+    path.startsWith("/checkout") ||
+    path === "/orders" ||
+    path.startsWith("/orders") ||
+    path === "/account" ||
+    path.startsWith("/account") ||
+    path.startsWith("/auth/") ||
+    (path.startsWith("/vendor/onboarding") && new URL(request.url).searchParams.has("token"))
   ) {
     return NextResponse.next();
   }

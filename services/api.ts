@@ -50,7 +50,7 @@ api.interceptors.response.use(
     const originalRequest = error.config;
 
     // Only redirect to login for protected endpoints
-    const protectedEndpoints = ['/orders', '/checkout', '/account'];
+    const protectedEndpoints: string[] = []; // No protected endpoints, all are public
     if (
       error.response?.status === 401 &&
       protectedEndpoints.some((ep) => originalRequest.url && originalRequest.url.includes(ep)) &&

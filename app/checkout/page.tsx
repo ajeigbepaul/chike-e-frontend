@@ -14,6 +14,8 @@ import { CheckCircle, ChevronRight, AlertCircle } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import dynamic from 'next/dynamic';
 import { useSearchParams } from "next/navigation";
+import { useSession } from "next-auth/react";
+
 // Dynamically import PaystackPayment to avoid SSR issues
 const PaystackPayment = dynamic(
   () => import('@/components/PaystackPayment').then((mod) => ({ default: mod.PaystackPayment })),
@@ -577,8 +579,19 @@ function CheckoutContent() {
 }
 
 export default function Checkout() {
-  return (
-    <Suspense fallback={
+  const { data: session, status } = useSession();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (status === "loading") return; // Wait for session to load
+    if (!session) {
+      // Redirect to login with callbackUrl
+      router.replace(`/auth/signin?callbackUrl=${encodeURIComponent("/checkout")}`);
+    }
+  }, [session, status, router]);
+
+  if (status === "loading") {
+    return (
       <div className="min-h-screen flex items-center justify-center bg-background px-4 py-16">
         <div className="bg-white rounded-xl shadow-lg p-8 flex flex-col items-center max-w-md w-full">
           <div className="w-20 h-20 bg-gray-200 rounded-full mb-4 animate-pulse"></div>
@@ -590,12 +603,15 @@ export default function Checkout() {
           </div>
         </div>
       </div>
-    }>
-      <CheckoutContent />
-    </Suspense>
-  );
+    );
+  }
 
+  if (!session) {
+    // Optionally show nothing or a spinner while redirecting
+    return null;
+  }
 
+  return <CheckoutContent />;
 }
 
 
