@@ -49,8 +49,13 @@ api.interceptors.response.use(
   async (error) => {
     const originalRequest = error.config;
 
-    // Handle JWT expiration and 401 Unauthorized errors
-    if (error.response?.status === 401 && !originalRequest._retry) {
+    // Only redirect to login for protected endpoints
+    const protectedEndpoints = ['/orders', '/checkout', '/account'];
+    if (
+      error.response?.status === 401 &&
+      protectedEndpoints.some((ep) => originalRequest.url && originalRequest.url.includes(ep)) &&
+      !originalRequest._retry
+    ) {
       originalRequest._retry = true;
 
       // Check if the error is due to JWT expiration
@@ -60,23 +65,18 @@ api.interceptors.response.use(
       if (isTokenExpired) {
         // Sign out the user
         await signOut({ redirect: false });
-        
-        // Show a toast notification
         toast.error('Your session has expired. Please log in again.');
-        
-        // Redirect to login page if not already there
         if (!window.location.pathname.includes('/auth/signin')) {
           window.location.href = "/auth/signin";
         }
       } else {
-        // Handle other 401 errors
         if (!window.location.pathname.includes('/auth/signin')) {
           window.location.href = "/auth/signin";
         }
       }
       return Promise.reject(error);
     }
-
+    // For public endpoints, do not redirect, just reject
     return Promise.reject(error);
   }
 );
