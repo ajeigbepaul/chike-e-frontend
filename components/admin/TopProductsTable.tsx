@@ -10,7 +10,7 @@ import { getTopProducts } from '@/services/api/products';
 import { useQuery } from '@tanstack/react-query';
 
 export function TopProductsTable() {
-  const { data: topProducts = [], isLoading, isError } = useQuery({
+  const { data: topProducts = [] } = useQuery({
     queryKey: ['topProducts'],
     queryFn: getTopProducts,
   });

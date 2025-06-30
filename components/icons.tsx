@@ -1,4 +1,4 @@
-import { LucideProps, Store, Loader2 } from "lucide-react";
+import {  Store, Loader2 } from "lucide-react";
 
 export const Icons = {
   store: Store,

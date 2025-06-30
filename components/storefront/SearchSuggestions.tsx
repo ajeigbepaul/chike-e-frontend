@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { useQuery } from '@tanstack/react-query';
 import { getAutocompleteSuggestions } from '@/services/api/products';
+import Image from 'next/image';
 
 export function SearchSuggestions({
   query,
@@ -47,7 +48,7 @@ export function SearchSuggestions({
                 onClick={() => onSelect(item.name)}
               >
                 {item.imageCover && (
-                  <img src={item.imageCover} alt={item.name} className="w-8 h-8 object-cover rounded" />
+                  <Image width={24} height={24} src={item.imageCover} alt={item.name} className="w-8 h-8 object-cover rounded" />
                 )}
                 <div>
                   <div className="font-medium">{item.name}</div>

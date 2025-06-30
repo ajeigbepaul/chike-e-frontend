@@ -69,6 +69,8 @@ const FeaturedProducts = ({
                 onAddToCart={() => onAddToCart(product)}
                 isLoggedIn={isLoggedIn}
                 onRequireLogin={onRequireLogin}
+                quantity={product.quantity || 0}
+
               />
             ))}
       </div>

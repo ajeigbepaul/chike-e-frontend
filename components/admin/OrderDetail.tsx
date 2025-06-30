@@ -9,6 +9,7 @@ import orderService from "@/services/api/order";
 import { toast } from "react-hot-toast";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import Image from "next/image";
 
 type OrderDetailProps = {
   order: {
@@ -197,7 +198,9 @@ export function OrderDetail({ order }: OrderDetailProps) {
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center">
                       {item.image && (
-                        <img 
+                        <Image
+                         width={24}
+                         height={24} 
                           src={item.image} 
                           alt={item.product} 
                           className="w-10 h-10 rounded object-cover mr-3"

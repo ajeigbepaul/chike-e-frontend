@@ -35,6 +35,7 @@ declare module "next-auth/jwt" {
     } & DefaultSession["user"];
   }
 }
+
 export const authOptions: NextAuthOptions = {
   providers: [
     CredentialsProvider({
@@ -58,6 +59,7 @@ export const authOptions: NextAuthOptions = {
             },
             {
               withCredentials: true, // Important for cookies
+              timeout: 10000, // 10 second timeout
             }
           );
 
@@ -197,4 +199,8 @@ export const authOptions: NextAuthOptions = {
       },
     },
   },
+  // Add these options to handle SSR better
+  debug: process.env.NODE_ENV === "development",
+  // Disable automatic session fetching during SSR to prevent errors
+  useSecureCookies: process.env.NODE_ENV === "production",
 };

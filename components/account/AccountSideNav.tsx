@@ -2,7 +2,7 @@
 "use client"
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { ShoppingBag, Mail, FileText, Ticket, Heart, Store, RotateCcw, User } from 'lucide-react';
+import { ShoppingBag, Mail, FileText,  Heart, User } from 'lucide-react';
 
 const navItems = [
   { label: 'My Account', href: '/account', key: 'account', icon: <User className="w-6 h-6 mr-2" /> },

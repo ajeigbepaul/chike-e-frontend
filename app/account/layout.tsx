@@ -1,6 +1,4 @@
 // frontend/app/account/layout.tsx
-import {Header} from '@/components/storefront/Header';
-import Footer from '@/components/storefront/Footer';
 import AccountSideNav from '@/components/account/AccountSideNav';
 
 export default function AccountLayout({ children }: { children: React.ReactNode }) {

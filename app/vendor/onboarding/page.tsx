@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -34,7 +34,7 @@ const onboardingSchema = z
     path: ["confirmPassword"],
   });
 
-export default function VendorOnboardingPage() {
+function VendorOnboardingContent(){
   const router = useRouter();
   const searchParams = useSearchParams();
   const [isLoading, setIsLoading] = useState(false);
@@ -241,5 +241,14 @@ export default function VendorOnboardingPage() {
         </Card>
       </div>
     </div>
+  );
+}
+
+
+export default function VendorOnboardingPage() {
+  return (
+    <Suspense fallback={<div className="flex items-center justify-center min-h-screen bg-gray-100">Loading...</div>}>
+      <VendorOnboardingContent />
+    </Suspense>
   );
 }

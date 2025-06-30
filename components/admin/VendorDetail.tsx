@@ -1,4 +1,4 @@
-// import { Card } from '@/components/admin/Card'
+// eslint-disable-next-line react/no-children-prop
 
 import { Card } from "./Card"
 

@@ -40,7 +40,6 @@ export default function UserReviews() {
     setText('');
     setModalOpen(true);
   };
-  const closeReviewModal = () => setModalOpen(false);
 
   const handleSubmitReview = async () => {
     if (!reviewProduct || !rating || !text.trim()) return;
@@ -82,7 +81,7 @@ export default function UserReviews() {
     return (
       <div className="text-center py-12">
         <h2 className="text-2xl font-semibold mb-4">My Reviews</h2>
-        <p className="text-gray-600 mb-6">You haven't written any reviews yet.</p>
+        <p className="text-gray-600 mb-6">You haven&apos;t written any reviews yet.</p>
         <Link
           href="/products"
           className="text-brand-yellow hover:underline"
@@ -101,7 +100,7 @@ export default function UserReviews() {
         <div className="mb-8">
           <h3 className="text-lg font-bold mb-4">Pending Reviews</h3>
           <div className="space-y-4">
-            {productsToReview.map((item: any, i: number) => (
+            {productsToReview.map((item: any) => (
               <div key={item.product} className="flex items-center justify-between bg-yellow-50 border border-yellow-200 rounded-lg p-4">
                 <div>
                   <div className="font-medium">{item.name || item.product?.name || 'Product'}</div>
@@ -117,7 +116,7 @@ export default function UserReviews() {
       <div className="space-y-6">
         {reviews.length === 0 ? (
           <div className="text-center py-12">
-            <p className="text-gray-600 mb-6">You haven't written any reviews yet.</p>
+            <p className="text-gray-600 mb-6">You haven&apos;t written any reviews yet.</p>
             <Link href="/products" className="text-brand-yellow hover:underline">Browse products to review</Link>
           </div>
         ) : (

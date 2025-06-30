@@ -1,10 +1,9 @@
 "use client"
-import React, { useState, useMemo, useEffect } from "react";
+import React, { useState, useMemo, useEffect, Suspense } from "react";
 import { ChevronDown, ChevronUp, Box } from "lucide-react";
 import categoryService from "@/services/api/category";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import type { Category } from "@/app/admin/categories/types";
-import Link from 'next/link';
 import ProductCard, { ProductCardSkeleton } from './ProductCard';
 import { getProducts } from '@/services/api/products';
 import type { Product } from '@/types/product';
@@ -17,8 +16,6 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import brandService from '@/services/api/brand';
 // import { useToast } from '@/components/ui/use-toast';
 
-const brands = ["Brand A", "Brand B", "Brand C"];
-const colours = ["Red", "Blue", "Green", "Yellow"];
 
 function buildCategoryTree(categories: Category[]): Category[] {
   const map: { [key: string]: Category & { subcategories: Category[] } } = {};
@@ -136,7 +133,7 @@ interface ProductsGallerySectionProps {
   initialProducts?: Product[];
 }
 
-export default function ProductsGallerySection({ initialProducts }: ProductsGallerySectionProps) {
+function ProductGalleryContent({ initialProducts }: ProductsGallerySectionProps){
   const { data: categories = [] } = useQuery({
     queryKey: ["categories"],
     queryFn: async () => {
@@ -185,8 +182,8 @@ export default function ProductsGallerySection({ initialProducts }: ProductsGall
 
   // Mobile state
   const [mobileCatOpen, setMobileCatOpen] = useState(false);
-  const [brandOpen, setBrandOpen] = useState(false);
-  const [colourOpen, setColourOpen] = useState(false);
+  // const [brandOpen, setBrandOpen] = useState(false);
+  // const [colourOpen, setColourOpen] = useState(false);
   const [openCategoryIds, setOpenCategoryIds] = useState<Set<string>>(new Set());
   const [categoryOpen, setCategoryOpen] = useState(true);
 
@@ -205,7 +202,7 @@ export default function ProductsGallerySection({ initialProducts }: ProductsGall
   };
 
   // Remove initialProducts and useState for products
-  const { data: productsResponse, isLoading, isError } = useQuery({
+  const { data: productsResponse, isLoading } = useQuery({
     queryKey: ['products'],
     queryFn: () => getProducts(1, 20),
     initialData: initialProducts
@@ -220,7 +217,7 @@ export default function ProductsGallerySection({ initialProducts }: ProductsGall
         }
       : undefined,
   });
-  const products: Product[] = productsResponse?.products || [];
+  // const products: Product[] = productsResponse?.products || [];
 
   // const { toast } = useToast();
   const [wishlist, setWishlist] = useState<Set<string>>(new Set());
@@ -233,7 +230,7 @@ export default function ProductsGallerySection({ initialProducts }: ProductsGall
         // Assuming res.data is an array of wishlist items with productId or product._id
         const ids = (res.data || []).map((item: any) => item.productId?._id || item.productId || item.product?._id || item.product);
         setWishlist(new Set(ids));
-      } catch (error: any) {
+      } catch {
         // Optionally show error toast
       }
     })();
@@ -272,7 +269,7 @@ export default function ProductsGallerySection({ initialProducts }: ProductsGall
   };
 
   // Fetch brands from backend
-  const { data: brandsResponse = [], isLoading: isBrandsLoading } = useQuery({
+  const { data: brandsResponse = [] } = useQuery({
     queryKey: ['brands'],
     queryFn: async () => {
       const response = await brandService.getAllBrands();
@@ -285,6 +282,7 @@ export default function ProductsGallerySection({ initialProducts }: ProductsGall
 
   // Filtering logic
   const filteredProducts = useMemo(() => {
+    const products = productsResponse?.products || [];
     let result = products;
     if (selectedCategory !== 'All') {
       result = result.filter(p =>
@@ -321,7 +319,7 @@ export default function ProductsGallerySection({ initialProducts }: ProductsGall
       });
     }
     return result;
-  }, [products, selectedCategory, selectedBrand, selectedColor, selectedReview, selectedPrice]);
+  }, [productsResponse?.products, selectedCategory, selectedBrand, selectedColor, selectedReview, selectedPrice]);
 
   // Helper for filter chips
   const getBrandLabel = (val: string) => brandOptions.find(b => b.value === val)?.label || val;
@@ -597,4 +595,13 @@ export default function ProductsGallerySection({ initialProducts }: ProductsGall
       </div>
     </div>
   );
-} 
+
+}
+
+export default function ProductsGallerySection({ initialProducts }: ProductsGallerySectionProps) {
+  return (
+    <Suspense fallback={<div className="flex items-center justify-center min-h-screen bg-gray-100">Loading...</div>}>
+      <ProductGalleryContent initialProducts={initialProducts} />
+    </Suspense>
+  );
+}

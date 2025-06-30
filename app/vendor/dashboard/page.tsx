@@ -22,12 +22,11 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { format } from "date-fns";
 import {
-  BarChart,
+  
   Package,
   ShoppingCart,
   DollarSign,
-  Layers,
-  AlertTriangle,
+ 
   RefreshCw,
   Plus,
 } from "lucide-react";
@@ -74,7 +73,7 @@ interface DashboardData {
 }
 
 export default function VendorDashboard() {
-  const { data: session, status } = useSession();
+  const { status } = useSession();
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);

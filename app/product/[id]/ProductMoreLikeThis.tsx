@@ -1,4 +1,3 @@
-import Image from 'next/image';
 import type { Product } from '@/types/product';
 import { useQuery } from '@tanstack/react-query';
 import { getRelatedProducts } from '@/services/api/products';

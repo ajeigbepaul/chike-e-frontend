@@ -2,16 +2,15 @@
 import { useSelector, useDispatch } from 'react-redux';
 import { RootState } from '@/store/store';
 import { updateQuantity, removeFromCart } from '@/store/cartSlice';
-import { Star, Trash2, ShoppingBag } from 'lucide-react';
+import { Star } from 'lucide-react';
 import Image from 'next/image';
-import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 
 export default function CartPage() {
   const cart = useSelector((state: RootState) => state.cart.items);
   const dispatch = useDispatch();
-  const [note, setNote] = useState('');
-  const [coupon, setCoupon] = useState('');
+  // const [note, setNote] = useState('');
+  // const [coupon, setCoupon] = useState('');
   const router = useRouter();
 
   // Example static values

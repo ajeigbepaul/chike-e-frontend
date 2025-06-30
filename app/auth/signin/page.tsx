@@ -1,18 +1,22 @@
 // src/app/auth/signin/page.tsx
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useState,Suspense } from "react";
 import { signIn, useSession } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "react-hot-toast";
 import Link from "next/link";
+import { Eye, EyeOff } from "lucide-react";
 
-export default function LoginPage() {
+
+function LoginContent(){
   const searchParams = useSearchParams();
+ 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const router = useRouter();
-  const { data: session, update } = useSession();
+  const { update } = useSession();
 
   useEffect(() => {
     const verified = searchParams.get("verified");
@@ -95,20 +99,27 @@ export default function LoginPage() {
             />
           </div>
           <div>
-            <label
-              className="block text-sm font-medium mb-2"
-              htmlFor="password"
-            >
+            <label className="block text-sm font-medium mb-2" htmlFor="password">
               Password
             </label>
-            <input
-              id="password"
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-              required
-            />
+            <div className="relative">
+              <input
+                id="password"
+                type={showPassword ? "text" : "password"}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 pr-10"
+                required
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword((prev) => !prev)}
+                className="absolute inset-y-0 right-0 flex items-center px-3 text-gray-500"
+                tabIndex={-1}
+              >
+                {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+              </button>
+            </div>
             <div className="text-right mt-1">
               <Link
                 href="/auth/forgot-password"
@@ -127,7 +138,7 @@ export default function LoginPage() {
           </button>
         </form>
         <p className="mt-4 text-center text-sm text-gray-600">
-          Don't have an account?{" "}
+          Don&apos;t have an account?{" "}
           <Link
             href="/auth/signup"
             className="text-brand-yellow hover:text-yellow-500"
@@ -139,3 +150,11 @@ export default function LoginPage() {
     </div>
   );
 }
+export default function LoginPage() {
+  return (
+    <Suspense fallback={<div className="flex items-center justify-center min-h-screen bg-gray-100">Loading...</div>}>
+     <LoginContent />
+    </Suspense>
+  );
+}
+

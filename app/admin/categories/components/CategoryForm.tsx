@@ -14,7 +14,6 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Switch } from '@/components/ui/switch';
-import { Category } from '@/app/admin/categories/types';
 
 interface CategoryFormData {
   name: string;

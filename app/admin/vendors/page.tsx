@@ -34,7 +34,7 @@ const VendorInviteDialog = dynamic(
 
 export default function VendorsPage() {
   const [isLoading, setIsLoading] = useState(true);
-  const [inviteLoading, setInviteLoading] = useState(false);
+  const [, setInviteLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
   const { toast } = useToast();
@@ -121,37 +121,37 @@ export default function VendorsPage() {
   };
 
   // Handle vendor status update
-  const handleStatusUpdate = async (
-    vendorId: string,
-    status: "active" | "inactive"
-  ) => {
-    try {
-      setIsLoading(true);
-      const response = await vendorService.updateVendorStatus(vendorId, {
-        status,
-      });
+  // const handleStatusUpdate = async (
+  //   vendorId: string,
+  //   status: "active" | "inactive"
+  // ) => {
+  //   try {
+  //     setIsLoading(true);
+  //     const response = await vendorService.updateVendorStatus(vendorId, {
+  //       status,
+  //     });
 
-      if (response.success) {
-        toast({
-          title: "Success",
-          description: "Vendor status updated successfully",
-        });
-        // Refresh the vendor list to reflect the status change
-        fetchVendors();
-      } else {
-        throw new Error(response.message || "Failed to update vendor status");
-      }
-    } catch (error: any) {
-      console.error("Update vendor status error:", error);
-      toast({
-        title: "Error",
-        description: error.message || "Failed to update vendor status",
-        variant: "destructive",
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  //     if (response.success) {
+  //       toast({
+  //         title: "Success",
+  //         description: "Vendor status updated successfully",
+  //       });
+  //       // Refresh the vendor list to reflect the status change
+  //       fetchVendors();
+  //     } else {
+  //       throw new Error(response.message || "Failed to update vendor status");
+  //     }
+  //   } catch (error: any) {
+  //     console.error("Update vendor status error:", error);
+  //     toast({
+  //       title: "Error",
+  //       description: error.message || "Failed to update vendor status",
+  //       variant: "destructive",
+  //     });
+  //   } finally {
+  //     setIsLoading(false);
+  //   }
+  // };
 
   return (
     <div className="space-y-6">

@@ -1,9 +1,9 @@
 "use client";
-import React, { useState, Fragment, useEffect } from "react";
+import React, { useState, useEffect,Suspense } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import Link from "next/link";
 import Image from "next/image";
-import orderService, { initializePayment, verifyPayment } from '@/services/api/order';
+import orderService from '@/services/api/order';
 import { clearCart } from '@/store/cartSlice';
 import { clearCheckout, setCustomerAddress, setDeliveryDetails, setPaymentMethod } from '@/store/checkoutSlice';
 import toast from 'react-hot-toast';
@@ -13,7 +13,7 @@ import { Button } from '@/components/ui/button';
 import { CheckCircle, ChevronRight, AlertCircle } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import dynamic from 'next/dynamic';
-
+import { useSearchParams } from "next/navigation";
 // Dynamically import PaystackPayment to avoid SSR issues
 const PaystackPayment = dynamic(
   () => import('@/components/PaystackPayment').then((mod) => ({ default: mod.PaystackPayment })),
@@ -27,8 +27,8 @@ const PaystackPayment = dynamic(
   }
 );
 
-
-const Checkout = () => {
+function CheckoutContent() {
+  const searchParams = useSearchParams();
   const dispatch = useDispatch();
   const router = useRouter();
   const { items } = useSelector((state: RootState) => state.cart);
@@ -573,6 +573,29 @@ const Checkout = () => {
       </Dialog>
     </div>
   );
-};
 
-export default Checkout;
+}
+
+export default function Checkout() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center bg-background px-4 py-16">
+        <div className="bg-white rounded-xl shadow-lg p-8 flex flex-col items-center max-w-md w-full">
+          <div className="w-20 h-20 bg-gray-200 rounded-full mb-4 animate-pulse"></div>
+          <div className="h-8 bg-gray-200 rounded mb-2 w-64 animate-pulse"></div>
+          <div className="h-4 bg-gray-200 rounded mb-6 w-80 animate-pulse"></div>
+          <div className="flex flex-col gap-3 w-full">
+            <div className="h-12 bg-gray-200 rounded animate-pulse"></div>
+            <div className="h-12 bg-gray-200 rounded animate-pulse"></div>
+          </div>
+        </div>
+      </div>
+    }>
+      <CheckoutContent />
+    </Suspense>
+  );
+
+
+}
+
+

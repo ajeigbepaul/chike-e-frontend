@@ -12,7 +12,6 @@ const starCats = [
 
 export default function ProductTabs({ product }: { product: Product }) {
   const [tab, setTab] = useState('attributes');
-  const [showMore, setShowMore] = useState(false);
   const reviews = product.reviews || [];
   return (
     <div className="mt-10">

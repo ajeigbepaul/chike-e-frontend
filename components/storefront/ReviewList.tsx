@@ -12,6 +12,7 @@ import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/use-toast';
 import reviewService, { Review } from '@/services/api/review';
 import { useSession } from 'next-auth/react';
+import Image from 'next/image';
 
 interface ReviewListProps {
   productId: string;
@@ -79,7 +80,9 @@ export default function ReviewList({ productId }: ReviewListProps) {
           <div className="flex items-start justify-between">
             <div className="flex items-start space-x-4">
               {review.user.photo ? (
-                <img
+                <Image
+                  width={24}
+                  height={24}
                   src={review.user.photo}
                   alt={review.user.name}
                   className="w-10 h-10 rounded-full"

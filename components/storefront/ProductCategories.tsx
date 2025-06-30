@@ -1,9 +1,7 @@
+/* eslint-disable @typescript-eslint/ban-ts-comment */
 import React, { useRef } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import constructionImg from '../../public/construction-materials.jpg';
-import indoorImg from '../../public/indoor-products.jpg';
-import outdoorImg from '../../public/outdoor-products.jpg';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { Navigation } from 'swiper/modules';
 import 'swiper/css';
@@ -55,8 +53,8 @@ const ProductCategories = () => {
           Our Product Categories
         </h2>
         <p className="text-[16px] text-gray-600 max-w-3xl mx-auto">
-          We're redefining construction material procurement with an extensive selection spanning 
-          structural materials, interior finishes, and exterior solutions—built to meet every project requirement.
+          {`We're redefining construction material procurement with an extensive selection spanning 
+          structural materials, interior finishes, and exterior solutions—built to meet every project requirement.`}
         </p>
       </div>
       <div className="relative">
@@ -83,9 +81,9 @@ const ProductCategories = () => {
             nextEl: nextRef.current,
           }}
           onInit={swiper => {
-            // @ts-ignore
+            // @ts-expect-error
             swiper.params.navigation.prevEl = prevRef.current;
-            // @ts-ignore
+            // @ts-expect-error
             swiper.params.navigation.nextEl = nextRef.current;
             swiper.navigation.init();
             swiper.navigation.update();

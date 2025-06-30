@@ -17,7 +17,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { PlusIcon, TrashIcon } from "lucide-react";
+import {  TrashIcon } from "lucide-react";
 import { useState } from "react";
 
 type Attribute = {

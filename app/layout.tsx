@@ -1,5 +1,4 @@
 "use client";
-import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { NextAuthProvider } from "@/providers/auth-provider";
@@ -33,7 +32,7 @@ function CartPersistenceWatcher() {
         dispatch(setCart(JSON.parse(data)));
       }
     }
-    // eslint-disable-next-line
+    
   }, [dispatch]);
   // Save cart to localStorage on change
   useEffect(() => {

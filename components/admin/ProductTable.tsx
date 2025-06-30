@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import {
   Table,
   TableBody,
@@ -13,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Loader2 } from "lucide-react";
 import { Product } from "@/types/product";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 
 interface ProductTableProps {
   products: Product[];
@@ -57,7 +57,9 @@ export function ProductTable({ products, pagination, onPageChange, isLoading }: 
               {products.map((product) => (
                 <TableRow key={product._id}>
                   <TableCell>
-                    <img
+                    <Image
+                    width={24}
+                    height={24}
                       src={product.imageCover}
                       alt={product.name}
                       className="w-12 h-12 object-cover rounded"

@@ -1,4 +1,5 @@
 "use client"
+import Image from 'next/image';
 import React, { useState } from 'react';
 
 const mockOrders = [
@@ -73,7 +74,7 @@ export default function AccountOrdersList() {
         <div className="space-y-4">
           {selectedOrder.products.map((product, idx) => (
             <div key={idx} className="flex items-center gap-4 border-b pb-4 last:border-b-0">
-              <img src={product.image} alt={product.name} className="w-20 h-20 object-cover rounded-lg" />
+              <Image width={24} height={24} src={product.image} alt={product.name} className="w-20 h-20 object-cover rounded-lg" />
               <div className="flex-1">
                 <div className="font-semibold text-lg">{product.name}</div>
                 <div className="text-sm text-gray-500">Color – {product.color} • Size – {product.size}</div>

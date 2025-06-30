@@ -17,7 +17,7 @@ type AttributeSetFormProps = {
 };
 
 export function AttributeSetForm({
-  attributeSets,
+  // attributeSets,
   value,
   onChange,
 }: AttributeSetFormProps) {

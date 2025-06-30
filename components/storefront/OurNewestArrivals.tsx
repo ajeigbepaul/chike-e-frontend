@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/ban-ts-comment */
 import Image from 'next/image';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { Navigation } from 'swiper/modules';
@@ -15,8 +16,6 @@ interface OurNewestArrivalsProps {
   isLoggedIn: boolean;
   onRequireLogin: () => void;
 }
-
-const sliderImages = ['/cat1.svg', '/cat3.svg', '/cat2.svg'];
 
 const OurNewestArrivals = ({
   products,
@@ -76,7 +75,7 @@ const OurNewestArrivals = ({
                       </div>
                     </SwiperSlide>
                   ))
-                : products.map((product, idx) => (
+                : products.map((product) => (
                     <SwiperSlide key={product._id}>
                       <ProductCard
                         id={product._id}
@@ -91,6 +90,7 @@ const OurNewestArrivals = ({
                         onAddToCart={() => onAddToCart(product)}
                         isLoggedIn={isLoggedIn}
                         onRequireLogin={onRequireLogin}
+                        quantity={product.quantity || 0}
                       />
                     </SwiperSlide>
                   ))}

@@ -1,11 +1,11 @@
 "use client";
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, Suspense } from 'react';
 import Link from 'next/link';
-import { Search, ShoppingBag, User, ChevronDown, ChevronRight, LogOut, Settings, Upload, Bell, LogIn, Heart } from 'lucide-react';
+import { Search, ShoppingBag, User, ChevronDown, LogOut, Bell, LogIn, Heart } from 'lucide-react';
 import { useDispatch, useSelector } from 'react-redux';
 import { RootState } from '@/store/store';
-import { toggleCart, clearCart } from '@/store/cartSlice';
+import { clearCart } from '@/store/cartSlice';
 import { DropdownMenu } from './DropdownMenu';
 import { SearchSuggestions } from './SearchSuggestions';
 import { CategoryDropdown } from './CategoryDropdown';
@@ -19,9 +19,10 @@ import wishlistService from '@/services/api/wishlist';
 import { Badge } from '@/components/ui/badge';
 import notificationService from '@/services/api/notification';
 
-export function Header() {
+
+function HeaderContent() {
   const dispatch = useDispatch();
-  const { data: session, status } = useSession();
+  const { data: session} = useSession();
   const cartItems = useSelector((state: RootState) => state.cart.items);
   const cartItemCount = cartItems.reduce((total, item) => total + item.quantity, 0);
   const [searchQuery, setSearchQuery] = useState('');
@@ -399,5 +400,14 @@ export function Header() {
         )}
       </div>
     </header>
+  );
+
+}
+
+export function Header() {
+  return (
+    <Suspense fallback={<div className="flex items-center justify-center min-h-screen bg-gray-100">Loading...</div>}>
+      <HeaderContent />
+    </Suspense>
   );
 }

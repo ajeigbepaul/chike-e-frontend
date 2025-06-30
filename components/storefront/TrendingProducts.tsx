@@ -1,11 +1,11 @@
+/* eslint-disable @typescript-eslint/ban-ts-comment */
 import React, { useRef } from 'react';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { Navigation } from 'swiper/modules';
 import 'swiper/css';
 import 'swiper/css/navigation';
 import ProductCard, { ProductCardSkeleton } from './ProductCard';
-import { getProducts } from '@/services/api/products';
-import { useQuery } from '@tanstack/react-query';
+
 import type { Product } from '@/types/product';
 
 interface TrendingProductsProps {
@@ -56,9 +56,9 @@ const TrendingProducts = ({
           nextEl: nextRef.current,
         }}
         onInit={swiper => {
-          // @ts-ignore
+          // @ts-expect-error
           swiper.params.navigation.prevEl = prevRef.current;
-          // @ts-ignore
+          // @ts-expect-error
           swiper.params.navigation.nextEl = nextRef.current;
           swiper.navigation.init();
           swiper.navigation.update();
@@ -88,6 +88,7 @@ const TrendingProducts = ({
                   onAddToCart={() => onAddToCart(product)}
                   isLoggedIn={isLoggedIn}
                   onRequireLogin={onRequireLogin}
+                  quantity={product.quantity || 0}
                 />
               </SwiperSlide>
             ))}

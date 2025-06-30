@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState,Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "react-hot-toast";
 import { authService } from "@/services/auth";
@@ -12,7 +12,8 @@ import { Label } from "@/components/ui/label";
 import { Icons } from "@/components/icons";
 import { cn } from "@/lib/utils";
 
-export default function VendorSetupPage() {
+
+function VendorOnboardingContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [loading, setLoading] = useState(false);
@@ -195,5 +196,14 @@ export default function VendorSetupPage() {
         </form>
       </Card>
     </div>
+  );
+
+}
+
+export default function VendorSetupPage() {
+  return (
+    <Suspense fallback={<div className="flex items-center justify-center min-h-screen bg-gray-100">Loading...</div>}>
+      <VendorOnboardingContent />
+    </Suspense>
   );
 }

@@ -31,9 +31,11 @@ export default function ProductsPage() {
     }
   };
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     fetchProducts(1);
   }, []);
+  // come and check here if there areany issue
 
   const handlePageChange = (newPage: number) => {
     fetchProducts(newPage);

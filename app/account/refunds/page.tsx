@@ -5,7 +5,7 @@ import { useState } from 'react';
 
 export default function RefundRequestsPage() {
   // Simulate refund requests presence
-  const [hasRefunds, setHasRefunds] = useState(false); // Change to true to test list
+  const [hasRefunds] = useState(false); // Change to true to test list
 
   return (
     <div>

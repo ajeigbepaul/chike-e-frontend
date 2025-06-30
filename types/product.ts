@@ -19,6 +19,7 @@ export interface Brand {
 }
 
 export interface Product {
+  updatedAt: any;
   _id: string;
   name: string;
   description: string;

@@ -1,5 +1,5 @@
 import { cn } from '@/lib/utils'
-import { ArrowUp, ArrowDown, TrendingUp } from 'lucide-react'
+import { ArrowUp, ArrowDown} from 'lucide-react'
 
 export function StatsGrid() {
   const stats = [

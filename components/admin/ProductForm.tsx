@@ -1,6 +1,7 @@
+// eslint-disable react-hooks/exhaustive-deps 
 "use client";
 
-import { useEffect, useRef, SetStateAction, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,13 +14,12 @@ import { RefreshCw } from 'lucide-react';
 import { toast } from "react-hot-toast";
 import { useProductForm } from "@/hooks/useProductForm";
 import { CategorySelector } from "./CategorySelector";
-import { ProductFormData, CategoryType, AttributeType, Dimensions, Weight } from "@/types/product";
+import { ProductFormData, CategoryType, AttributeType } from "@/types/product";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import categoryService from "@/services/api/category";
 import { createProduct, updateProduct } from "@/services/api/products";
-import { useSelector } from "react-redux";
-import { RootState } from "@/store/store";
 import brandService from "@/services/api/brand";
+import Image from "next/image";
 
 const STEPS = [
   { id: 'details', label: 'Basic Details', required: ['name', 'description', 'price', 'category', 'imageCover', 'quantity', 'priceUnit'] },
@@ -29,10 +29,11 @@ const STEPS = [
   { id: 'bulk', label: 'Bulk Options', required: [] },
 ];
 
+// eslint-disable-next-line react-hooks/exhaustive-deps
 export function ProductForm({
   product,
   categories: initialCategories,
-  attributeSets,
+ 
 }: {
   product?: ProductFormData;
   categories: CategoryType[];
@@ -46,7 +47,7 @@ export function ProductForm({
     productId,
     progress,
     formData,
-    categories,
+    
     isSubmitting,
     coverImageUrl,
     additionalImageUrls,
@@ -146,6 +147,8 @@ export function ProductForm({
           ...data,
           category: typeof data.category === 'object' ? data.category._id : data.category,
           brand: typeof data.brand === 'object' ? data.brand._id : data.brand,
+          createdAt: data.createdAt ? new Date(data.createdAt) : undefined,
+          updatedAt: data.updatedAt ? new Date(data.updatedAt) : undefined,
         });
         
         if (progress === 100) {
@@ -671,7 +674,9 @@ submissionFormData.append('weight[unit]', weight.unit);
                   />
                   {coverImageUrl && (
                     <div className="relative w-14 h-14 mt-2">
-                      <img
+                      <Image
+                       width={24}
+                       height={24}
                         src={coverImageUrl}
                         alt="Cover preview"
                         className="w-full h-full object-cover rounded-lg"
@@ -713,7 +718,9 @@ submissionFormData.append('weight[unit]', weight.unit);
                   <div className="grid grid-cols-4 gap-2 mt-2">
                     {additionalImageUrls.map((url, index) => (
                       <div key={index} className="relative w-full aspect-square">
-                        <img
+                        <Image
+                         width={24}
+                         height={24}
                           src={url}
                           alt={`Preview ${index + 1}`}
                           className="w-full h-full object-cover rounded-lg"

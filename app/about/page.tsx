@@ -15,13 +15,13 @@ export default function AboutPage() {
             <div className="hidden md:block w-1/2 bg-gray-100 relative">
               <Image src="/contact.svg" alt="Contact" fill className="object-cover" />
               <div className="absolute bottom-0 left-0 p-6 text-white text-sm bg-black/40 w-full">
-                We're committed to responding promptly and ensuring you receive the support or information you need.
+               {` We're committed to responding promptly and ensuring you receive the support or information you need.`}
               </div>
             </div>
             {/* Right form */}
             <div className="w-full md:w-1/2 p-8 bg-white">
               <button onClick={() => setShowModal(false)} className="absolute top-4 right-4 text-gray-400 hover:text-gray-700 text-2xl font-bold">&times;</button>
-              <h2 className="text-2xl font-bold mb-1">Let's Get In Touch.<span className="text-brand-yellow">.</span></h2>
+              <h2 className="text-2xl font-bold mb-1">{`Let's Get In Touch.`}<span className="text-brand-yellow">.</span></h2>
               <p className="mb-4 text-gray-600 text-sm">Or just reach out manually to <a href="mailto:hello@gieniushub.vet.com" className="text-brand-yellow font-semibold">hello@gieniushub.vet.com</a>.</p>
               <form className="space-y-4">
                 <div className="flex gap-2">
@@ -43,7 +43,7 @@ export default function AboutPage() {
       <section className="text-center py-16 px-4 bg-white">
         <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4 leading-tight">
           We have been empowering the<br />
-          learning community since the '80s
+          {`learning community since the '80s`}
         </h1>
         <p className="max-w-2xl mx-auto text-gray-500 mb-8">
           — Inspiring growth, innovation, and lifelong learning for generations to come, by fostering inclusive education, nurturing curiosity, and equipping learners with the tools to shape a better future.
@@ -80,7 +80,7 @@ export default function AboutPage() {
           <div className="text-center mb-10">
             <h2 className="text-3xl md:text-4xl font-bold mb-2  inline-block px-8 py-2">Our Services</h2>
             <p className="max-w-2xl mx-auto text-gray-500 mt-4">
-              We're redefining construction material procurement with an extensive selection spanning structural materials, interior finishes, and exterior solutions—built to meet every project requirement.
+             {` We're redefining construction material procurement with an extensive selection spanning structural materials, interior finishes, and exterior solutions—built to meet every project requirement.`}
             </p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
@@ -153,7 +153,7 @@ export default function AboutPage() {
           <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-10 gap-6">
             <div>
               <h2 className="text-2xl md:text-3xl font-bold text-white mb-2">We only deliver results.</h2>
-              <p className="text-white/80">We don't use excuses or something. Okay maybe sometimes.</p>
+              <p className="text-white/80">{`We don't use excuses or something. Okay maybe sometimes`}.</p>
             </div>
             <button className="self-start md:self-center px-8 py-2 rounded-full bg-gray-900 text-white font-semibold hover:bg-white hover:text-gray-900 transition text-lg" onClick={() => setShowModal(true)}>Contact us</button>
           </div>

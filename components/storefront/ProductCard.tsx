@@ -59,7 +59,7 @@ export default function ProductCard({
           onClick={e => {
             e.preventDefault();
             if (isLoggedIn) {
-              onFavoriteToggle && onFavoriteToggle();
+              onFavoriteToggle?.();
             } else if (onRequireLogin) {
               onRequireLogin();
             }
@@ -82,7 +82,7 @@ export default function ProductCard({
               e.preventDefault();
               if (quantity === 0) return;
               if (isLoggedIn) {
-                onAddToCart && onAddToCart();
+                onAddToCart?.();
               } else if (onRequireLogin) {
                 onRequireLogin();
               }

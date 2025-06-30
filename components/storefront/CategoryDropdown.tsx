@@ -14,7 +14,7 @@ interface CategoryDropdownProps {
   onCategorySelect?: (categoryId: string) => void;
 }
 
-export function CategoryDropdown({ categories, trigger, isMobile, setIsMobile, onCategorySelect }: CategoryDropdownProps) {
+export function CategoryDropdown({ categories, trigger, isMobile, onCategorySelect }: CategoryDropdownProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [activePath, setActivePath] = useState<string[]>([]);
   const [hoverPath, setHoverPath] = useState<string[]>([]);

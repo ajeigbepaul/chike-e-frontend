@@ -40,6 +40,7 @@ type SalesReportProps = {
 };
 
 export function SalesReport({ fromDate, toDate }: SalesReportProps) {
+  console.log(fromDate,toDate)
   // Mock data - replace with your API data
   const salesData = {
     labels: ["Jan", "Feb", "Mar", "Apr", "May", "Jun"],
