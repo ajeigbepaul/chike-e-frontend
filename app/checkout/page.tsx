@@ -583,12 +583,12 @@ export default function Checkout() {
   const router = useRouter();
   console.log(session,"Session");
 
-  // useEffect(() => {
-  //   if (status === "loading") return; 
-  //   if (!session) {
-  //     router.replace(`/auth/signin?callbackUrl=${encodeURIComponent("/checkout")}`);
-  //   }
-  // }, [session, status, router]);
+  useEffect(() => {
+    if (status === "loading") return; 
+    if (!session) {
+      router.replace(`/auth/signin?callbackUrl=${encodeURIComponent("/checkout")}`);
+    }
+  }, [session, status, router]);
 
   if (status === "loading") {
     return (

@@ -47,6 +47,8 @@ export async function middleware(request: NextRequest) {
     path.startsWith("/products") ||
     path === "/checkout" ||
     path.startsWith("/checkout") ||
+    path === "/cart" ||
+    path.startsWith("/cart") ||
     path === "/orders" ||
     path.startsWith("/orders") ||
     path === "/account" ||
