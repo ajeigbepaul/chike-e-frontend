@@ -581,14 +581,14 @@ function CheckoutContent() {
 export default function Checkout() {
   const { data: session, status } = useSession();
   const router = useRouter();
+  console.log(session,"Session");
 
-  useEffect(() => {
-    if (status === "loading") return; // Wait for session to load
-    if (!session) {
-      // Redirect to login with callbackUrl
-      router.replace(`/auth/signin?callbackUrl=${encodeURIComponent("/checkout")}`);
-    }
-  }, [session, status, router]);
+  // useEffect(() => {
+  //   if (status === "loading") return; 
+  //   if (!session) {
+  //     router.replace(`/auth/signin?callbackUrl=${encodeURIComponent("/checkout")}`);
+  //   }
+  // }, [session, status, router]);
 
   if (status === "loading") {
     return (
