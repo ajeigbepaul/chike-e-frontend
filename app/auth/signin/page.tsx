@@ -56,7 +56,7 @@ function LoginContent(){
         await update();
 
         // Get the updated session with the user role
-        const updatedSession = await fetch("/api/auth/session").then((res) =>
+        const updatedSession = await fetch("/api/v1/auth/session").then((res) =>
           res.json()
         );
 
