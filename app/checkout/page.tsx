@@ -201,7 +201,7 @@ function CheckoutContent() {
     }
   };
 
-  // Prefill from localStorage on mount
+  // Prefill from localStorage or API on mount
   useEffect(() => {
     const saved = localStorage.getItem('checkoutInfo');
     if (saved) {
@@ -209,6 +209,34 @@ function CheckoutContent() {
       if (customerAddress) dispatch(setCustomerAddress(customerAddress));
       if (deliveryDetails) dispatch(setDeliveryDetails(deliveryDetails));
       if (paymentMethod) dispatch(setPaymentMethod(paymentMethod));
+    } else {
+      // Fetch from API if not in localStorage
+      import('@/services/api/user').then(({ default: userService }) => {
+        userService.getCheckoutInfo()
+          .then((data) => {
+            console.log("InfoData from API:", data?.data);
+            const { checkoutInfo, user } = data.data || {};
+            if (checkoutInfo) {
+              if (checkoutInfo.customerAddress) dispatch(setCustomerAddress(checkoutInfo.customerAddress));
+              if (checkoutInfo.deliveryDetails) dispatch(setDeliveryDetails(checkoutInfo.deliveryDetails));
+              if (checkoutInfo.paymentMethod) dispatch(setPaymentMethod(checkoutInfo.paymentMethod));
+              // Save to localStorage for next time
+              localStorage.setItem('checkoutInfo', JSON.stringify(checkoutInfo));
+            } else if (user) {
+              // Optionally prefill with user info if no checkoutInfo
+              dispatch(setCustomerAddress({
+                name: user.name,
+                email: user.email,
+                phone: user.phone,
+                address: user.addresses?.[0]?.street || "",
+              }));
+            }
+          })
+          .catch(err => {
+            // Optionally handle error
+            console.error("Failed to fetch checkout info:", err);
+          });
+      });
     }
   }, [dispatch]);
 
