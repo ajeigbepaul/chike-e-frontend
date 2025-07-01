@@ -56,9 +56,10 @@ function LoginContent(){
         await update();
 
         // Get the updated session with the user role
-        const updatedSession = await fetch("/api/v1/auth/session").then((res) =>
-          res.json()
-        );
+        const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+        const updatedSession = await fetch(`${API_BASE}/api/v1/auth/session`, {
+          credentials: "include",
+        }).then((res) => res.json());
 
         toast.success("Logged in successfully!");
 
