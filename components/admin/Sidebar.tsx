@@ -14,6 +14,7 @@ import {
   ChevronUp,
   Tag,
   Layers,
+  FileText,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -86,8 +87,8 @@ export function Sidebar() {
       icon: <Users className="h-5 w-5" />,
       subItems: [
         { name: "All Users", href: "/admin/users" },
-        { name: "Admins", href: "/admin/users?role=admin" },
-        { name: "Customers", href: "/admin/users?role=customer" },
+        // { name: "Admins", href: "/admin/users?role=admin" },
+        // { name: "Customers", href: "/admin/users?role=customer" },
       ],
     },
     {
@@ -96,19 +97,24 @@ export function Sidebar() {
       icon: <Truck className="h-5 w-5" />,
     },
     {
+      name: "Advert",
+      href: "/admin/advert",
+      icon: <FileText className="h-5 w-5" />,
+    },
+    {
       name: "Reports",
       href: "/admin/reports",
       icon: <BarChart2 className="h-5 w-5" />,
       subItems: [
         { name: "Sales", href: "/admin/reports/sales" },
-        { name: "Products", href: "/admin/reports/products" },
+        // { name: "Products", href: "/admin/reports/products" },
       ],
     },
-    {
-      name: "Settings",
-      href: "/admin/settings",
-      icon: <Settings className="h-5 w-5" />,
-    },
+    // {
+    //   name: "Settings",
+    //   href: "/admin/settings",
+    //   icon: <Settings className="h-5 w-5" />,
+    // },
   ];
 
   const toggleSubmenu = (name: string) => {
@@ -128,7 +134,7 @@ export function Sidebar() {
 
   return (
     <div className="hidden md:flex md:w-64 md:flex-col">
-      <div className="flex flex-col h-full px-3 py-4 border-r bg-white">
+      <div className="flex flex-col h-full px-3 py-2 border-r bg-white scrollbar-hide overflow-y-auto">
         <div className="mb-10 px-4 py-2">
           <h1 className="text-xl font-bold">Admin Panel</h1>
         </div>

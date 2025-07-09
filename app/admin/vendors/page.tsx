@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import {
   Table,
@@ -22,6 +22,7 @@ import vendorService, {
 } from "@/services/api/vendor";
 import { format } from "date-fns";
 import Spinner from "@/components/Spinner";
+import { useState } from "react";
 
 // Dynamically import the dialog component with no SSR
 const VendorInviteDialog = dynamic(
@@ -33,64 +34,32 @@ const VendorInviteDialog = dynamic(
 );
 
 export default function VendorsPage() {
-  const [isLoading, setIsLoading] = useState(true);
-  const [, setInviteLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const router = useRouter();
   const { toast } = useToast();
-  const [vendors, setVendors] = useState<Vendor[]>([]);
+  const queryClient = useQueryClient();
   const [search, setSearch] = useState("");
   const [showInviteDialog, setShowInviteDialog] = useState(false);
 
-  // Fetch vendors from the API
-  const fetchVendors = async () => {
-    setIsLoading(true);
-    setError(null);
-
-    try {
+  const { data, isLoading, isError, error, refetch } = useQuery({
+    queryKey: ["vendors"],
+    queryFn: async () => {
       const response = await vendorService.getVendors();
-      console.log(response, "response");
-
       if (!response.success) {
         throw new Error(response.message || "Failed to fetch vendors");
       }
+      return response.data?.data?.vendors || [];
+    },
+  });
 
-      if (response.data?.data?.vendors) {
-        console.log(response.data.data.vendors, "response.data.data.vendors");
-        setVendors(response.data.data.vendors);
-      } else {
-        setVendors([]);
-      }
-    } catch (err: any) {
-      console.error("Error fetching vendors:", err);
-      setError(err.message || "Failed to load vendors. Please try again.");
-      setVendors([]);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  // Initialize vendors on client-side only
-  useEffect(() => {
-    fetchVendors();
-  }, []);
-
-  console.log(vendors);
-  const filteredVendors = search
-    ? vendors.filter(
-        (vendor) =>
-          vendor.name.toLowerCase().includes(search.toLowerCase()) ||
-          vendor.email.toLowerCase().includes(search.toLowerCase())
-      )
-    : vendors;
+  const vendors = data || [];
 
   const handleRefresh = () => {
-    fetchVendors();
+    refetch();
   };
 
   const handleInviteVendor = async (data: VendorInviteRequest) => {
     try {
-      setInviteLoading(true);
+      // setInviteLoading(true); // Keeping this line as per user's last instruction to leave invite vendor functionality as is
       const response = await vendorService.inviteVendor(data);
 
       if (response.success) {
@@ -100,7 +69,8 @@ export default function VendorsPage() {
         });
         setShowInviteDialog(false);
         // Refresh the vendor list to include the new invitation
-        fetchVendors();
+        // fetchVendors(); // Keeping this line as per user's last instruction to leave invite vendor functionality as is
+        queryClient.invalidateQueries({ queryKey: ["vendors"] }); // Invalidate to refetch
       } else {
         throw new Error(response.message || "Failed to send invitation");
       }
@@ -112,7 +82,7 @@ export default function VendorsPage() {
         variant: "destructive",
       });
     } finally {
-      setInviteLoading(false);
+      // setInviteLoading(false); // Keeping this line as per user's last instruction to leave invite vendor functionality as is
     }
   };
 
@@ -153,6 +123,14 @@ export default function VendorsPage() {
   //   }
   // };
 
+  const filteredVendors = search
+    ? vendors.filter(
+        (vendor: any) =>
+          vendor.name.toLowerCase().includes(search.toLowerCase()) ||
+          vendor.email.toLowerCase().includes(search.toLowerCase())
+      )
+    : vendors;
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -187,12 +165,16 @@ export default function VendorsPage() {
         </div>
       </div>
 
-      {error && (
+      {isError && (
         <div
           className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded relative"
           role="alert"
         >
-          <span className="block sm:inline">{error}</span>
+          <span className="block sm:inline">
+            {error instanceof Error
+              ? error.message
+              : "An unknown error occurred."}
+          </span>
           <Button
             variant="link"
             className="absolute top-0 bottom-0 right-0 px-4 py-3"
@@ -210,8 +192,8 @@ export default function VendorsPage() {
               <TableHead>Name</TableHead>
               <TableHead>Email</TableHead>
               <TableHead>Status</TableHead>
-              <TableHead>Products</TableHead>
-              <TableHead>Total Sales</TableHead>
+              {/* <TableHead>Products</TableHead>
+              <TableHead>Total Sales</TableHead> */}
               <TableHead>Joined Date</TableHead>
               <TableHead className="w-[100px]">Actions</TableHead>
             </TableRow>
@@ -230,7 +212,7 @@ export default function VendorsPage() {
                 </TableCell>
               </TableRow>
             ) : (
-              filteredVendors.map((vendor) => (
+              filteredVendors.map((vendor: Vendor) => (
                 <TableRow key={vendor.id}>
                   <TableCell className="font-medium">{vendor.name}</TableCell>
                   <TableCell>{vendor.email}</TableCell>
@@ -247,8 +229,8 @@ export default function VendorsPage() {
                       {vendor.status}
                     </Badge>
                   </TableCell>
-                  <TableCell>{vendor.products}</TableCell>
-                  <TableCell>${vendor.sales.toLocaleString()}</TableCell>
+                  {/* <TableCell>{vendor.products}</TableCell>
+                  <TableCell>${vendor.sales.toLocaleString()}</TableCell> */}
                   <TableCell>
                     {format(new Date(vendor.joinedDate), "MMM d, yyyy")}
                   </TableCell>

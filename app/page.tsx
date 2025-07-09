@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
+import { useQuery } from "@tanstack/react-query";
+import advertService from "@/services/api/advert";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
@@ -136,9 +138,26 @@ export default function Home() {
     router.push("/auth/signin");
   }, [router]);
 
+  
+
+  const { data: advertData, isLoading: isAdvertLoading, isError: isAdvertError } = useQuery({
+    queryKey: ["adverts"],
+    queryFn: advertService.getAllAdverts,
+  });
+
+  const heroSlides = advertData?.data?.adverts || [];
+
+  if (isAdvertLoading) {
+    return <div>Loading hero section...</div>; // Or a skeleton loader
+  }
+
+  if (isAdvertError) {
+    return <div>Error loading hero section.</div>; // Or an error message
+  }
+
   return (
     <main className="w-full">
-      <HeroSection />
+      <HeroSection heroSlides={heroSlides} />
       <ProductCategories />
       <FeaturedProducts
         products={featured}

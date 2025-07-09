@@ -1,4 +1,4 @@
-import { Category } from '@/app/admin/categories/types';
+import { Category } from "@/app/admin/categories/types";
 
 export interface Dimensions {
   length?: number;
@@ -28,6 +28,7 @@ export interface Product {
   priceUnit: string;
   priceDiscount?: number;
   category: Category | string;
+  categoryName?: string;
   subCategories?: string[];
   brand?: Brand | string;
   quantity: number;
@@ -102,8 +103,8 @@ export interface ProductFormData {
   minBulkQuantity?: number;
   bulkDiscountPercentage?: number;
   isActive?: boolean;
-  createdAt?: Date;
-  updatedAt?: Date;
+  createdAt?: string;
+  updatedAt?: string;
   variants?: Array<{
     attributes: Array<{
       name: string;
@@ -112,6 +113,7 @@ export interface ProductFormData {
     price: number;
     quantity: number;
   }>;
+  vendor?: string;
 }
 
 export interface AttributeType {
@@ -121,4 +123,4 @@ export interface AttributeType {
   options?: string[];
   required: boolean;
   order: number;
-} 
+}

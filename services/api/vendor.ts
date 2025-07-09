@@ -60,7 +60,9 @@ const vendorService = {
    * Send an invitation to a potential vendor
    * @param inviteData Vendor invitation data
    */
-  inviteVendor: async (inviteData: VendorInviteRequest): Promise<ApiResponse> => {
+  inviteVendor: async (
+    inviteData: VendorInviteRequest
+  ): Promise<ApiResponse> => {
     try {
       const response = await api.post("/admin/vendors/invite", inviteData);
       return {
@@ -72,7 +74,8 @@ const vendorService = {
       const axiosError = error as AxiosError<any>;
       return {
         success: false,
-        message: axiosError.response?.data?.message || "Failed to send invitation",
+        message:
+          axiosError.response?.data?.message || "Failed to send invitation",
       };
     }
   },
@@ -83,7 +86,9 @@ const vendorService = {
    */
   verifyInvitation: async (token: string): Promise<ApiResponse> => {
     try {
-      const response = await api.get(`/vendors/verify-invitation?token=${token}`);
+      const response = await api.get(
+        `/vendors/verify-invitation?token=${token}`
+      );
       return {
         success: true,
         message: "Invitation verified successfully",
@@ -93,7 +98,8 @@ const vendorService = {
       const axiosError = error as AxiosError<any>;
       return {
         success: false,
-        message: axiosError.response?.data?.message || "Invalid or expired invitation",
+        message:
+          axiosError.response?.data?.message || "Invalid or expired invitation",
       };
     }
   },
@@ -102,7 +108,9 @@ const vendorService = {
    * Complete vendor onboarding process
    * @param onboardingData Vendor onboarding data
    */
-  completeOnboarding: async (onboardingData: VendorOnboardingRequest): Promise<ApiResponse> => {
+  completeOnboarding: async (
+    onboardingData: VendorOnboardingRequest
+  ): Promise<ApiResponse> => {
     try {
       const response = await api.post("/vendors/onboarding", onboardingData);
       return {
@@ -114,7 +122,8 @@ const vendorService = {
       const axiosError = error as AxiosError<any>;
       return {
         success: false,
-        message: axiosError.response?.data?.message || "Failed to complete onboarding",
+        message:
+          axiosError.response?.data?.message || "Failed to complete onboarding",
       };
     }
   },
@@ -134,7 +143,8 @@ const vendorService = {
       const axiosError = error as AxiosError<any>;
       return {
         success: false,
-        message: axiosError.response?.data?.message || "Failed to retrieve profile",
+        message:
+          axiosError.response?.data?.message || "Failed to retrieve profile",
       };
     }
   },
@@ -143,7 +153,9 @@ const vendorService = {
    * Update vendor profile
    * @param profileData Vendor profile data
    */
-  updateProfile: async (profileData: VendorProfileUpdateRequest): Promise<ApiResponse> => {
+  updateProfile: async (
+    profileData: VendorProfileUpdateRequest
+  ): Promise<ApiResponse> => {
     try {
       const response = await api.put("/vendors/profile", profileData);
       return {
@@ -155,7 +167,8 @@ const vendorService = {
       const axiosError = error as AxiosError<any>;
       return {
         success: false,
-        message: axiosError.response?.data?.message || "Failed to update profile",
+        message:
+          axiosError.response?.data?.message || "Failed to update profile",
       };
     }
   },
@@ -175,7 +188,8 @@ const vendorService = {
       const axiosError = error as AxiosError<any>;
       return {
         success: false,
-        message: axiosError.response?.data?.message || "Failed to retrieve stats",
+        message:
+          axiosError.response?.data?.message || "Failed to retrieve stats",
       };
     }
   },
@@ -185,15 +199,22 @@ const vendorService = {
    * @param page Optional page number for pagination
    * @param limit Optional limit of vendors per page
    */
-  getVendors: async (page?: number, limit?: number): Promise<ApiResponse<{
-    data: any; vendors: Vendor[], total: number 
-}>> => {
+  getVendors: async (
+    page?: number,
+    limit?: number
+  ): Promise<
+    ApiResponse<{
+      data: any;
+      vendors: Vendor[];
+      total: number;
+    }>
+  > => {
     try {
       let url = "/admin/vendors";
       if (page !== undefined && limit !== undefined) {
         url += `?page=${page}&limit=${limit}`;
       }
-      
+
       const response = await api.get(url);
       return {
         success: true,
@@ -204,7 +225,8 @@ const vendorService = {
       const axiosError = error as AxiosError<any>;
       return {
         success: false,
-        message: axiosError.response?.data?.message || "Failed to retrieve vendors",
+        message:
+          axiosError.response?.data?.message || "Failed to retrieve vendors",
       };
     }
   },
@@ -225,7 +247,8 @@ const vendorService = {
       const axiosError = error as AxiosError<any>;
       return {
         success: false,
-        message: axiosError.response?.data?.message || "Failed to retrieve vendor",
+        message:
+          axiosError.response?.data?.message || "Failed to retrieve vendor",
       };
     }
   },
@@ -235,9 +258,15 @@ const vendorService = {
    * @param vendorId The ID of the vendor to update
    * @param statusData The new status data
    */
-  updateVendorStatus: async (vendorId: string, statusData: VendorStatusUpdateRequest): Promise<ApiResponse> => {
+  updateVendorStatus: async (
+    vendorId: string,
+    statusData: VendorStatusUpdateRequest
+  ): Promise<ApiResponse> => {
     try {
-      const response = await api.patch(`/admin/vendors/${vendorId}/status`, statusData);
+      const response = await api.patch(
+        `/admin/vendors/${vendorId}/status`,
+        statusData
+      );
       return {
         success: true,
         message: "Vendor status updated successfully",
@@ -247,7 +276,9 @@ const vendorService = {
       const axiosError = error as AxiosError<any>;
       return {
         success: false,
-        message: axiosError.response?.data?.message || "Failed to update vendor status",
+        message:
+          axiosError.response?.data?.message ||
+          "Failed to update vendor status",
       };
     }
   },
@@ -268,11 +299,32 @@ const vendorService = {
       const axiosError = error as AxiosError<any>;
       return {
         success: false,
-        message: axiosError.response?.data?.message || "Failed to delete vendor",
+        message:
+          axiosError.response?.data?.message || "Failed to delete vendor",
+      };
+    }
+  },
+
+  /**
+   * Admin: Get all vendors (for product form)
+   */
+  getAllVendors: async (): Promise<ApiResponse> => {
+    try {
+      const response = await api.get("/vendors/all");
+      return {
+        success: true,
+        message: "Vendors retrieved successfully",
+        data: response.data.data,
+      };
+    } catch (error) {
+      const axiosError = error as AxiosError<any>;
+      return {
+        success: false,
+        message:
+          axiosError.response?.data?.message || "Failed to fetch vendors",
       };
     }
   },
 };
 
 export default vendorService;
-

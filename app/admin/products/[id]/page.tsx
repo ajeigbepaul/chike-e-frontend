@@ -1,43 +1,69 @@
-// import { ProductForm } from '@/components/admin/ProductForm'
-// // import { getProductById } from '@/lib/api/products'
+"use client";
 
-// export default async function ProductDetailPage({
-//   params,
-// }: {
-//   params: Promise<{ id: string }>
-// }) {
-//   const { id } = await params;
-// //   const product = await getProductById(id)
+import { ProductForm } from "@/components/admin/ProductForm";
+import { getProduct } from "@/services/api/products";
+import categoryService from "@/services/api/category";
+import { useQuery } from "@tanstack/react-query";
+import { useParams } from "next/navigation";
+import { Loader2 } from "lucide-react";
+import { ProductFormData } from "@/types/product";
 
-//   return (
-//     <div className="space-y-6">
-//       <h1 className="text-2xl font-bold">
-//         {/* {product ? 'Edit Product' : 'Product Not Found'} */}
-//       </h1>
-//       {/* {product && <ProductForm product={product} />} */}
-//       <ProductForm product={{
-//         _id: '1',
-//         name: 'Product 1',
-//         description: 'Description 1',
-//         price: 100,
-//         quantity: 10,
-//         category: 'Category 1',
-//         imageCover: 'https://via.placeholder.com/150',
-//         priceUnit: 'piece',
-//         images: [],
-//         createdAt: new Date(),
-//         updatedAt: new Date()
-//       }}/>
-//     </div>
-//   )
-// }
+export default function EditProductPage() {
+  const params = useParams();
+  const { id } = params;
 
-import React from 'react'
+  const { data: product, isLoading: isProductLoading } = useQuery({
+    queryKey: ["products", id],
+    queryFn: () => getProduct(id as string),
+    enabled: !!id,
+  });
 
-function ProductDetails() {
+  const { data: categories, isLoading: areCategoriesLoading } = useQuery({
+    queryKey: ["categories"],
+    queryFn: async () => {
+      const response = await categoryService.getAllCategories();
+      if (!response.success) throw new Error(response.message);
+      return response.data || [];
+    },
+  });
+
+  const isLoading = isProductLoading || areCategoriesLoading;
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Loader2 className="h-8 w-8 animate-spin" />
+      </div>
+    );
+  }
+
+  const productForForm: ProductFormData | undefined = product
+    ? {
+        ...product,
+        category:
+          typeof product.category === "object"
+            ? product.category._id
+            : product.category,
+        brand:
+          typeof product.brand === "object" ? product.brand._id : product.brand,
+        images: product.images || [],
+        createdAt: product.createdAt
+          ? new Date(product.createdAt).toISOString()
+          : undefined,
+        updatedAt: product.updatedAt
+          ? new Date(product.updatedAt).toISOString()
+          : undefined,
+      }
+    : undefined;
+
   return (
-    <div>page</div>
-  )
+    <div className="space-y-6">
+      <h1 className="text-2xl font-bold">Edit Product</h1>
+      <ProductForm
+        product={productForForm}
+        categories={categories || []}
+        attributeSets={[]}
+      />
+    </div>
+  );
 }
-
-export default ProductDetails

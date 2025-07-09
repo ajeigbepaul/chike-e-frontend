@@ -1,45 +1,30 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { ProductTable } from "@/components/admin/ProductTable";
 import { getProducts } from "@/services/api/products";
-import { Product } from "@/types/product";
 import { useRouter } from "next/navigation";
+import { useQuery } from "@tanstack/react-query";
+import { Loader2 } from "lucide-react";
 
 export default function ProductsPage() {
   const router = useRouter();
-  const [products, setProducts] = useState<Product[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [pagination, setPagination] = useState({
-    total: 0,
-    page: 1,
-    limit: 10,
-    pages: 0
+  const [page, setPage] = useState(1);
+  const limit = 10;
+
+  const { data, isLoading, isError } = useQuery({
+    queryKey: ["products", page, limit],
+    queryFn: () => getProducts(page, limit),
   });
 
-  const fetchProducts = async (page: number) => {
-    try {
-      setIsLoading(true);
-      const response = await getProducts(page, pagination.limit);
-      setProducts(response.products);
-      setPagination(response.pagination);
-    } catch (error) {
-      console.error("Error fetching products:", error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  useEffect(() => {
-    fetchProducts(1);
-  }, []);
-  // come and check here if there areany issue
-
   const handlePageChange = (newPage: number) => {
-    fetchProducts(newPage);
+    setPage(newPage);
   };
+
+  if (isError) {
+    return <div>Error fetching products</div>;
+  }
 
   return (
     <div className="space-y-6">
@@ -49,12 +34,18 @@ export default function ProductsPage() {
           Add New Product
         </Button>
       </div>
-      <ProductTable
-        products={products}
-        pagination={pagination}
-        onPageChange={handlePageChange}
-        isLoading={isLoading}
-      />
+      {isLoading && !data ? (
+        <div className="flex items-center justify-center h-64">
+          <Loader2 className="h-8 w-8 animate-spin" />
+        </div>
+      ) : (
+        <ProductTable
+          products={data?.products || []}
+          pagination={data?.pagination || { total: 0, page: 1, limit: 10, pages: 0 }}
+          onPageChange={handlePageChange}
+          isLoading={isLoading}
+        />
+      )}
     </div>
   );
 }

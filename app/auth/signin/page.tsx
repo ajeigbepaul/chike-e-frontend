@@ -1,16 +1,15 @@
 // src/app/auth/signin/page.tsx
 "use client";
-import { useEffect, useState,Suspense } from "react";
-import { signIn, useSession } from "next-auth/react";
+import { useEffect, useState, Suspense } from "react";
+import { signIn, useSession, getSession } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "react-hot-toast";
 import Link from "next/link";
 import { Eye, EyeOff } from "lucide-react";
 
-
-function LoginContent(){
+function LoginContent() {
   const searchParams = useSearchParams();
- 
+
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -56,10 +55,7 @@ function LoginContent(){
         await update();
 
         // Get the updated session with the user role
-        const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
-        const updatedSession = await fetch(`${API_BASE}/api/v1/auth/session`, {
-          credentials: "include",
-        }).then((res) => res.json());
+        const updatedSession = await getSession();
 
         toast.success("Logged in successfully!");
 
@@ -100,7 +96,10 @@ function LoginContent(){
             />
           </div>
           <div>
-            <label className="block text-sm font-medium mb-2" htmlFor="password">
+            <label
+              className="block text-sm font-medium mb-2"
+              htmlFor="password"
+            >
               Password
             </label>
             <div className="relative">
@@ -153,9 +152,14 @@ function LoginContent(){
 }
 export default function LoginPage() {
   return (
-    <Suspense fallback={<div className="flex items-center justify-center min-h-screen bg-gray-100">Loading...</div>}>
-     <LoginContent />
+    <Suspense
+      fallback={
+        <div className="flex items-center justify-center min-h-screen bg-gray-100">
+          Loading...
+        </div>
+      }
+    >
+      <LoginContent />
     </Suspense>
   );
 }
-

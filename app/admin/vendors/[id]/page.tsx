@@ -1,47 +1,32 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import { VendorDetail } from "@/components/admin/VendorDetail";
 import { useParams } from "next/navigation";
 import vendorService from "@/services/api/vendor";
 import { useToast } from "@/components/ui/use-toast";
 import Spinner from "@/components/Spinner";
+import { useQuery } from "@tanstack/react-query";
 
 export default function VendorDetailPage() {
   const params = useParams();
   const { toast } = useToast();
-  const [vendor, setVendor] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const vendorId = params.id as string;
 
-  useEffect(() => {
-    const fetchVendor = async () => {
-      try {
-        const response = await vendorService.getVendorById(params.id as string);
-        if (response.success && response.data) {
-          setVendor(response.data);
-        } else {
-          throw new Error(response.message || "Failed to fetch vendor details");
-        }
-      } catch (err: any) {
-        console.error("Error fetching vendor:", err);
-        setError(err.message || "Failed to load vendor details");
-        toast({
-          title: "Error",
-          description: err.message || "Failed to load vendor details",
-          variant: "destructive",
-        });
-      } finally {
-        setLoading(false);
+  const { data, isLoading, isError, error } = useQuery({
+    queryKey: ["vendor", vendorId],
+    queryFn: async () => {
+      const response = await vendorService.getVendorById(vendorId);
+      if (!response.success) {
+        throw new Error(response.message || "Failed to fetch vendor details");
       }
-    };
+      return response.data;
+    },
+    enabled: !!vendorId, // Only run query if vendorId is available
+  });
 
-    if (params.id) {
-      fetchVendor();
-    }
-  }, [params.id, toast]);
+  const vendor = data;
 
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
         <Spinner />
@@ -49,8 +34,13 @@ export default function VendorDetailPage() {
     );
   }
 
-  if (error) {
-    return <div className="text-red-500 text-center py-8">{error}</div>;
+  if (isError) {
+    toast({
+      title: "Error",
+      description: error?.message || "Failed to load vendor details",
+      variant: "destructive",
+    });
+    return <div className="text-red-500 text-center py-8">{error?.message || "Failed to load vendor details"}</div>;
   }
 
   if (!vendor) {
