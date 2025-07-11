@@ -7,5 +7,6 @@ export interface Category {
   ancestors: { _id: string; name: string }[];
   path: string;
   order: number;
+  image?: string; // Optional image field
   subcategories?: Category[];
-} 
+}

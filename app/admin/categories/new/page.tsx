@@ -1,17 +1,23 @@
-'use client';
+"use client";
 
-import { useRouter } from 'next/navigation';
-import { useToast } from '@/components/ui/use-toast';
-import { Category } from '../types';
-import categoryService, { CreateCategoryData } from '@/services/api/category';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { Plus, ChevronRight } from 'lucide-react';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import React from 'react';
+import { useRouter } from "next/navigation";
+import { useToast } from "@/components/ui/use-toast";
+import { Category } from "../types";
+import categoryService, { CreateCategoryData } from "@/services/api/category";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Plus, ChevronRight } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import React from "react";
 
 export default function NewCategoryPage() {
   const router = useRouter();
@@ -19,15 +25,19 @@ export default function NewCategoryPage() {
   const queryClient = useQueryClient();
 
   // State for category selection path
-  const [selectionPath, setSelectionPath] = useState<{id: string, name: string}[]>([]);
-  
+  const [selectionPath, setSelectionPath] = useState<
+    { id: string; name: string }[]
+  >([]);
+
   // State for new category input
-  const [newCategoryName, setNewCategoryName] = useState('');
+  const [newCategoryName, setNewCategoryName] = useState("");
+  // State for image upload (main category only)
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
 
   // Fetch all categories
-  const { data: categories = [] } = useQuery<Category[]>(
-    {
-    queryKey: ['categories'],
+  const { data: categories = [] } = useQuery<Category[]>({
+    queryKey: ["categories"],
     queryFn: async () => {
       const response = await categoryService.getAllCategories();
       if (!response.success) throw new Error(response.message);
@@ -36,11 +46,11 @@ export default function NewCategoryPage() {
   });
 
   // Get top-level categories
-  const mainCategories = categories.filter(cat => !cat.parent);
+  const mainCategories = categories.filter((cat) => !cat.parent);
 
   // Get subcategories for a parent
   const getSubcategories = (parentId: string | null) => {
-    return categories.filter(cat => cat.parent === parentId);
+    return categories.filter((cat) => cat.parent === parentId);
   };
 
   // Get current level categories based on selection path
@@ -52,9 +62,12 @@ export default function NewCategoryPage() {
 
   // Handle category selection
   const handleSelectCategory = (categoryId: string) => {
-    const selected = categories.find(cat => cat._id === categoryId);
+    const selected = categories.find((cat) => cat._id === categoryId);
     if (selected) {
-      setSelectionPath([...selectionPath, {id: selected._id, name: selected.name}]);
+      setSelectionPath([
+        ...selectionPath,
+        { id: selected._id, name: selected.name },
+      ]);
     }
   };
 
@@ -65,38 +78,69 @@ export default function NewCategoryPage() {
 
   // Mutation for creating new category
   const createCategoryMutation = useMutation({
-    mutationFn: async (data: CreateCategoryData) => {
-      const response = await categoryService.createCategory(data);
-      if (!response.success) throw new Error(response.message);
-      return response.data;
+    mutationFn: async (data: CreateCategoryData | FormData) => {
+      if (data instanceof FormData) {
+        const response = await categoryService.createCategory(data);
+        if (!response.success) throw new Error(response.message);
+        return response.data;
+      } else {
+        const response = await categoryService.createCategory(data);
+        if (!response.success) throw new Error(response.message);
+        return response.data;
+      }
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['categories'] });
-      toast({ title: 'Success', description: 'Category created successfully!' });
-      router.push('/admin/categories');
+      queryClient.invalidateQueries({ queryKey: ["categories"] });
+      toast({
+        title: "Success",
+        description: "Category created successfully!",
+      });
+      // Do NOT route away here
     },
     onError: (error: Error) => {
-      toast({ title: 'Error', description: error.message, variant: 'destructive' });
-    }
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
   });
 
   // Handle form submission
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!newCategoryName.trim()) {
-      toast({ title: 'Validation', description: 'Please enter a category name', variant: 'destructive' });
+      toast({
+        title: "Validation",
+        description: "Please enter a category name",
+        variant: "destructive",
+      });
       return;
     }
 
-    const parentId = selectionPath.length > 0 ? selectionPath[selectionPath.length - 1].id : undefined;
+    const parentId =
+      selectionPath.length > 0
+        ? selectionPath[selectionPath.length - 1].id
+        : undefined;
     const order = getSubcategories(parentId || null).length;
 
-    createCategoryMutation.mutate({
-      name: newCategoryName,
-      parent: parentId,
-      order,
-      isActive: true
-    });
+    if (selectionPath.length === 0 && imageFile) {
+      // Main category with image
+      const formData = new FormData();
+      formData.append("name", newCategoryName);
+      formData.append("order", order.toString());
+      formData.append("isActive", "true");
+      formData.append("image", imageFile);
+      createCategoryMutation.mutate(formData as any);
+    } else {
+      // Subcategory or main category without image
+      createCategoryMutation.mutate({
+        name: newCategoryName,
+        parent: parentId,
+        order,
+        isActive: true,
+      });
+    }
   };
 
   return (
@@ -105,8 +149,8 @@ export default function NewCategoryPage() {
         <div className="mb-6">
           <h1 className="text-2xl font-bold">Add New Category</h1>
           <p className="text-muted-foreground">
-            {selectionPath.length === 0 
-              ? "Select a main category or add a new one" 
+            {selectionPath.length === 0
+              ? "Select a main category or add a new one"
               : "Select a subcategory or add a new one"}
           </p>
         </div>
@@ -114,23 +158,25 @@ export default function NewCategoryPage() {
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Breadcrumb navigation */}
           <div className="flex items-center gap-2 flex-wrap">
-            <Button 
-              type="button" 
-              variant="ghost" 
+            <Button
+              type="button"
+              variant="ghost"
               onClick={() => navigateBack(0)}
-              className={selectionPath.length === 0 ? 'font-bold' : ''}
+              className={selectionPath.length === 0 ? "font-bold" : ""}
             >
               Main Categories
             </Button>
-            
+
             {selectionPath.map((category, index) => (
               <React.Fragment key={category.id}>
                 <ChevronRight className="h-4 w-4 text-muted-foreground" />
-                <Button 
-                  type="button" 
-                  variant="ghost" 
+                <Button
+                  type="button"
+                  variant="ghost"
                   onClick={() => navigateBack(index + 1)}
-                  className={index === selectionPath.length - 1 ? 'font-bold' : ''}
+                  className={
+                    index === selectionPath.length - 1 ? "font-bold" : ""
+                  }
                 >
                   {category.name}
                 </Button>
@@ -141,15 +187,16 @@ export default function NewCategoryPage() {
           {/* Current level category selection */}
           <div className="space-y-4">
             <Label>Select Existing Category</Label>
-            <Select
-              onValueChange={handleSelectCategory}
-              value=""
-            >
+            <Select onValueChange={handleSelectCategory} value="">
               <SelectTrigger>
-                <SelectValue placeholder={`Select ${selectionPath.length === 0 ? 'main' : 'sub'} category`} />
+                <SelectValue
+                  placeholder={`Select ${
+                    selectionPath.length === 0 ? "main" : "sub"
+                  } category`}
+                />
               </SelectTrigger>
               <SelectContent>
-                {getCurrentLevelCategories().map(category => (
+                {getCurrentLevelCategories().map((category) => (
                   <SelectItem key={category._id} value={category._id}>
                     {category.name}
                   </SelectItem>
@@ -165,22 +212,61 @@ export default function NewCategoryPage() {
               <Input
                 value={newCategoryName}
                 onChange={(e) => setNewCategoryName(e.target.value)}
-                placeholder={`Enter new ${selectionPath.length === 0 ? 'main' : 'sub'} category name`}
+                placeholder={`Enter new ${
+                  selectionPath.length === 0 ? "main" : "sub"
+                } category name`}
               />
               <Button type="submit" disabled={createCategoryMutation.isPending}>
                 <Plus className="mr-2 h-4 w-4" />
                 Add
               </Button>
             </div>
+            {/* Image upload for main categories only */}
+            {selectionPath.length === 0 && (
+              <div className="space-y-2">
+                <Label>Category Image (main categories only)</Label>
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) {
+                      setImageFile(file);
+                      setImagePreview(URL.createObjectURL(file));
+                    }
+                  }}
+                />
+                {imagePreview && (
+                  <div className="mt-2 relative w-24 h-24">
+                    <img
+                      src={imagePreview}
+                      alt="Preview"
+                      className="w-full h-full object-cover rounded border"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setImageFile(null);
+                        setImagePreview(null);
+                      }}
+                      className="absolute top-0 right-0 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
+                      title="Remove image"
+                    >
+                      &times;
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
 
           <div className="flex justify-end gap-2">
-            <Button 
-              type="button" 
-              variant="outline" 
-              onClick={() => router.push('/admin/categories')}
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => router.push("/admin/categories")}
             >
-              Cancel
+              Finish
             </Button>
           </div>
         </form>

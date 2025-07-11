@@ -18,6 +18,13 @@ export interface Brand {
   createdAt?: string;
 }
 
+export interface Vendor {
+  _id: string;
+  name: string;
+  email: string;
+  businessName?: string;
+}
+
 export interface Product {
   updatedAt: any;
   _id: string;
@@ -31,6 +38,8 @@ export interface Product {
   categoryName?: string;
   subCategories?: string[];
   brand?: Brand | string;
+  vendor?: Vendor | string;
+  vendorName?: string;
   quantity: number;
   imageCover: string;
   images?: string[];

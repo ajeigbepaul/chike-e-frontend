@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Loader2, Minus, Plus } from "lucide-react";
+import { Loader2, Minus, Plus, Edit, Trash2, Eye } from "lucide-react";
 import { Product } from "@/types/product";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
@@ -18,6 +18,17 @@ import { useState, useEffect } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { updateProduct } from "@/services/api/products";
 import { toast } from "react-hot-toast";
+import {
+  Dialog,
+  DialogTrigger,
+  DialogContent,
+  DialogHeader,
+  DialogFooter,
+  DialogTitle,
+  DialogDescription,
+  DialogClose,
+} from "@/components/ui/dialog";
+import { deleteProduct as deleteProductApi } from "@/services/api/products";
 
 interface ProductTableProps {
   products: Product[];
@@ -45,6 +56,8 @@ export function ProductTable({
     null
   );
   const queryClient = useQueryClient();
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [productToDelete, setProductToDelete] = useState<Product | null>(null);
 
   const updateProductMutation = useMutation({
     mutationFn: ({
@@ -105,6 +118,24 @@ export function ProductTable({
     updateProductMutation.mutate({ productId, formData });
   };
 
+  const handleDeleteClick = (product: Product) => {
+    setProductToDelete(product);
+    setDeleteDialogOpen(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!productToDelete) return;
+    try {
+      await deleteProductApi(productToDelete._id);
+      toast.success("Product deleted successfully");
+      setDeleteDialogOpen(false);
+      setProductToDelete(null);
+      queryClient.invalidateQueries({ queryKey: ["products"] });
+    } catch (error: any) {
+      toast.error(error.message || "Failed to delete product");
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -116,45 +147,68 @@ export function ProductTable({
   return (
     <div className="h-full flex flex-col pb-20">
       <div className="flex-1 overflow-auto">
-        <div className="rounded-md border">
-          <Table className="min-w-full divide-y divide-gray-200">
+        <div className="rounded-md border shadow-sm">
+          <Table className="w-full divide-y divide-gray-200">
             <TableHeader>
-              <TableRow>
-                <TableHead className="w-[80px]">Image</TableHead>
-                <TableHead className="min-w-[200px]">Name</TableHead>
-                <TableHead className="w-[100px]">Price</TableHead>
-                <TableHead className="w-[250px]">Quantity</TableHead>
-                <TableHead className="min-w-[150px]">Category</TableHead>
-                <TableHead className="w-[100px]">Status</TableHead>
-                <TableHead className="w-[150px]">Actions</TableHead>
+              <TableRow className="bg-gray-50">
+                <TableHead className="w-[60px] font-semibold px-2">
+                  Image
+                </TableHead>
+                <TableHead className="w-[180px] font-semibold px-2">
+                  Name
+                </TableHead>
+                <TableHead className="w-[80px] font-semibold px-2">
+                  Price
+                </TableHead>
+                <TableHead className="w-[200px] font-semibold px-2">
+                  Quantity
+                </TableHead>
+                <TableHead className="w-[120px] font-semibold px-2">
+                  Category
+                </TableHead>
+                <TableHead className="w-[120px] font-semibold px-2">
+                  Vendor
+                </TableHead>
+                <TableHead className="w-[80px] font-semibold px-2">
+                  Status
+                </TableHead>
+                <TableHead className="w-[100px] font-semibold px-2">
+                  Actions
+                </TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {products.map((product) => (
-                <TableRow key={product._id}>
-                  <TableCell>
+                <TableRow
+                  key={product._id}
+                  className="hover:bg-gray-50 transition-colors"
+                >
+                  <TableCell className="px-2">
                     <Image
                       width={24}
                       height={24}
                       src={product.imageCover}
                       alt={product.name}
-                      className="w-12 h-12 object-cover rounded"
+                      className="w-10 h-10 object-cover rounded"
                     />
                   </TableCell>
-                  <TableCell className="font-medium">{product.name}</TableCell>
-                  <TableCell>₦{product.price}</TableCell>
-                  <TableCell>
-                    <div className="flex items-center space-x-2">
+                  <TableCell className="font-medium px-2 text-sm">
+                    {product.name}
+                  </TableCell>
+                  <TableCell className="px-2">₦{product.price}</TableCell>
+                  <TableCell className="px-2">
+                    <div className="flex items-center space-x-1">
                       <Button
                         size="icon"
                         variant="outline"
                         onClick={() => handleDecrement(product._id)}
+                        className="h-6 w-6"
                       >
-                        <Minus className="h-4 w-4" />
+                        <Minus className="h-3 w-3" />
                       </Button>
                       <Input
                         type="number"
-                        className="w-16 text-center"
+                        className="w-16 text-center text-xs" // Increased width from w-12 to w-16
                         value={updateQuantities[product._id] ?? ""}
                         onChange={(e) =>
                           handleQuantityChange(product._id, e.target.value)
@@ -164,8 +218,9 @@ export function ProductTable({
                         size="icon"
                         variant="outline"
                         onClick={() => handleIncrement(product._id)}
+                        className="h-6 w-6"
                       >
-                        <Plus className="h-4 w-4" />
+                        <Plus className="h-3 w-3" />
                       </Button>
                       <Button
                         size="sm"
@@ -174,16 +229,17 @@ export function ProductTable({
                           updateQuantities[product._id] === product.quantity ||
                           updatingProductId === product._id
                         }
+                        className="text-xs px-2 py-1"
                       >
                         {updatingProductId === product._id ? (
-                          <Loader2 className="h-4 w-4 animate-spin" />
+                          <Loader2 className="h-3 w-3 animate-spin" />
                         ) : (
                           "Update"
                         )}
                       </Button>
                     </div>
                   </TableCell>
-                  <TableCell>
+                  <TableCell className="px-2 text-sm">
                     {product.categoryName ||
                       (typeof product.category === "object" &&
                       product.category !== null
@@ -192,7 +248,12 @@ export function ProductTable({
                         ? product.category
                         : "Uncategorized")}
                   </TableCell>
-                  <TableCell>
+                  <TableCell className="px-2 text-sm">
+                    <div className="font-medium">
+                      {product.vendorName || "Unknown"}
+                    </div>
+                  </TableCell>
+                  <TableCell className="px-2">
                     <span
                       className={`px-2 py-1 rounded-full text-xs ${
                         product.isActive
@@ -203,25 +264,28 @@ export function ProductTable({
                       {product.isActive ? "Active" : "Inactive"}
                     </span>
                   </TableCell>
-                  <TableCell>
-                    <div className="flex space-x-2">
+                  <TableCell className="px-2">
+                    <div className="flex space-x-1">
                       <Button
                         variant="outline"
                         size="sm"
                         onClick={() =>
                           router.push(`/admin/products/${product._id}`)
                         }
+                        className="h-8 w-8 p-0 hover:bg-blue-50 hover:border-blue-200 transition-colors"
+                        title="Edit Product"
                       >
-                        Edit
+                        <Edit className="h-4 w-4 text-blue-600" />
                       </Button>
+                      {/* Removed the Eye (View) icon button */}
                       <Button
-                        variant="destructive"
+                        variant="outline"
                         size="sm"
-                        onClick={() => {
-                          // Handle delete
-                        }}
+                        onClick={() => handleDeleteClick(product)}
+                        className="h-8 w-8 p-0 hover:bg-red-50 hover:border-red-200 transition-colors"
+                        title="Delete Product"
                       >
-                        Delete
+                        <Trash2 className="h-4 w-4 text-red-600" />
                       </Button>
                     </div>
                   </TableCell>
@@ -258,6 +322,31 @@ export function ProductTable({
           </Button>
         </div>
       </div>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete Product</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete <b>{productToDelete?.name}</b>?
+              This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <DialogClose asChild>
+              <Button variant="outline">Cancel</Button>
+            </DialogClose>
+            <Button
+              variant="destructive"
+              onClick={handleConfirmDelete}
+              disabled={!productToDelete}
+            >
+              Delete
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

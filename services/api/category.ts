@@ -1,6 +1,6 @@
 import api from "../api";
 import { AxiosError } from "axios";
-import { Category } from '@/app/admin/categories/types';
+import { Category } from "@/app/admin/categories/types";
 
 // Type definitions
 export interface CreateCategoryData {
@@ -8,6 +8,7 @@ export interface CreateCategoryData {
   parent?: string;
   isActive?: boolean;
   order?: number;
+  image?: File;
 }
 
 export interface UpdateCategoryData extends Partial<CreateCategoryData> {
@@ -37,7 +38,8 @@ const categoryService = {
       const axiosError = error as AxiosError<any>;
       return {
         success: false,
-        message: axiosError.response?.data?.message || "Failed to retrieve categories",
+        message:
+          axiosError.response?.data?.message || "Failed to retrieve categories",
       };
     }
   },
@@ -58,7 +60,8 @@ const categoryService = {
       const axiosError = error as AxiosError<any>;
       return {
         success: false,
-        message: axiosError.response?.data?.message || "Failed to retrieve category",
+        message:
+          axiosError.response?.data?.message || "Failed to retrieve category",
       };
     }
   },
@@ -67,19 +70,32 @@ const categoryService = {
    * Create a new category
    * @param data Category creation data
    */
-  createCategory: async (data: CreateCategoryData): Promise<ApiResponse<Category>> => {
+  createCategory: async (
+    data: CreateCategoryData | FormData
+  ): Promise<ApiResponse> => {
     try {
-      const response = await api.post("/categories", data);
+      let response;
+      if (data instanceof FormData) {
+        response = await api.post("/categories", data, {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+        });
+      } else {
+        response = await api.post("/categories", data);
+      }
       return {
         success: true,
         message: "Category created successfully",
         data: response.data.data.category,
       };
-    } catch (error) {
-      const axiosError = error as AxiosError<any>;
+    } catch (error: any) {
       return {
         success: false,
-        message: axiosError.response?.data?.message || "Failed to create category",
+        message:
+          error.response?.data?.message ||
+          error.message ||
+          "Failed to create category",
       };
     }
   },
@@ -88,10 +104,27 @@ const categoryService = {
    * Update an existing category
    * @param data Category update data
    */
-  updateCategory: async (data: UpdateCategoryData): Promise<ApiResponse<Category>> => {
+  updateCategory: async (
+    data: UpdateCategoryData
+  ): Promise<ApiResponse<Category>> => {
     try {
       const { _id, ...updateData } = data;
-      const response = await api.patch(`/categories/${_id}`, updateData);
+      const formData = new FormData();
+
+      if (updateData.name) formData.append("name", updateData.name);
+      if (updateData.parent !== undefined)
+        formData.append("parent", updateData.parent || "");
+      if (updateData.isActive !== undefined)
+        formData.append("isActive", String(updateData.isActive));
+      if (updateData.order !== undefined)
+        formData.append("order", String(updateData.order));
+      if (updateData.image) formData.append("image", updateData.image);
+
+      const response = await api.patch(`/categories/${_id}`, formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      });
       return {
         success: true,
         message: "Category updated successfully",
@@ -101,7 +134,42 @@ const categoryService = {
       const axiosError = error as AxiosError<any>;
       return {
         success: false,
-        message: axiosError.response?.data?.message || "Failed to update category",
+        message:
+          axiosError.response?.data?.message || "Failed to update category",
+      };
+    }
+  },
+
+  /**
+   * Update category image only
+   * @param categoryId Category ID
+   * @param image File to upload
+   */
+  updateCategoryImage: async (
+    categoryId: string,
+    image: File
+  ): Promise<ApiResponse<Category>> => {
+    try {
+      const formData = new FormData();
+      formData.append("image", image);
+
+      const response = await api.patch(`/categories/${categoryId}`, formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      });
+      return {
+        success: true,
+        message: "Category image updated successfully",
+        data: response.data.data.category,
+      };
+    } catch (error) {
+      const axiosError = error as AxiosError<any>;
+      return {
+        success: false,
+        message:
+          axiosError.response?.data?.message ||
+          "Failed to update category image",
       };
     }
   },
@@ -121,7 +189,8 @@ const categoryService = {
       const axiosError = error as AxiosError<any>;
       return {
         success: false,
-        message: axiosError.response?.data?.message || "Failed to delete category",
+        message:
+          axiosError.response?.data?.message || "Failed to delete category",
       };
     }
   },
@@ -143,7 +212,8 @@ const categoryService = {
       const axiosError = error as AxiosError<any>;
       return {
         success: false,
-        message: axiosError.response?.data?.message || "Failed to export categories",
+        message:
+          axiosError.response?.data?.message || "Failed to export categories",
       };
     }
   },
@@ -169,7 +239,8 @@ const categoryService = {
       const axiosError = error as AxiosError<any>;
       return {
         success: false,
-        message: axiosError.response?.data?.message || "Failed to import categories",
+        message:
+          axiosError.response?.data?.message || "Failed to import categories",
       };
     }
   },
@@ -179,11 +250,13 @@ const categoryService = {
    * @param categoryId Category ID
    * @param newOrder New order value
    */
-  updateCategoryOrder: async (categoryId: string, newOrder: number): Promise<ApiResponse> => {
+  updateCategoryOrder: async (
+    categoryId: string,
+    newOrder: number
+  ): Promise<ApiResponse> => {
     try {
       await api.post("/categories/reorder", {
-        categoryId,
-        newOrder,
+        orders: [{ id: categoryId, order: newOrder }],
       });
       return {
         success: true,
@@ -193,7 +266,9 @@ const categoryService = {
       const axiosError = error as AxiosError<any>;
       return {
         success: false,
-        message: axiosError.response?.data?.message || "Failed to update category order",
+        message:
+          axiosError.response?.data?.message ||
+          "Failed to update category order",
       };
     }
   },
@@ -203,7 +278,10 @@ const categoryService = {
    * @param categoryId Category ID
    * @param isActive New status
    */
-  toggleCategoryStatus: async (categoryId: string, isActive: boolean): Promise<ApiResponse> => {
+  toggleCategoryStatus: async (
+    categoryId: string,
+    isActive: boolean
+  ): Promise<ApiResponse> => {
     try {
       await api.patch(`/categories/${categoryId}`, { isActive });
       return {
@@ -214,10 +292,12 @@ const categoryService = {
       const axiosError = error as AxiosError<any>;
       return {
         success: false,
-        message: axiosError.response?.data?.message || "Failed to update category status",
+        message:
+          axiosError.response?.data?.message ||
+          "Failed to update category status",
       };
     }
   },
 };
 
-export default categoryService; 
+export default categoryService;
