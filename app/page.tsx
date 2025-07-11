@@ -9,13 +9,11 @@ import toast from "react-hot-toast";
 import { useDispatch } from "react-redux";
 import { addToCart } from "@/store/cartSlice";
 import wishlistService from "@/services/api/wishlist";
-import {
-  getProducts,
-  getMostOrderedProducts,
-} from "@/services/api/products";
-import type { Product } from '@/types/product';
+import { getProducts, getMostOrderedProducts } from "@/services/api/products";
+import type { Product } from "@/types/product";
 
 import HeroSection from "@/components/storefront/Hero";
+import HeroSkeleton from "@/components/storefront/HeroSkeleton";
 import ProductCategories from "@/components/storefront/ProductCategories";
 import FeaturedProducts from "@/components/storefront/FeaturedProducts";
 import TrendingProducts from "@/components/storefront/TrendingProducts";
@@ -41,22 +39,27 @@ export default function Home() {
   // Fetch all product data
   useEffect(() => {
     // Featured: first 8 products (or use a featured flag if you have one)
-    getProducts(1, 8).then(res => setFeatured(res.products));
+    getProducts(1, 8).then((res) => setFeatured(res.products));
 
     // Trending: top 8 by rating (simulate, or use a real endpoint if you have one)
-    getProducts(1, 20).then(res => {
-      const sorted = [...res.products].sort((a, b) => (b.rating || 0) - (a.rating || 0));
+    getProducts(1, 20).then((res) => {
+      const sorted = [...res.products].sort(
+        (a, b) => (b.rating || 0) - (a.rating || 0)
+      );
       setTrending(sorted.slice(0, 8));
     });
 
     // Newest: top 8 by createdAt
-    getProducts(1, 20).then(res => {
-      const sorted = [...res.products].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    getProducts(1, 20).then((res) => {
+      const sorted = [...res.products].sort(
+        (a, b) =>
+          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+      );
       setNewest(sorted.slice(0, 8));
     });
 
     // Most Ordered: use getMostOrderedProducts
-    getMostOrderedProducts().then(products => {
+    getMostOrderedProducts().then((products) => {
       setMostOrdered(products);
     });
   }, []);
@@ -64,8 +67,10 @@ export default function Home() {
   // Fetch wishlist for logged-in user
   useEffect(() => {
     if (isLoggedIn) {
-      wishlistService.getWishlist().then(res => {
-        const ids = (res.data || []).map((item: any) => item.product?._id || item.productId?._id || item._id);
+      wishlistService.getWishlist().then((res) => {
+        const ids = (res.data || []).map(
+          (item: any) => item.product?._id || item.productId?._id || item._id
+        );
         setWishlist(new Set(ids));
       });
     } else {
@@ -103,7 +108,7 @@ export default function Home() {
       }
       const id = product._id;
       if (wishlist.has(id)) {
-        setWishlist(prev => {
+        setWishlist((prev) => {
           const newSet = new Set(prev);
           newSet.delete(id);
           return newSet;
@@ -113,16 +118,16 @@ export default function Home() {
           toast.success("Removed from wishlist");
         } catch (error: any) {
           toast.error(error.message);
-          setWishlist(prev => new Set(prev).add(id)); // revert
+          setWishlist((prev) => new Set(prev).add(id)); // revert
         }
       } else {
-        setWishlist(prev => new Set(prev).add(id));
+        setWishlist((prev) => new Set(prev).add(id));
         try {
           await wishlistService.addToWishlist(id);
           toast.success("Added to wishlist");
         } catch (error: any) {
           toast.error(error.message);
-          setWishlist(prev => {
+          setWishlist((prev) => {
             const newSet = new Set(prev);
             newSet.delete(id);
             return newSet;
@@ -138,26 +143,34 @@ export default function Home() {
     router.push("/auth/signin");
   }, [router]);
 
-  
-
-  const { data: advertData, isLoading: isAdvertLoading, isError: isAdvertError } = useQuery({
+  const {
+    data: advertData,
+    isLoading: isAdvertLoading,
+    isError: isAdvertError,
+  } = useQuery({
     queryKey: ["adverts"],
     queryFn: advertService.getAllAdverts,
   });
 
-  const heroSlides = advertData?.data?.adverts || [];
-
-  if (isAdvertLoading) {
-    return <div>Loading hero section...</div>; // Or a skeleton loader
-  }
-
-  if (isAdvertError) {
-    return <div>Error loading hero section.</div>; // Or an error message
-  }
+  console.log(advertData?.data, "This are the adverts");
+  console.log(mostOrdered, "This are the most ordered products");
+  // Transform advert data to match Hero component interface
+  const heroSlides = (advertData?.data || []).map((advert: any) => ({
+    id: advert._id,
+    title: advert.title,
+    subtitle: advert.subTitle, // Transform subTitle to subtitle
+    description: advert.description,
+    cta: advert.cta,
+    image: advert.image,
+  }));
 
   return (
     <main className="w-full">
-      <HeroSection heroSlides={heroSlides} />
+      {isAdvertLoading ? (
+        <HeroSkeleton />
+      ) : (
+        <HeroSection heroSlides={heroSlides} />
+      )}
       <ProductCategories />
       <FeaturedProducts
         products={featured}
@@ -193,10 +206,58 @@ export default function Home() {
         onRequireLogin={handleRequireLogin}
       />
       <PartnerWithUs />
-      {/* Add more sections here */}
-      {/* <FeaturedProducts /> */}
-      {/* <Testimonials /> */}
-      {/* <Footer /> */}
     </main>
   );
+
+  if (isAdvertError) {
+    return (
+      <main className="w-full">
+        <div className="relative md:h-screen h-[60vh] w-full bg-gray-100 flex items-center justify-center">
+          <div className="text-center">
+            <h2 className="text-2xl font-bold text-gray-800 mb-2">
+              Error Loading Hero Section
+            </h2>
+            <p className="text-gray-600">
+              Unable to load advertisement content.
+            </p>
+          </div>
+        </div>
+        <ProductCategories />
+        <FeaturedProducts
+          products={featured}
+          wishlist={wishlist}
+          onAddToCart={handleAddToCart}
+          onToggleWishlist={handleToggleWishlist}
+          isLoggedIn={isLoggedIn}
+          onRequireLogin={handleRequireLogin}
+        />
+        <TrendingProducts
+          products={trending}
+          wishlist={wishlist}
+          onAddToCart={handleAddToCart}
+          onToggleWishlist={handleToggleWishlist}
+          isLoggedIn={isLoggedIn}
+          onRequireLogin={handleRequireLogin}
+        />
+        <WhyUs />
+        <OurNewestArrivals
+          products={newest}
+          wishlist={wishlist}
+          onAddToCart={handleAddToCart}
+          onToggleWishlist={handleToggleWishlist}
+          isLoggedIn={isLoggedIn}
+          onRequireLogin={handleRequireLogin}
+        />
+        <MostOrderedProducts
+          products={mostOrdered}
+          wishlist={wishlist}
+          onAddToCart={handleAddToCart}
+          onToggleWishlist={handleToggleWishlist}
+          isLoggedIn={isLoggedIn}
+          onRequireLogin={handleRequireLogin}
+        />
+        <PartnerWithUs />
+      </main>
+    );
+  }
 }
