@@ -74,3 +74,16 @@ export const deletePromotion = async (id: string): Promise<void> => {
     );
   }
 };
+
+export const validateCoupon = async ({ code, cartItems }: { code: string; cartItems: any[] }) => {
+  try {
+    const response = await api.post('/promotions/validate-coupon', { code, cartItems });
+    return response.data;
+  } catch (error: any) {
+    throw new Error(
+      error.response?.data?.message ||
+      error.message ||
+      'Failed to validate coupon'
+    );
+  }
+};

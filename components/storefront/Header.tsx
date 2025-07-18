@@ -120,6 +120,153 @@ function HeaderContent() {
     router.push(`/products?${params.toString()}`);
   };
 
+  // State initialization
+  const [isMounted, setIsMounted] = useState(false);
+
+  useEffect(() => {
+    setIsMounted(true);
+    setIsMobile(window.innerWidth < 768);
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
+  // Fix 1: Cart badge - only render after mount
+  const renderCartBadge = () => {
+    if (!isMounted) return null;
+    return cartItemCount > 0 ? (
+      <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">
+        {cartItemCount}
+      </span>
+    ) : null;
+  };
+
+  // Fix 2: Search suggestions - only render client-side
+  const renderSearchSuggestions = () => {
+    if (!isMounted || !showSuggestions || searchQuery.length <= 2) return null;
+    return (
+      <SearchSuggestions
+        query={searchQuery}
+        onSelect={handleSuggestionSelect}
+      />
+    );
+  };
+
+  // Fix 3: Mobile menu - ensure consistent rendering
+  const renderMobileMenu = () => {
+    if (!mobileMenuOpen) return null;
+    return (
+      <div className="md:hidden bg-white pb-4">
+        <div className="pt-2 pb-3 space-y-1">
+          <Link
+            href="/"
+            className={`block px-4 py-2 ${
+              pathname === "/" ? "text-brand-yellow" : "text-gray-900"
+            } hover:bg-gray-100`}
+            onClick={() => setMobileMenuOpen(false)}
+          >
+            Home
+          </Link>
+          <Link
+            href="/about"
+            className={`block px-4 py-2 ${
+              pathname === "/about" ? "text-brand-yellow" : "text-gray-900"
+            } hover:bg-gray-100`}
+            onClick={() => setMobileMenuOpen(false)}
+          >
+            About Us
+          </Link>
+          <CategoryDropdown
+            categories={categories}
+            isMobile={true}
+            setIsMobile={setIsMobile}
+            onCategorySelect={handleHeaderCategorySelect}
+            trigger={<div className="px-4 flex items-center">Products</div>}
+          />
+          <Link
+            href="/contact"
+            className={`block px-4 py-2 ${
+              pathname === "/contact" ? "text-brand-yellow" : "text-gray-900"
+            } hover:bg-gray-100`}
+            onClick={() => setMobileMenuOpen(false)}
+          >
+            Contact
+          </Link>
+        </div>
+
+        <div className="pt-4 border-t border-gray-200">
+          {!session ? (
+            <button
+              className="w-full flex items-center px-4 py-2 text-gray-900 hover:bg-gray-100"
+              onClick={() => {
+                router.push("/auth/signin");
+                setMobileMenuOpen(false);
+              }}
+            >
+              <LogIn className="mr-2 h-4 w-4" />
+              Sign In
+            </button>
+          ) : (
+            <>
+              <Link
+                href="/account"
+                className={`block px-4 py-2 ${
+                  pathname === "/account"
+                    ? "text-brand-yellow"
+                    : "text-gray-900"
+                } hover:bg-gray-100`}
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                My Account
+              </Link>
+              <Link
+                href="/orders"
+                className={`block px-4 py-2 ${
+                  pathname === "/orders" ? "text-brand-yellow" : "text-gray-900"
+                } hover:bg-gray-100`}
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                Orders
+              </Link>
+              <Link
+                href="/wishlist"
+                className={`block px-4 py-2 ${
+                  pathname === "/wishlist"
+                    ? "text-brand-yellow"
+                    : "text-gray-900"
+                } hover:bg-gray-100`}
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                Wishlist
+              </Link>
+              <Link
+                href="/inbox"
+                className={`block px-4 py-2 ${
+                  pathname === "/inbox" ? "text-brand-yellow" : "text-gray-900"
+                } hover:bg-gray-100`}
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                Inbox
+              </Link>
+              <button
+                className="w-full flex items-center px-4 py-2 text-gray-900 hover:bg-gray-100"
+                onClick={() => {
+                  handleSignOut();
+                  setMobileMenuOpen(false);
+                }}
+              >
+                <LogOut className="mr-2 h-4 w-4" />
+                Sign Out
+              </button>
+            </>
+          )}
+        </div>
+      </div>
+    );
+  };
+
   return (
     <header className="sticky top-0 z-50 bg-white shadow-sm">
       <div className="max-w-6xl mx-auto px-4 sm:px-6">
@@ -193,6 +340,15 @@ function HeaderContent() {
 
           {/* Desktop Search and Actions */}
           <div className="hidden md:flex items-center space-x-4">
+            {/* Fixed Cart Button */}
+            <button
+              className="p-2 text-gray-600 hover:text-brand-yellow transition-colors relative"
+              onClick={() => router.push("/cart")}
+            >
+              <ShoppingBag className="h-5 w-5" />
+              {renderCartBadge()}
+            </button>
+            {/* Fixed Search Suggestions */}
             <div className="relative" ref={searchRef}>
               <input
                 type="text"
@@ -203,25 +359,8 @@ function HeaderContent() {
                 onFocus={() => setShowSuggestions(true)}
               />
               <Search className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
-              {showSuggestions && searchQuery.length > 2 && (
-                <SearchSuggestions
-                  query={searchQuery}
-                  onSelect={handleSuggestionSelect}
-                />
-              )}
+              {renderSearchSuggestions()}
             </div>
-
-            <button
-              className="p-2 text-gray-600 hover:text-brand-yellow transition-colors relative"
-              onClick={() => router.push("/cart")}
-            >
-              <ShoppingBag className="h-5 w-5" />
-              {mounted && cartItemCount > 0 && (
-                <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">
-                  {cartItemCount}
-                </span>
-              )}
-            </button>
 
             <DropdownMenu
               trigger={
@@ -346,141 +485,10 @@ function HeaderContent() {
         </div>
 
         {/* Mobile Search - Always visible */}
-        <div className="md:hidden pb-3">
-          <div className="relative" ref={searchRef}>
-            <input
-              type="text"
-              placeholder="Search products..."
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-yellow"
-              value={searchQuery}
-              onChange={handleSearchChange}
-              onFocus={() => setShowSuggestions(true)}
-            />
-            <Search className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
-            {showSuggestions && searchQuery.length > 2 && (
-              <SearchSuggestions
-                query={searchQuery}
-                onSelect={handleSuggestionSelect}
-              />
-            )}
-          </div>
-        </div>
+        {/* This section is now handled by the fixed search input */}
 
         {/* Mobile Menu */}
-        {mobileMenuOpen && (
-          <div className="md:hidden bg-white pb-4">
-            <div className="pt-2 pb-3 space-y-1">
-              <Link
-                href="/"
-                className={`block px-4 py-2 ${
-                  pathname === "/" ? "text-brand-yellow" : "text-gray-900"
-                } hover:bg-gray-100`}
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                Home
-              </Link>
-              <Link
-                href="/about"
-                className={`block px-4 py-2 ${
-                  pathname === "/about" ? "text-brand-yellow" : "text-gray-900"
-                } hover:bg-gray-100`}
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                About Us
-              </Link>
-              <CategoryDropdown
-                categories={categories}
-                isMobile={true}
-                setIsMobile={setIsMobile}
-                onCategorySelect={handleHeaderCategorySelect}
-                trigger={<div className="px-4 flex items-center">Products</div>}
-              />
-              <Link
-                href="/contact"
-                className={`block px-4 py-2 ${
-                  pathname === "/contact"
-                    ? "text-brand-yellow"
-                    : "text-gray-900"
-                } hover:bg-gray-100`}
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                Contact
-              </Link>
-            </div>
-
-            <div className="pt-4 border-t border-gray-200">
-              {!session ? (
-                <button
-                  className="w-full flex items-center px-4 py-2 text-gray-900 hover:bg-gray-100"
-                  onClick={() => {
-                    router.push("/auth/signin");
-                    setMobileMenuOpen(false);
-                  }}
-                >
-                  <LogIn className="mr-2 h-4 w-4" />
-                  Sign In
-                </button>
-              ) : (
-                <>
-                  <Link
-                    href="/account"
-                    className={`block px-4 py-2 ${
-                      pathname === "/account"
-                        ? "text-brand-yellow"
-                        : "text-gray-900"
-                    } hover:bg-gray-100`}
-                    onClick={() => setMobileMenuOpen(false)}
-                  >
-                    My Account
-                  </Link>
-                  <Link
-                    href="/orders"
-                    className={`block px-4 py-2 ${
-                      pathname === "/orders"
-                        ? "text-brand-yellow"
-                        : "text-gray-900"
-                    } hover:bg-gray-100`}
-                    onClick={() => setMobileMenuOpen(false)}
-                  >
-                    Orders
-                  </Link>
-                  <Link
-                    href="/wishlist"
-                    className={`block px-4 py-2 ${
-                      pathname === "/wishlist"
-                        ? "text-brand-yellow"
-                        : "text-gray-900"
-                    } hover:bg-gray-100`}
-                    onClick={() => setMobileMenuOpen(false)}
-                  >
-                    Wishlist
-                  </Link>
-                  <Link
-                    href="/inbox"
-                    className={`block px-4 py-2 ${
-                      pathname === "/inbox"
-                        ? "text-brand-yellow"
-                        : "text-gray-900"
-                    } hover:bg-gray-100`}
-                    onClick={() => setMobileMenuOpen(false)}
-                  >
-                    Inbox
-                  </Link>
-                  <button
-                    className="w-full flex items-center px-4 py-2 text-gray-900 hover:bg-gray-100"
-                    onClick={() => {
-                      handleSignOut();
-                      setMobileMenuOpen(false);
-                    }}
-                  >
-                    <LogOut className="mr-2 h-4 w-4" />
-                    Sign Out
-                  </button>
-                </>
-              )}
-            </div>
-          </div>
-        )}
+        {renderMobileMenu()}
       </div>
     </header>
   );
@@ -488,13 +496,7 @@ function HeaderContent() {
 
 export function Header() {
   return (
-    <Suspense
-      fallback={
-        <div className="flex items-center justify-center min-h-screen bg-gray-100">
-          Loading...
-        </div>
-      }
-    >
+    <Suspense fallback={<div className="h-16 bg-white" />}>
       <HeaderContent />
     </Suspense>
   );
