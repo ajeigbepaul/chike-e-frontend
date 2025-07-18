@@ -46,6 +46,10 @@ export default function EditProductPage() {
             : product.category,
         brand:
           typeof product.brand === "object" ? product.brand._id : product.brand,
+        vendor:
+          typeof product.vendor === "object"
+            ? product.vendor._id
+            : product.vendor,
         images: product.images || [],
         createdAt: product.createdAt
           ? new Date(product.createdAt).toISOString()

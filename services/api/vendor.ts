@@ -48,10 +48,27 @@ export interface VendorStatusUpdateRequest {
   status: "active" | "inactive";
 }
 
+export interface VendorDirectOnboardingRequest {
+  userId: string;
+  password: string;
+  phone: string;
+  address: string;
+  bio: string;
+}
+
 export interface ApiResponse<T = any> {
   success: boolean;
   message: string;
   data?: T;
+}
+
+export interface VendorInvitation {
+  _id: string;
+  name: string;
+  email: string;
+  status: string;
+  createdAt: string;
+  token: string;
 }
 
 // Vendor service
@@ -113,6 +130,33 @@ const vendorService = {
   ): Promise<ApiResponse> => {
     try {
       const response = await api.post("/vendors/onboarding", onboardingData);
+      return {
+        success: true,
+        message: "Onboarding completed successfully",
+        data: response.data,
+      };
+    } catch (error) {
+      const axiosError = error as AxiosError<any>;
+      return {
+        success: false,
+        message:
+          axiosError.response?.data?.message || "Failed to complete onboarding",
+      };
+    }
+  },
+
+  /**
+   * Direct vendor onboarding (no invitation)
+   * @param onboardingData Direct onboarding data
+   */
+  directOnboarding: async (
+    onboardingData: VendorDirectOnboardingRequest
+  ): Promise<ApiResponse> => {
+    try {
+      const response = await api.post(
+        "/vendors/direct-onboarding",
+        onboardingData
+      );
       return {
         success: true,
         message: "Onboarding completed successfully",
@@ -322,6 +366,97 @@ const vendorService = {
         success: false,
         message:
           axiosError.response?.data?.message || "Failed to fetch vendors",
+      };
+    }
+  },
+
+  /**
+   * Request a vendor invitation (public form)
+   * @param inviteData Vendor invite request data
+   */
+  requestVendorInvite: async (
+    inviteData: VendorInviteRequest
+  ): Promise<ApiResponse> => {
+    try {
+      const response = await api.post("/vendors/request-invite", inviteData);
+      return {
+        success: true,
+        message: response.data?.message || "Request submitted successfully",
+        data: response.data,
+      };
+    } catch (error) {
+      const axiosError = error as AxiosError<any>;
+      return {
+        success: false,
+        message:
+          axiosError.response?.data?.message || "Failed to submit request",
+      };
+    }
+  },
+
+  /**
+   * Get all pending vendor invitations (admin only)
+   */
+  getPendingInvitations: async (): Promise<ApiResponse<VendorInvitation[]>> => {
+    try {
+      const response = await api.get("/vendors/admin/vendor-invitations");
+      return {
+        success: true,
+        message: "Pending invitations retrieved successfully",
+        data: response.data.data,
+      };
+    } catch (error) {
+      const axiosError = error as AxiosError<any>;
+      return {
+        success: false,
+        message:
+          axiosError.response?.data?.message || "Failed to fetch invitations",
+      };
+    }
+  },
+
+  /**
+   * Admin: Resend a pending vendor invitation
+   */
+  resendInvitation: async (id: string): Promise<ApiResponse> => {
+    try {
+      const response = await api.post(
+        `/vendors/admin/vendor-invitations/${id}/send`
+      );
+      return {
+        success: true,
+        message: response.data?.message || "Invitation resent successfully",
+        data: response.data,
+      };
+    } catch (error) {
+      const axiosError = error as AxiosError<any>;
+      return {
+        success: false,
+        message:
+          axiosError.response?.data?.message || "Failed to resend invitation",
+      };
+    }
+  },
+
+  /**
+   * Admin: Delete a pending vendor invitation
+   */
+  deleteInvitation: async (id: string): Promise<ApiResponse> => {
+    try {
+      const response = await api.delete(
+        `/vendors/admin/vendor-invitations/${id}`
+      );
+      return {
+        success: true,
+        message: response.data?.message || "Invitation deleted successfully",
+        data: response.data,
+      };
+    } catch (error) {
+      const axiosError = error as AxiosError<any>;
+      return {
+        success: false,
+        message:
+          axiosError.response?.data?.message || "Failed to delete invitation",
       };
     }
   },

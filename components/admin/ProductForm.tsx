@@ -215,6 +215,7 @@ export function ProductForm({
         category:
           typeof data.category === "object" ? data.category._id : data.category,
         brand: typeof data.brand === "object" ? data.brand._id : data.brand,
+        vendor: typeof data.vendor === "object" ? data.vendor?._id : data.vendor, // <-- add this line
         createdAt: data.createdAt
           ? new Date(data.createdAt).toISOString()
           : undefined,

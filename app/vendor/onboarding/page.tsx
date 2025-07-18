@@ -5,6 +5,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { useRouter, useSearchParams } from "next/navigation";
+import { useSession } from "next-auth/react";
 import { Button } from "@/components/ui/button";
 import {
   Form,
@@ -34,12 +35,14 @@ const onboardingSchema = z
     path: ["confirmPassword"],
   });
 
-function VendorOnboardingContent(){
+function VendorOnboardingContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { data: session, status: sessionStatus } = useSession();
   const [isLoading, setIsLoading] = useState(false);
   const [isVerifying, setIsVerifying] = useState(true);
   const [invitation, setInvitation] = useState<any>(null);
+  const [directOnboarding, setDirectOnboarding] = useState(false);
 
   const form = useForm<z.infer<typeof onboardingSchema>>({
     resolver: zodResolver(onboardingSchema),
@@ -54,57 +57,74 @@ function VendorOnboardingContent(){
 
   useEffect(() => {
     const token = searchParams.get("token");
-    if (!token) {
-      router.push("/");
-      return;
-    }
-
-    // Verify invitation token
-    const verifyInvitation = async () => {
-      setIsVerifying(true);
-      try {
-        const response = await vendorService.verifyInvitation(token);
-
-        if (!response.success) {
-          throw new Error(response.message || "Invalid or expired invitation");
+    if (token) {
+      // Invitation flow
+      setDirectOnboarding(false);
+      const verifyInvitation = async () => {
+        setIsVerifying(true);
+        try {
+          const response = await vendorService.verifyInvitation(token);
+          if (!response.success) {
+            throw new Error(
+              response.message || "Invalid or expired invitation"
+            );
+          }
+          setInvitation(response.data);
+        } catch (error: any) {
+          console.error("Error verifying invitation:", error);
+          toast.error(error.message || "Invalid or expired invitation");
+          router.push("/");
+        } finally {
+          setIsVerifying(false);
         }
-
-        setInvitation(response.data);
-      } catch (error: any) {
-        console.error("Error verifying invitation:", error);
-        toast.error(error.message || "Invalid or expired invitation");
-        router.push("/");
-      } finally {
-        setIsVerifying(false);
-      }
-    };
-
-    verifyInvitation();
+      };
+      verifyInvitation();
+    } else {
+      // Direct onboarding flow
+      setDirectOnboarding(true);
+      setIsVerifying(false);
+    }
   }, [searchParams, router]);
+
+  useEffect(() => {
+    if (directOnboarding && sessionStatus !== "loading" && !session) {
+      // Not authenticated, redirect to sign in with callback
+      router.push("/auth/signin?callbackUrl=/vendor/onboarding");
+    }
+  }, [directOnboarding, session, sessionStatus, router]);
 
   const onSubmit = async (data: z.infer<typeof onboardingSchema>) => {
     try {
       setIsLoading(true);
-
       const token = searchParams.get("token");
-      if (!token) {
-        throw new Error("Invitation token is missing");
+      let response;
+      if (token) {
+        // Invitation onboarding
+        const onboardingData: VendorOnboardingRequest = {
+          token,
+          password: data.password,
+          phone: data.phone,
+          address: data.address,
+          bio: data.bio,
+        };
+        response = await vendorService.completeOnboarding(onboardingData);
+      } else {
+        // Direct onboarding (no token)
+        if (!session?.user) {
+          throw new Error("You must be signed in to onboard as a vendor.");
+        }
+        // You may need to adjust this API call to match your backend
+        response = await vendorService.directOnboarding({
+          userId: session.user.id,
+          password: data.password,
+          phone: data.phone,
+          address: data.address,
+          bio: data.bio,
+        });
       }
-
-      const onboardingData: VendorOnboardingRequest = {
-        token,
-        password: data.password,
-        phone: data.phone,
-        address: data.address,
-        bio: data.bio,
-      };
-
-      const response = await vendorService.completeOnboarding(onboardingData);
-
       if (!response.success) {
         throw new Error(response.message || "Failed to complete onboarding");
       }
-
       toast.success("Registration completed successfully");
       router.push("/vendor/dashboard");
     } catch (error: any) {
@@ -115,7 +135,7 @@ function VendorOnboardingContent(){
     }
   };
 
-  if (isVerifying) {
+  if (isVerifying || (directOnboarding && sessionStatus === "loading")) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <Spinner />
@@ -123,7 +143,7 @@ function VendorOnboardingContent(){
     );
   }
 
-  if (!invitation) {
+  if (!directOnboarding && !invitation) {
     return (
       <div className="min-h-screen flex items-center justify-center p-4">
         <Card className="p-6">
@@ -141,6 +161,16 @@ function VendorOnboardingContent(){
     );
   }
 
+  // Welcome message
+  let welcomeName = "";
+  if (invitation?.name) {
+    welcomeName = invitation.name;
+  } else if (session?.user?.name) {
+    welcomeName = session.user.name;
+  } else if (session?.user?.email) {
+    welcomeName = session.user.email;
+  }
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full space-y-8">
@@ -149,10 +179,9 @@ function VendorOnboardingContent(){
             Complete Your Registration
           </h2>
           <p className="mt-2 text-center text-sm text-gray-600">
-            Welcome, {invitation.name}! Please complete your vendor profile.
+            Welcome, {welcomeName}! Please complete your vendor profile.
           </p>
         </div>
-
         <Card className="p-6">
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
@@ -169,7 +198,6 @@ function VendorOnboardingContent(){
                   </FormItem>
                 )}
               />
-
               <FormField
                 control={form.control}
                 name="confirmPassword"
@@ -183,7 +211,6 @@ function VendorOnboardingContent(){
                   </FormItem>
                 )}
               />
-
               <FormField
                 control={form.control}
                 name="phone"
@@ -197,7 +224,6 @@ function VendorOnboardingContent(){
                   </FormItem>
                 )}
               />
-
               <FormField
                 control={form.control}
                 name="address"
@@ -211,7 +237,6 @@ function VendorOnboardingContent(){
                   </FormItem>
                 )}
               />
-
               <FormField
                 control={form.control}
                 name="bio"
@@ -225,7 +250,6 @@ function VendorOnboardingContent(){
                   </FormItem>
                 )}
               />
-
               <Button type="submit" className="w-full" disabled={isLoading}>
                 {isLoading ? (
                   <>
@@ -244,10 +268,15 @@ function VendorOnboardingContent(){
   );
 }
 
-
 export default function VendorOnboardingPage() {
   return (
-    <Suspense fallback={<div className="flex items-center justify-center min-h-screen bg-gray-100">Loading...</div>}>
+    <Suspense
+      fallback={
+        <div className="flex items-center justify-center min-h-screen bg-gray-100">
+          Loading...
+        </div>
+      }
+    >
       <VendorOnboardingContent />
     </Suspense>
   );

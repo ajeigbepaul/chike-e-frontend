@@ -1,6 +1,6 @@
 "use client";
 
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import {
   Table,
@@ -13,12 +13,20 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/components/ui/use-toast";
-import { PlusIcon, SearchIcon, RefreshCw, Eye } from "lucide-react";
+import {
+  PlusIcon,
+  SearchIcon,
+  RefreshCw,
+  Eye,
+  Mail,
+  Trash2,
+} from "lucide-react";
 import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
 import vendorService, {
   VendorInviteRequest,
   Vendor,
+  VendorInvitation,
 } from "@/services/api/vendor";
 import { format } from "date-fns";
 import Spinner from "@/components/Spinner";
@@ -51,7 +59,48 @@ export default function VendorsPage() {
     },
   });
 
+  // Fetch pending invitations
+  const {
+    data: invitationsData,
+    isLoading: isInvitationsLoading,
+    isError: isInvitationsError,
+  } = useQuery({
+    queryKey: ["pending-invitations"],
+    queryFn: async () => {
+      const response = await vendorService.getPendingInvitations();
+      if (!response.success) {
+        throw new Error(response.message || "Failed to fetch invitations");
+      }
+      return response.data || [];
+    },
+  });
+
   const vendors = data || [];
+  const pendingInvitations: VendorInvitation[] = invitationsData || [];
+
+  // Merge vendors and invitations for display
+  const allRows = [
+    ...pendingInvitations.map((inv) => ({
+      id: inv._id,
+      name: inv.name,
+      email: inv.email,
+      status: "pending",
+      joinedDate: inv.createdAt,
+      isInvitation: true,
+    })),
+    ...vendors.map((vendor: any) => ({
+      ...vendor,
+      isInvitation: false,
+    })),
+  ];
+
+  const filteredRows = search
+    ? allRows.filter(
+        (row: any) =>
+          row.name.toLowerCase().includes(search.toLowerCase()) ||
+          row.email.toLowerCase().includes(search.toLowerCase())
+      )
+    : allRows;
 
   const handleRefresh = () => {
     refetch();
@@ -123,13 +172,36 @@ export default function VendorsPage() {
   //   }
   // };
 
-  const filteredVendors = search
-    ? vendors.filter(
-        (vendor: any) =>
-          vendor.name.toLowerCase().includes(search.toLowerCase()) ||
-          vendor.email.toLowerCase().includes(search.toLowerCase())
-      )
-    : vendors;
+  // Mutations for admin actions
+  const resendMutation = useMutation({
+    mutationFn: (id: string) => vendorService.resendInvitation(id),
+    onSuccess: (data) => {
+      toast({ title: "Success", description: data.message });
+      queryClient.invalidateQueries({ queryKey: ["pending-invitations"] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to resend invitation",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: (id: string) => vendorService.deleteInvitation(id),
+    onSuccess: (data) => {
+      toast({ title: "Success", description: data.message });
+      queryClient.invalidateQueries({ queryKey: ["pending-invitations"] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to delete invitation",
+        variant: "destructive",
+      });
+    },
+  });
 
   return (
     <div className="space-y-6">
@@ -192,57 +264,80 @@ export default function VendorsPage() {
               <TableHead>Name</TableHead>
               <TableHead>Email</TableHead>
               <TableHead>Status</TableHead>
-              {/* <TableHead>Products</TableHead>
-              <TableHead>Total Sales</TableHead> */}
-              <TableHead>Joined Date</TableHead>
+              <TableHead>Joined/Requested</TableHead>
               <TableHead className="w-[100px]">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {isLoading ? (
+            {isLoading || isInvitationsLoading ? (
               <TableRow>
                 <TableCell colSpan={7} className="h-24 text-center">
                   <Spinner />
                 </TableCell>
               </TableRow>
-            ) : filteredVendors.length === 0 ? (
+            ) : filteredRows.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={7} className="h-24 text-center">
-                  No vendors found
+                  No vendors or invitations found
                 </TableCell>
               </TableRow>
             ) : (
-              filteredVendors.map((vendor: Vendor) => (
-                <TableRow key={vendor.id}>
-                  <TableCell className="font-medium">{vendor.name}</TableCell>
-                  <TableCell>{vendor.email}</TableCell>
+              filteredRows.map((row: any) => (
+                <TableRow key={row.id}>
+                  <TableCell className="font-medium">{row.name}</TableCell>
+                  <TableCell>{row.email}</TableCell>
                   <TableCell>
                     <Badge
                       variant={
-                        vendor.status === "active"
+                        row.status === "active"
                           ? "default"
-                          : vendor.status === "pending"
+                          : row.status === "pending"
                           ? "secondary"
                           : "outline"
                       }
                     >
-                      {vendor.status}
+                      {row.status}
                     </Badge>
                   </TableCell>
-                  {/* <TableCell>{vendor.products}</TableCell>
-                  <TableCell>${vendor.sales.toLocaleString()}</TableCell> */}
                   <TableCell>
-                    {format(new Date(vendor.joinedDate), "MMM d, yyyy")}
+                    {row.joinedDate
+                      ? format(new Date(row.joinedDate), "MMM d, yyyy")
+                      : "-"}
                   </TableCell>
                   <TableCell>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleViewVendor(vendor.id)}
-                    >
-                      <Eye className="h-4 w-4 mr-2" />
-                      View
-                    </Button>
+                    {row.isInvitation ? (
+                      <div className="flex gap-2">
+                        <button
+                          className="inline-flex items-center px-2 py-1 text-xs font-medium rounded bg-blue-100 text-blue-800 hover:bg-blue-200 transition"
+                          onClick={() => resendMutation.mutate(row.id)}
+                          disabled={resendMutation.isPending}
+                          title="Send/Resend Invitation"
+                        >
+                          <Mail className="h-4 w-4 mr-1" />
+                          {resendMutation.isPending
+                            ? "Sending..."
+                            : "Send/Resend"}
+                        </button>
+                        <button
+                          className="inline-flex items-center px-2 py-1 text-xs font-medium rounded bg-red-100 text-red-800 hover:bg-red-200 transition"
+                          onClick={() => deleteMutation.mutate(row.id)}
+                          disabled={deleteMutation.isPending}
+                          title="Delete Invitation"
+                        >
+                          <Trash2 className="h-4 w-4 mr-1" />
+                          {deleteMutation.isPending ? "Deleting..." : "Delete"}
+                        </button>
+                      </div>
+                    ) : (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleViewVendor(row.id)}
+                      >
+                        <Eye className="h-4 w-4 mr-2" />
+                        View
+                      </Button>
+                    )}
                   </TableCell>
                 </TableRow>
               ))
