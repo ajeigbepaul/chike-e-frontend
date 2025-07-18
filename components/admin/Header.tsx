@@ -21,8 +21,7 @@ export function AdminHeader() {
   const router = useRouter();
 
   const handleLogout = async () => {
-    await signOut({ redirect: false });
-    router.push("/auth/signin");
+    await signOut({ callbackUrl: "/" });
   };
 
   return (

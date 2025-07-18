@@ -95,7 +95,7 @@ function HeaderContent() {
     if (typeof window !== "undefined") {
       localStorage.removeItem("cart");
     }
-    await signOut({ redirect: false });
+    await signOut({ callbackUrl: "/" });
   };
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {

@@ -103,7 +103,7 @@ export const authService = {
   // Logout
   async logout() {
     try {
-      await signOut({ redirect: false });
+      await signOut({ callbackUrl: "/" });
       return { success: true };
     } catch (error) {
       console.error("Logout error:", error);

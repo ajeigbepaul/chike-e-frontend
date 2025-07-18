@@ -31,6 +31,7 @@ import vendorService, {
 import { format } from "date-fns";
 import Spinner from "@/components/Spinner";
 import { useState } from "react";
+import toast from "react-hot-toast";
 
 // Dynamically import the dialog component with no SSR
 const VendorInviteDialog = dynamic(
@@ -43,7 +44,7 @@ const VendorInviteDialog = dynamic(
 
 export default function VendorsPage() {
   const router = useRouter();
-  const { toast } = useToast();
+  // const { toast } = useToast();
   const queryClient = useQueryClient();
   const [search, setSearch] = useState("");
   const [showInviteDialog, setShowInviteDialog] = useState(false);
@@ -112,10 +113,7 @@ export default function VendorsPage() {
       const response = await vendorService.inviteVendor(data);
 
       if (response.success) {
-        toast({
-          title: "Success",
-          description: "Vendor invitation sent successfully",
-        });
+        toast.success("Vendor invitation sent successfully");
         setShowInviteDialog(false);
         // Refresh the vendor list to include the new invitation
         // fetchVendors(); // Keeping this line as per user's last instruction to leave invite vendor functionality as is
@@ -125,11 +123,7 @@ export default function VendorsPage() {
       }
     } catch (error: any) {
       console.error("Invite vendor error:", error);
-      toast({
-        title: "Error",
-        description: error.message || "Failed to send invitation",
-        variant: "destructive",
-      });
+      toast.error(error.message || "Failed to send invitation");
     } finally {
       // setInviteLoading(false); // Keeping this line as per user's last instruction to leave invite vendor functionality as is
     }
@@ -176,30 +170,22 @@ export default function VendorsPage() {
   const resendMutation = useMutation({
     mutationFn: (id: string) => vendorService.resendInvitation(id),
     onSuccess: (data) => {
-      toast({ title: "Success", description: data.message });
+      toast.success(data.message || "Invitation resent successfully");
       queryClient.invalidateQueries({ queryKey: ["pending-invitations"] });
     },
     onError: (error: any) => {
-      toast({
-        title: "Error",
-        description: error.message || "Failed to resend invitation",
-        variant: "destructive",
-      });
+      toast.error(error.message || "Failed to resend invitation");
     },
   });
 
   const deleteMutation = useMutation({
     mutationFn: (id: string) => vendorService.deleteInvitation(id),
     onSuccess: (data) => {
-      toast({ title: "Success", description: data.message });
+      toast.success(data.message || "Invitation deleted successfully");
       queryClient.invalidateQueries({ queryKey: ["pending-invitations"] });
     },
     onError: (error: any) => {
-      toast({
-        title: "Error",
-        description: error.message || "Failed to delete invitation",
-        variant: "destructive",
-      });
+      toast.error(error.message || "Failed to delete invitation");
     },
   });
 
