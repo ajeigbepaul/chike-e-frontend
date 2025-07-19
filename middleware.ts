@@ -124,28 +124,9 @@ export async function middleware(request: NextRequest) {
   // Debug: Log all cookies to see what's available
   console.log("All cookies:", request.cookies.getAll());
 
-  // Handle auth pages
+  // Handle auth pages - let NextAuth handle redirects
   if (path.startsWith("/auth/")) {
-    if (token) {
-      // If user is authenticated and trying to access auth pages
-      console.log(
-        "User is already authenticated, redirecting based on role:",
-        token.role
-      );
-
-      // Redirect based on role
-      if (token.role === "admin") {
-        console.log("Redirecting admin to admin dashboard");
-        return NextResponse.redirect(new URL("/admin/dashboard", request.url));
-      } else if (token.role === "vendor") {
-        console.log("Redirecting vendor to vendor dashboard");
-        return NextResponse.redirect(new URL("/vendor/dashboard", request.url));
-      }
-      // For regular users, send them to the homepage
-      console.log("Redirecting user to homepage");
-      return NextResponse.redirect(new URL("/", request.url));
-    }
-    console.log("No token, allowing access to auth pages");
+    console.log("Auth page access, allowing NextAuth to handle");
     return NextResponse.next();
   }
 

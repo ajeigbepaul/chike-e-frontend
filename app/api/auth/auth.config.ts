@@ -158,17 +158,31 @@ export const authOptions: NextAuthOptions = {
       return session;
     },
     async redirect({ url, baseUrl }) {
+      console.log("=== REDIRECT CALLBACK DEBUG ===");
+      console.log("URL:", url);
+      console.log("Base URL:", baseUrl);
+
       // Handle role-based redirection
       if (url.startsWith(baseUrl)) {
-        // If the URL is a callback URL, extract the original destination
-        const callbackUrl = new URL(url).searchParams.get("callbackUrl");
+        const urlObj = new URL(url);
+        const callbackUrl = urlObj.searchParams.get("callbackUrl");
+        
+        console.log("Callback URL:", callbackUrl);
+        
+        // If there's a callback URL, return it (let middleware handle access control)
         if (callbackUrl) {
-          return callbackUrl;
+          const decodedCallbackUrl = decodeURIComponent(callbackUrl);
+          console.log("Decoded callback URL:", decodedCallbackUrl);
+          console.log("Returning callback URL, middleware will handle role check");
+          return decodedCallbackUrl;
         }
-
-        // For now, just redirect to homepage - let client-side handle role-based redirects
+        
+        // No callback URL, redirect to homepage and let client-side handle role-based redirect
+        console.log("No callback URL, redirecting to homepage");
         return `${baseUrl}/`;
       }
+      
+      console.log("External URL, allowing redirect");
       return url;
     },
   },
@@ -186,10 +200,10 @@ export const authOptions: NextAuthOptions = {
   secret: process.env.NEXTAUTH_SECRET,
   cookies: {
     sessionToken: {
-      name: `next-auth.session-token`,
+      name: process.env.NODE_ENV === "production" ? "__Secure-next-auth.session-token" : "next-auth.session-token",
       options: {
         httpOnly: true,
-        sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+        sameSite: "lax",
         path: "/",
         secure: process.env.NODE_ENV === "production",
       },
