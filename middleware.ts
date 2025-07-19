@@ -45,6 +45,7 @@ export async function middleware(request: NextRequest) {
     path === "/about" ||
     path === "/products" ||
     path.startsWith("/products") ||
+    path.startsWith("/product") ||  // Add this line
     path === "/checkout" ||
     path.startsWith("/checkout") ||
     path === "/cart" ||
@@ -62,7 +63,11 @@ export async function middleware(request: NextRequest) {
   // Get the token
   const token = await getToken({ req: request });
   console.log("Token status:", token ? "Present" : "Missing");
-
+  console.log("Token details:", token ? { 
+    role: token.role, 
+    exp: token.exp, 
+    iat: token.iat 
+  } : "No token");
   // Handle auth pages
   if (path.startsWith("/auth/")) {
     if (token) {
