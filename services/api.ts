@@ -25,15 +25,15 @@ api.interceptors.request.use(
   async (config) => {
     // Get session from NextAuth
     const session = (await getSession()) as CustomSession;
-    console.log('API Interceptor: Session', session);
-    console.log('API Interceptor: Access Token', session?.accessToken);
+    console.log("API Interceptor: Session", session);
+    console.log("API Interceptor: Access Token", session?.accessToken);
 
     // Add the JWT token to the Authorization header if it exists
     if (session?.accessToken) {
       config.headers.Authorization = `Bearer ${session.accessToken}`;
-      console.log('API Interceptor: Authorization header set');
+      console.log("API Interceptor: Authorization header set");
     } else {
-      console.log('API Interceptor: No access token found in session.');
+      console.log("API Interceptor: No access token found in session.");
     }
 
     return config;
@@ -53,24 +53,31 @@ api.interceptors.response.use(
     const protectedEndpoints: string[] = []; // No protected endpoints, all are public
     if (
       error.response?.status === 401 &&
-      protectedEndpoints.some((ep) => originalRequest.url && originalRequest.url.includes(ep)) &&
+      protectedEndpoints.some(
+        (ep) => originalRequest.url && originalRequest.url.includes(ep)
+      ) &&
       !originalRequest._retry
     ) {
       originalRequest._retry = true;
 
       // Check if the error is due to JWT expiration
-      const isTokenExpired = error.response?.data?.message?.toLowerCase().includes('jwt expired') ||
-                           error.response?.data?.error?.toLowerCase().includes('jwt expired');
+      const isTokenExpired =
+        error.response?.data?.message
+          ?.toLowerCase()
+          .includes("token expired") ||
+        error.response?.data?.message?.toLowerCase().includes("jwt expired") ||
+        error.response?.data?.error?.toLowerCase().includes("token expired") ||
+        error.response?.data?.error?.toLowerCase().includes("jwt expired");
 
       if (isTokenExpired) {
         // Sign out the user
         await signOut({ redirect: false });
-        toast.error('Your session has expired. Please log in again.');
-        if (!window.location.pathname.includes('/auth/signin')) {
+        toast.error("Your session has expired. Please log in again.");
+        if (!window.location.pathname.includes("/auth/signin")) {
           window.location.href = "/auth/signin";
         }
       } else {
-        if (!window.location.pathname.includes('/auth/signin')) {
+        if (!window.location.pathname.includes("/auth/signin")) {
           window.location.href = "/auth/signin";
         }
       }

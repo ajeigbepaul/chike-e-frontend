@@ -1,13 +1,16 @@
+"use client";
+
 import { PromotionForm } from "@/components/admin/PromotionForm";
 import { getPromotion } from "@/services/api/promotion";
 import { useQuery } from "@tanstack/react-query";
+import { use } from "react";
 
 interface EditPromotionPageProps {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }
 
 export default function EditPromotionPage({ params }: EditPromotionPageProps) {
-  const { id } = params;
+  const { id } = use(params);
 
   const { data, isLoading, isError } = useQuery({
     queryKey: ["promotion", id],

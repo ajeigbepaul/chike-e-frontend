@@ -1,7 +1,8 @@
+"use client";
+
 import ProductsAdCard from '@/components/storefront/ProductsAdCard'
 import ProductsGallerySection from '@/components/storefront/ProductsGallerySection'
 import React, { Suspense } from 'react'
-import { getProducts } from '@/services/api/products';
 
 function ProductsGalleryFallback() {
   return (
@@ -33,15 +34,12 @@ function ProductsGalleryFallback() {
   );
 }
 
-export default async function Products() {
-  // SSR: Fetch first page of products
-  const { products: initialProducts} = await getProducts(1, 20);
-
+export default function Products() {
   return (
     <main className='w-full'>
        <ProductsAdCard/>
        <Suspense fallback={<ProductsGalleryFallback />}>
-         <ProductsGallerySection initialProducts={initialProducts} />
+         <ProductsGallerySection initialProducts={[]} />
        </Suspense>
     </main>
   )
