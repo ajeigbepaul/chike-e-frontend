@@ -29,6 +29,13 @@ export default function Home() {
   const router = useRouter();
   const dispatch = useDispatch();
 
+  // Redirect admin users to admin dashboard
+  useEffect(() => {
+    if (session?.user?.role === "admin") {
+      router.push("/admin/dashboard");
+    }
+  }, [session, router]);
+
   // Product data state
   const [featured, setFeatured] = useState<Product[]>([]);
   const [trending, setTrending] = useState<Product[]>([]);
