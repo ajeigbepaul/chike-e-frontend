@@ -32,7 +32,12 @@ export default function Home() {
   // Redirect admin users to admin dashboard
   useEffect(() => {
     if (session?.user?.role === "admin") {
-      router.push("/admin/dashboard");
+      // Add a small delay to ensure session is fully loaded
+      const timer = setTimeout(() => {
+        router.push("/admin/dashboard");
+      }, 100);
+
+      return () => clearTimeout(timer);
     }
   }, [session, router]);
 

@@ -157,6 +157,18 @@ export async function middleware(request: NextRequest) {
       return NextResponse.next();
     }
 
+    // Allow public routes even without token
+    if (
+      path.startsWith("/products") ||
+      path.startsWith("/product") ||
+      path === "/about" ||
+      path.startsWith("/cart") ||
+      path.startsWith("/checkout")
+    ) {
+      console.log("No token but accessing public route, allowing");
+      return NextResponse.next();
+    }
+
     console.log("No token found, redirecting to login");
     const url = new URL("/auth/signin", request.url);
     url.searchParams.set("callbackUrl", encodeURI(request.url));
@@ -182,16 +194,26 @@ export async function middleware(request: NextRequest) {
 
   // Special handling for admin routes
   if (path.startsWith("/admin")) {
-    // Temporary: Allow admin routes if token is missing but we're in production
+    // If no token but we're in production, allow access (temporary fix)
     if (!token && process.env.NODE_ENV === "production") {
       console.log("Production: Token missing but allowing admin route access");
       return NextResponse.next();
     }
 
-    if (userRole !== "admin") {
+    // If we have a token, check the role
+    if (token && userRole !== "admin") {
       console.log("Non-admin user trying to access admin route");
       return NextResponse.redirect(new URL("/unauthorized", request.url));
     }
+
+    // If no token at all, redirect to login
+    if (!token) {
+      console.log("No token for admin route, redirecting to login");
+      const url = new URL("/auth/signin", request.url);
+      url.searchParams.set("callbackUrl", encodeURI(request.url));
+      return NextResponse.redirect(url);
+    }
+
     console.log("Admin accessing admin route, allowing");
     return NextResponse.next();
   }
@@ -215,11 +237,7 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL("/admin/dashboard", request.url));
   }
 
-  // Special handling: Redirect admin users from homepage to admin dashboard
-  if (userRole === "admin" && path === "/") {
-    console.log("Admin user on homepage, redirecting to admin dashboard");
-    return NextResponse.redirect(new URL("/admin/dashboard", request.url));
-  }
+  // Note: Removed the homepage redirect for admin users - let client-side handle it
 
   // Redirect vendor users to vendor dashboard if they try to access non-vendor routes
   // But allow them to access the index route (homepage)

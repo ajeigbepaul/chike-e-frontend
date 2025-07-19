@@ -4,6 +4,8 @@ import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { Sidebar } from "@/components/admin/Sidebar";
+import { AdminHeader } from "@/components/admin/Header";
+import { SidebarProvider } from "@/contexts/SidebarContext";
 
 export default function AdminLayout({
   children,
@@ -16,14 +18,20 @@ export default function AdminLayout({
   useEffect(() => {
     // If session is loaded and user is not admin, redirect to unauthorized
     if (status === "authenticated" && session?.user?.role !== "admin") {
-      router.push("/unauthorized");
+      const timer = setTimeout(() => {
+        router.push("/unauthorized");
+      }, 100);
+      return () => clearTimeout(timer);
     }
 
     // If session is loaded and user is admin but we're not on an admin route, redirect to admin dashboard
     if (status === "authenticated" && session?.user?.role === "admin") {
       const currentPath = window.location.pathname;
       if (!currentPath.startsWith("/admin")) {
-        router.push("/admin/dashboard");
+        const timer = setTimeout(() => {
+          router.push("/admin/dashboard");
+        }, 100);
+        return () => clearTimeout(timer);
       }
     }
   }, [session, status, router]);
@@ -64,9 +72,16 @@ export default function AdminLayout({
   }
 
   return (
-    <div className="flex h-screen bg-gray-50">
-      <Sidebar />
-      <main className="flex-1 overflow-y-auto">{children}</main>
-    </div>
+    <SidebarProvider>
+      <div className="flex h-screen bg-gray-50 overflow-hidden">
+        <Sidebar />
+        <div className="flex-1 flex flex-col min-h-0">
+          <AdminHeader />
+          <main className="flex-1 overflow-y-auto p-6 bg-gray-50">
+            <div className="h-full">{children}</div>
+          </main>
+        </div>
+      </div>
+    </SidebarProvider>
   );
 }

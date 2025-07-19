@@ -166,11 +166,7 @@ export const authOptions: NextAuthOptions = {
           return callbackUrl;
         }
 
-        // If no callback URL, redirect based on role
-        const session = await getSession();
-        if (session?.user?.role === "admin") {
-          return `${baseUrl}/admin/dashboard`;
-        }
+        // For now, just redirect to homepage - let client-side handle role-based redirects
         return `${baseUrl}/`;
       }
       return url;
