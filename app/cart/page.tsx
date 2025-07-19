@@ -36,9 +36,36 @@ export default function CartPage() {
   );
   const total = itemsTotal + vat;
 
-  // Function to get reviews for a product
+  // Get all product IDs from cart
+  const productIds = cart.map((item) => item.id);
+
+  // Fetch reviews for all products in cart
+  const { data: allReviewsData } = useQuery({
+    queryKey: ["cart-reviews", productIds],
+    queryFn: async () => {
+      const reviewsPromises = productIds.map((id) =>
+        reviewService.getProductReviews(id).catch(() => ({ data: [] }))
+      );
+      const results = await Promise.all(reviewsPromises);
+      return results.reduce((acc, result, index) => {
+        acc[productIds[index]] = result.data || [];
+        return acc;
+      }, {} as Record<string, any[]>);
+    },
+    enabled: productIds.length > 0,
+  });
+
+  // Helper function to get reviews for a specific product
   const getProductReviews = (productId: string) => {
-    return reviewService.getProductReviews(productId);
+    return allReviewsData?.[productId] || [];
+  };
+
+  // Helper function to calculate average rating
+  const getAverageRating = (reviews: any[]) => {
+    if (reviews.length === 0) return 0;
+    return (
+      reviews.reduce((sum, review) => sum + review.rating, 0) / reviews.length
+    );
   };
 
   return (
@@ -53,21 +80,8 @@ export default function CartPage() {
         ) : (
           <div className="space-y-4">
             {cart.map((item) => {
-              // Get reviews for this product
-              const { data: reviewsResponse } = useQuery({
-                queryKey: ["reviews", item.id],
-                queryFn: () => getProductReviews(item.id),
-                enabled: !!item.id,
-              });
-
-              const reviews = reviewsResponse?.data || [];
-              const averageRating =
-                reviews.length > 0
-                  ? reviews.reduce(
-                      (sum: number, review: any) => sum + review.rating,
-                      0
-                    ) / reviews.length
-                  : 0;
+              const reviews = getProductReviews(item.id);
+              const averageRating = getAverageRating(reviews);
 
               return (
                 <div
