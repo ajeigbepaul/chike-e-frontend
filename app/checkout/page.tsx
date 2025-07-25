@@ -789,13 +789,31 @@ export default function Checkout() {
   const { data: session, status } = useSession();
   const router = useRouter();
   console.log(session, "Session");
+  
+  // Handle login redirect flag for checkout
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const urlParams = new URLSearchParams(window.location.search);
+      if (urlParams.has('_login_redirect')) {
+        // Set flag in sessionStorage and clean up URL
+        sessionStorage.setItem('just-logged-in', 'true');
+        
+        // Remove the parameter from URL
+        urlParams.delete('_login_redirect');
+        const newUrl = `${window.location.pathname}${urlParams.toString() ? '?' + urlParams.toString() : ''}`;
+        window.history.replaceState({}, '', newUrl);
+      }
+    }
+  }, []);
 
   useEffect(() => {
     if (status === "loading") return;
     if (!session) {
-      router.replace(
-        `/auth/signin?callbackUrl=${encodeURIComponent("/checkout")}`
-      );
+      // Get the current URL for proper redirect after login
+      const currentUrl = typeof window !== 'undefined' ? window.location.href : '/checkout';
+      const callbackUrl = encodeURIComponent(currentUrl);
+      console.log('Redirecting to login with callback:', callbackUrl);
+      router.replace(`/auth/signin?callbackUrl=${callbackUrl}`);
     }
   }, [session, status, router]);
 

@@ -38,7 +38,7 @@ export async function middleware(request: NextRequest) {
   console.log("Full URL:", request.url);
 
   // Allow access to public paths and API routes
-  if (
+  const isPublicRoute = 
     path.startsWith("/_next") ||
     path.startsWith("/api") ||
     path.startsWith("/static") ||
@@ -58,9 +58,11 @@ export async function middleware(request: NextRequest) {
     path.startsWith("/account") ||
     path.startsWith("/auth/") ||
     (path.startsWith("/vendor/onboarding") &&
-      new URL(request.url).searchParams.has("token"))
-  ) {
+      new URL(request.url).searchParams.has("token"));
+      
+  if (isPublicRoute) {
     console.log("Path is in public routes, allowing access");
+    console.log("Specific match for checkout:", path === "/checkout" || path.startsWith("/checkout"));
     return NextResponse.next();
   }
 
@@ -209,25 +211,7 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  // Redirect admin users to admin dashboard if they try to access non-admin routes
-  // But allow them to access the index route (homepage)
-  if (userRole === "admin" && !path.startsWith("/admin") && path !== "/") {
-    console.log(
-      "Admin user accessing non-admin route, redirecting to admin dashboard"
-    );
-    return NextResponse.redirect(new URL("/admin/dashboard", request.url));
-  }
 
-  // Note: Removed the homepage redirect for admin users - let client-side handle it
-
-  // Redirect vendor users to vendor dashboard if they try to access non-vendor routes
-  // But allow them to access the index route (homepage)
-  if (userRole === "vendor" && !path.startsWith("/vendor") && path !== "/") {
-    console.log(
-      "Vendor user accessing non-vendor route, redirecting to vendor dashboard"
-    );
-    return NextResponse.redirect(new URL("/vendor/dashboard", request.url));
-  }
 
   // For non-admin routes, check against protected routes
   const [matchingRoute, params] = findMatchingRoute(path);

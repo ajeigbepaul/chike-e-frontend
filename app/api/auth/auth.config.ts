@@ -169,17 +169,39 @@ export const authOptions: NextAuthOptions = {
         
         console.log("Callback URL:", callbackUrl);
         
-        // If there's a callback URL, return it (let middleware handle access control)
+        // If there's a callback URL, validate and return it
         if (callbackUrl) {
-          const decodedCallbackUrl = decodeURIComponent(callbackUrl);
-          console.log("Decoded callback URL:", decodedCallbackUrl);
-          console.log("Returning callback URL, middleware will handle role check");
-          return decodedCallbackUrl;
+          try {
+            const decodedCallbackUrl = decodeURIComponent(callbackUrl);
+            console.log("Decoded callback URL:", decodedCallbackUrl);
+            
+            // Validate that the callback URL is from the same origin
+            const callbackUrlObj = new URL(decodedCallbackUrl);
+            const baseUrlObj = new URL(baseUrl);
+            
+            if (callbackUrlObj.origin === baseUrlObj.origin) {
+              console.log("Valid callback URL, redirecting to:", decodedCallbackUrl);
+              
+              // Add a flag to indicate this is a login redirect
+              // We'll append it as a query parameter and handle it client-side
+              const redirectUrl = new URL(decodedCallbackUrl);
+              redirectUrl.searchParams.set('_login_redirect', '1');
+              
+              return redirectUrl.toString();
+            } else {
+              console.log("Invalid callback URL origin, redirecting to homepage");
+              return `${baseUrl}/?_login_redirect=1`;
+            }
+          } catch (error) {
+            console.error("Error processing callback URL:", error);
+            console.log("Malformed callback URL, redirecting to homepage");
+            return `${baseUrl}/?_login_redirect=1`;
+          }
         }
         
-        // No callback URL, redirect to homepage and let client-side handle role-based redirect
+        // No callback URL, redirect to homepage with login flag
         console.log("No callback URL, redirecting to homepage");
-        return `${baseUrl}/`;
+        return `${baseUrl}/?_login_redirect=1`;
       }
       
       console.log("External URL, allowing redirect");

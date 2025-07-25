@@ -6,7 +6,7 @@ const ProductsAdCard = () => (
     {/* <svg className="absolute left-0 top-0 w-full h-full z-0" viewBox="0 0 1200 220" fill="none" xmlns="http://www.w3.org/2000/svg">
       <path d="M0 180 Q 400 60 800 180 T 1200 60" stroke="#E6F16A" strokeWidth="16" fill="none" />
     </svg> */}
-    <svg className='absolute left-[15%] top-[6%]' width="900" height="205" viewBox="0 0 882 247" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <svg className='absolute md:left-[15%] hidden top-[6%]' width="900" height="205" viewBox="0 0 882 247" fill="none" xmlns="http://www.w3.org/2000/svg">
 <g clipPath="url(#clip0_150_12303)">
 <path d="M56.0357 415.291C109.521 153.943 300.678 115.022 407.343 141.955M407.343 141.955C481.6 160.705 514.908 211.373 432.306 241.128C301.442 288.27 198.756 238.036 407.343 141.955ZM407.343 141.955C425.438 133.62 445.876 124.94 468.842 115.948C698.993 25.8369 805.334 119.33 855.184 176.84" stroke="#DDE887" strokeWidth="13" strokeLinecap="round"/>
 </g>
@@ -27,7 +27,7 @@ const ProductsAdCard = () => (
       </button>
     </div>
     {/* Images */}
-    <div className="absolute w-32 h-40 md:w-[30rem] md:h-52 right-[1%] top-[5%]">
+    <div className="absolute md:w-32 hidden h-40 md:w-[30rem] md:h-52 right-[1%] top-[5%]">
         <Image src="/prodads.png" alt="Person 2" fill className="object-contain" />
     </div>
     {/* <div className="relative z-10 flex-shrink-0 flex items-end md:items-center mt-8 md:mt-0 md:ml-8">

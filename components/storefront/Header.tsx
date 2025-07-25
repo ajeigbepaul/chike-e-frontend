@@ -178,13 +178,45 @@ function HeaderContent() {
           >
             About Us
           </Link>
-          <CategoryDropdown
+          {/* <CategoryDropdown
             categories={categories}
             isMobile={true}
             setIsMobile={setIsMobile}
             onCategorySelect={handleHeaderCategorySelect}
             trigger={<div className="px-4 flex items-center">Products</div>}
-          />
+          /> */}
+          {/* Products nav: always show link, only show dropdown/caret on /products */}
+              <div className="relative flex items-center ml-4 md:ml-0">
+                <Link
+                  href="/products"
+                  className={`${
+                    pathname.startsWith("/products")
+                      ? "text-brand-yellow"
+                      : "text-gray-900"
+                  } hover:text-brand-yellow transition-colors`}
+                >
+                  Products
+                </Link>
+                {pathname.startsWith("/products") && (
+                  <CategoryDropdown
+                    categories={categories}
+                    isMobile={isMobile}
+                    setIsMobile={setIsMobile}
+                    onCategorySelect={handleHeaderCategorySelect}
+                    trigger={
+                      <button
+                        className={`p-1 ${
+                          pathname.startsWith("/products")
+                            ? "text-brand-yellow"
+                            : "text-gray-900"
+                        } hover:text-brand-yellow transition-colors focus:outline-none`}
+                      >
+                        <ChevronDown className="h-4 w-4" />
+                      </button>
+                    }
+                  />
+                )}
+              </div>
           <Link
             href="/contact"
             className={`block px-4 py-2 ${
