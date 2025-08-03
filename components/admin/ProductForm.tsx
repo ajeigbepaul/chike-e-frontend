@@ -17,7 +17,11 @@ import { CategorySelector } from "./CategorySelector";
 import { ProductFormData, CategoryType, AttributeType } from "@/types/product";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import categoryService from "@/services/api/category";
-import { createProduct, updateProduct } from "@/services/api/products";
+import {
+  createProduct,
+  getProducts,
+  updateProduct,
+} from "@/services/api/products";
 import brandService from "@/services/api/brand";
 import Image from "next/image";
 import vendorService from "@/services/api/vendor";
@@ -60,7 +64,6 @@ export function ProductForm({
     productId,
     progress,
     formData,
-
     isSubmitting,
     coverImageUrl,
     additionalImageUrls,
@@ -75,7 +78,19 @@ export function ProductForm({
     setAdditionalImageUrls,
     setSpecifications,
     resetForm,
+    setAccessories,
   } = useProductForm();
+  // Accessories UI state
+  const {
+    data: allProductsData = { products: [] },
+    isLoading: isProductsLoading,
+    isError: isProductsError,
+    refetch: refetchProducts,
+  } = useQuery({
+    queryKey: ["all-products-for-accessories"],
+    queryFn: async () => await getProducts(1, 1000),
+  });
+  const allProducts = allProductsData.products;
   const [isRefreshingCategories, setIsRefreshingCategories] = useState(false);
   // const [isRefreshingCategories, setIsRefreshingCategories] = useState(false);
   // Fetch categories if not provided
@@ -173,7 +188,7 @@ export function ProductForm({
     }
   }, [product, initialCategories, fetchedCategories]);
 
-  // Auto-select admin's vendor in dropdown
+  // Auto-select admin's vendor in dropdown when no vendor is selected
   useEffect(() => {
     if (
       session?.user?.role === "admin" &&
@@ -215,7 +230,8 @@ export function ProductForm({
         category:
           typeof data.category === "object" ? data.category._id : data.category,
         brand: typeof data.brand === "object" ? data.brand._id : data.brand,
-        vendor: typeof data.vendor === "object" ? data.vendor?._id : data.vendor, // <-- add this line
+        vendor:
+          typeof data.vendor === "object" ? data.vendor?._id : data.vendor, // <-- add this line
         createdAt: data.createdAt
           ? new Date(data.createdAt).toISOString()
           : undefined,
@@ -235,7 +251,9 @@ export function ProductForm({
           router.push("/admin/products");
         } else {
           // Create mode final step: reset for a new product
-          toast.success("Product created successfully! Ready for next product.");
+          toast.success(
+            "Product created successfully! Ready for next product."
+          );
           resetForm();
           if (formRef.current) {
             const fileInputs =
@@ -300,8 +318,6 @@ export function ProductForm({
     setActiveTab(newTab);
   };
 
-  
-
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setIsSubmitting(true);
@@ -318,8 +334,13 @@ export function ProductForm({
       submissionFormData.append("priceUnit", formData.priceUnit || "piece");
       submissionFormData.append("category", formData.category || "");
       submissionFormData.append("brand", formData.brand || "");
+
+      // Handle vendor - use selected vendor or admin's vendor ID if not selected
       if (formData.vendor) {
         submissionFormData.append("vendor", formData.vendor);
+      } else if (session?.user?.role === "admin") {
+        // If admin hasn't selected a vendor, default to their own vendor ID
+        submissionFormData.append("vendor", session.user.id);
       }
 
       // Handle dimensions with guaranteed values
@@ -458,6 +479,16 @@ export function ProductForm({
         String(formData.bulkDiscountPercentage || 0)
       );
 
+      // Add accessories
+      if (formData.accessories && Array.isArray(formData.accessories)) {
+        formData.accessories.forEach((acc, i) => {
+          submissionFormData.append(`accessories[${i}][name]`, acc.name);
+          acc.products.forEach((pid, j) => {
+            const productId = typeof pid === 'string' ? pid : pid._id;
+            submissionFormData.append(`accessories[${i}][products][${j}]`, productId);
+          });
+        });
+      }
       // Submit the form
       productMutation.mutate(submissionFormData);
     } catch (error) {
@@ -501,6 +532,75 @@ export function ProductForm({
         </div>
         <Progress value={progress} className="h-2" />
       </div>
+
+      {/* Accessories Section */}
+      {/* <Card className="mb-4">
+        <CardContent className="pt-6">
+          <div className="grid gap-4">
+            <label className="text-sm font-medium">Accessories</label>
+            {(formData.accessories || []).map((acc, i) => (
+              <div key={i} className="border p-2 rounded mb-2">
+                <div className="flex gap-2 mb-2">
+                  <Input
+                    value={acc.name}
+                    placeholder="Accessory Name"
+                    onChange={(e) => {
+                      const updated = [...(formData.accessories || [])];
+                      updated[i].name = e.target.value;
+                      setAccessories(updated);
+                    }}
+                  />
+                  <Button
+                    type="button"
+                    variant="destructive"
+                    onClick={() =>
+                      setAccessories(
+                        (formData.accessories || []).filter(
+                          (_, idx) => idx !== i
+                        )
+                      )
+                    }
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+                <label className="text-xs font-medium">Select Products</label>
+                <select
+                  multiple
+                  className="w-full border rounded p-2"
+                  value={acc.products}
+                  onChange={(e) => {
+                    const selected = Array.from(e.target.selectedOptions).map(
+                      (opt) => opt.value
+                    );
+                    const updated = [...(formData.accessories || [])];
+                    updated[i].products = selected;
+                    setAccessories(updated);
+                  }}
+                >
+                  {allProducts.map((p) => (
+                    <option key={p._id} value={p._id}>
+                      {p.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            ))}
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() =>
+                setAccessories([
+                  ...(formData.accessories || []),
+                  { name: "", products: [] },
+                ])
+              }
+            >
+              Add Accessory
+            </Button>
+          </div>
+        </CardContent>
+      </Card> */}
 
       <Tabs value={activeTab} onValueChange={handleTabChange}>
         <TabsList className="grid w-full grid-cols-6">
@@ -683,6 +783,7 @@ export function ProductForm({
                   )}
                 </div>
 
+                {/* Vendor field - admin can select any vendor, but defaults to their own vendor ID */}
                 <div>
                   <label className="text-sm font-medium">Vendor *</label>
                   {isVendorsLoading ? (
@@ -701,7 +802,6 @@ export function ProductForm({
                       onChange={(e) =>
                         updateFormData({ vendor: e.target.value })
                       }
-                      required
                     >
                       <option value="">Select vendor</option>
                       {vendorsResponse?.map((vendor: any) => (

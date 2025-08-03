@@ -81,6 +81,14 @@ const productSlice = createSlice({
     updateFormData: (state, action: PayloadAction<Partial<ProductFormData>>) => {
       state.formData = { ...state.formData, ...action.payload };
     },
+    setAccessories: (state, action: PayloadAction<Array<{ _id: string; name: string; products: string[] }>>) => {
+      // Convert the simple format to the Product format for the state
+      state.formData.accessories = action.payload.map(acc => ({
+        _id: acc._id,
+        name: acc.name,
+        products: acc.products.map(productId => ({ _id: productId } as any))
+      }));
+    },
     setCategories: (state, action: PayloadAction<CategoryType[]>) => {
       state.categories = action.payload;
     },
@@ -148,6 +156,7 @@ export const {
   completeStep,
   resetForm,
   setCompletedStep,
+  setAccessories,
 } = productSlice.actions;
 
 export default productSlice.reducer;

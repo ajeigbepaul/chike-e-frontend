@@ -4,7 +4,7 @@ import { useSelector, useDispatch } from "react-redux";
 import Link from "next/link";
 import Image from "next/image";
 import orderService from "@/services/api/order";
-import { clearCart } from "@/store/cartSlice";
+import { clearCart, calculateSubtotal, calculateVAT, calculateTotalWithVAT } from "@/store/cartSlice";
 import {
   clearCheckout,
   setCustomerAddress,
@@ -13,6 +13,7 @@ import {
 } from "@/store/checkoutSlice";
 import toast from "react-hot-toast";
 import { RootState } from "@/store/store";
+import { Breadcrumb } from "@/components/ui/breadcrumb";
 import {
   Dialog,
   DialogContent,
@@ -62,12 +63,9 @@ function CheckoutContent() {
   const [discount, setDiscount] = useState(0);
   const [couponError, setCouponError] = useState("");
 
-  const vat = 5000;
   const Delivery = 20000;
-  const itemsTotal = items.reduce(
-    (sum, item) => sum + item.price * item.quantity,
-    0
-  );
+  const itemsTotal = calculateSubtotal(items);
+  const vat = calculateVAT(items);
   const total = itemsTotal + vat + Delivery - discount;
 
   // Debug: Let's verify the calculation step by step
@@ -79,7 +77,12 @@ function CheckoutContent() {
   console.log("Final total:", total);
   console.log("Expected total should be:", itemsTotal + 5000 + 20000);
   console.log("=== END DEBUG ===");
-
+  console.log(
+    "DELIVERY DETAILS:",
+    customerAddress,
+    deliveryDetails,
+    paymentMethod
+  );
   const openModal = (type: string) => setIsModalOpen(type);
   const closeModal = () => setIsModalOpen(null);
 
@@ -320,6 +323,7 @@ function CheckoutContent() {
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-8 bg-background min-h-screen theme-transition">
+      <Breadcrumb />
       <div className="flex flex-col md:flex-row gap-8">
         {/* Checkout Form */}
         <div className="flex-1 bg-card rounded-lg shadow-sm border border-border p-6">
@@ -789,19 +793,21 @@ export default function Checkout() {
   const { data: session, status } = useSession();
   const router = useRouter();
   console.log(session, "Session");
-  
+
   // Handle login redirect flag for checkout
   useEffect(() => {
-    if (typeof window !== 'undefined') {
+    if (typeof window !== "undefined") {
       const urlParams = new URLSearchParams(window.location.search);
-      if (urlParams.has('_login_redirect')) {
+      if (urlParams.has("_login_redirect")) {
         // Set flag in sessionStorage and clean up URL
-        sessionStorage.setItem('just-logged-in', 'true');
-        
+        sessionStorage.setItem("just-logged-in", "true");
+
         // Remove the parameter from URL
-        urlParams.delete('_login_redirect');
-        const newUrl = `${window.location.pathname}${urlParams.toString() ? '?' + urlParams.toString() : ''}`;
-        window.history.replaceState({}, '', newUrl);
+        urlParams.delete("_login_redirect");
+        const newUrl = `${window.location.pathname}${
+          urlParams.toString() ? "?" + urlParams.toString() : ""
+        }`;
+        window.history.replaceState({}, "", newUrl);
       }
     }
   }, []);
@@ -810,9 +816,10 @@ export default function Checkout() {
     if (status === "loading") return;
     if (!session) {
       // Get the current URL for proper redirect after login
-      const currentUrl = typeof window !== 'undefined' ? window.location.href : '/checkout';
+      const currentUrl =
+        typeof window !== "undefined" ? window.location.href : "/checkout";
       const callbackUrl = encodeURIComponent(currentUrl);
-      console.log('Redirecting to login with callback:', callbackUrl);
+      console.log("Redirecting to login with callback:", callbackUrl);
       router.replace(`/auth/signin?callbackUrl=${callbackUrl}`);
     }
   }, [session, status, router]);

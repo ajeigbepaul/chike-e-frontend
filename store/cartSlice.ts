@@ -14,6 +14,26 @@ interface CartState {
   isOpen: boolean;
 }
 
+// VAT rate constant (7%)
+const VAT_RATE = 0.07;
+
+// Utility functions for cart calculations
+export const calculateItemTotal = (price: number, quantity: number) => price * quantity;
+
+export const calculateSubtotal = (items: CartItem[]) => 
+  items.reduce((sum, item) => sum + calculateItemTotal(item.price, item.quantity), 0);
+
+export const calculateVAT = (items: CartItem[]) => {
+  const subtotal = calculateSubtotal(items);
+  return subtotal * VAT_RATE;
+};
+
+export const calculateTotalWithVAT = (items: CartItem[]) => {
+  const subtotal = calculateSubtotal(items);
+  const vat = calculateVAT(items);
+  return subtotal + vat;
+};
+
 const initialState: CartState = {
   items: [],
   isOpen: false,

@@ -63,7 +63,7 @@ export function Sidebar() {
       subItems: [
         { name: "All Products", href: "/admin/products" },
         { name: "Add New", href: "/admin/products/new" },
-        // { name: "Import/Export", href: "/admin/products/import-export" },
+        { name: "Add Accessories", href: "/admin/products/accessories" },
       ],
     },
     {

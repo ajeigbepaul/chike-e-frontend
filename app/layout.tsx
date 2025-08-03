@@ -10,6 +10,7 @@ import { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { RootState } from "@/store/store";
 import { setCart } from "@/store/cartSlice";
+import VendorHeader from "@/components/vendor/VendorHeader";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -77,6 +78,7 @@ export default function RootLayout({
 }) {
   const pathname = usePathname();
   const isAdmin = pathname.startsWith("/admin");
+  const isVendor = pathname.startsWith("/vendor");
 
   return (
     <html lang="en">
@@ -85,12 +87,13 @@ export default function RootLayout({
       >
         <NextAuthProvider>
           <ClientProviders>
-            {!isAdmin && <Header />}
+            {!isAdmin && !isVendor && <Header />}
+            {isVendor && <VendorHeader />}
             <main className="flex-grow">
               <CartPersistenceWatcher />
               {children}
             </main>
-            {!isAdmin && <Footer />}
+            {!isAdmin && !isVendor && <Footer />}
             <BotpressWidget />
           </ClientProviders>
         </NextAuthProvider>

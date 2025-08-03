@@ -1,8 +1,10 @@
 "use client";
 
-import ProductsAdCard from '@/components/storefront/ProductsAdCard'
-import ProductsGallerySection from '@/components/storefront/ProductsGallerySection'
-import React, { Suspense } from 'react'
+import ProductsAdCard from "@/components/storefront/ProductsAdCard";
+import ProductsGallerySection from "@/components/storefront/ProductsGallerySection";
+import { Breadcrumb } from "@/components/ui/breadcrumb";
+import { CategoryNavigation } from "@/components/storefront/CategoryNavigation";
+import React, { Suspense } from "react";
 
 function ProductsGalleryFallback() {
   return (
@@ -13,7 +15,10 @@ function ProductsGalleryFallback() {
             <div className="h-6 bg-gray-200 rounded animate-pulse"></div>
             <div className="space-y-2">
               {Array.from({ length: 5 }).map((_, i) => (
-                <div key={i} className="h-4 bg-gray-200 rounded animate-pulse"></div>
+                <div
+                  key={i}
+                  className="h-4 bg-gray-200 rounded animate-pulse"
+                ></div>
               ))}
             </div>
           </div>
@@ -36,11 +41,20 @@ function ProductsGalleryFallback() {
 
 export default function Products() {
   return (
-    <main className='w-full'>
-       <ProductsAdCard/>
-       <Suspense fallback={<ProductsGalleryFallback />}>
-         <ProductsGallerySection initialProducts={[]} />
-       </Suspense>
+    <main className="w-full">
+       <CategoryNavigation />
+      <div className="max-w-6xl mx-auto px-4 py-4 relative">
+        <div className="mb-4">
+          <Suspense fallback={<div className="h-6 bg-gray-200 rounded animate-pulse w-48"></div>}>
+            <Breadcrumb />
+          </Suspense>
+        </div>
+      </div>
+     
+      <ProductsAdCard />
+      <Suspense fallback={<ProductsGalleryFallback />}>
+        <ProductsGallerySection initialProducts={[]} />
+      </Suspense>
     </main>
-  )
+  );
 }

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import VendorHeader from "@/components/vendor/VendorHeader";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import {
@@ -22,11 +23,9 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { format } from "date-fns";
 import {
-  
   Package,
   ShoppingCart,
   DollarSign,
- 
   RefreshCw,
   Plus,
 } from "lucide-react";
@@ -73,6 +72,8 @@ interface DashboardData {
 }
 
 export default function VendorDashboard() {
+  // Add custom vendor header
+  // ...existing code...
   const { status } = useSession();
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(true);
@@ -283,137 +284,143 @@ export default function VendorDashboard() {
   }
 
   return (
-    <div className="p-6 space-y-6">
-      <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold">Vendor Dashboard</h1>
-        <div className="flex gap-2">
-          <Button variant="outline" onClick={handleRefresh}>
-            <RefreshCw className="h-4 w-4 mr-2" />
-            Refresh
-          </Button>
-          <Button onClick={handleAddProduct}>
+    <>
+      {/* <VendorHeader /> */}
+      <div className="p-6 space-y-6">
+        <div className="flex justify-between items-center">
+          <h1 className="text-2xl font-bold">Vendor Dashboard</h1>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={handleRefresh}>
+              <RefreshCw className="h-4 w-4 mr-2" />
+              Refresh
+            </Button>
+            {/* <Button onClick={handleAddProduct}>
             <Plus className="h-4 w-4 mr-2" />
             Add Product
-          </Button>
-        </div>
-      </div>
-
-      {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
-              Total Products
-            </CardTitle>
-            <Package className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {dashboardData?.stats?.totalProducts || 0}
-            </div>
-            <p className="text-xs text-muted-foreground">
-              {dashboardData?.stats?.lowStockProducts || 0} low in stock
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Orders</CardTitle>
-            <ShoppingCart className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {dashboardData?.stats?.totalOrders || 0}
-            </div>
-            <p className="text-xs text-muted-foreground">
-              {dashboardData?.stats?.pendingOrders || 0} pending orders
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
-            <DollarSign className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              ${(dashboardData?.stats?.totalRevenue || 0).toFixed(2)}
-            </div>
-            <p className="text-xs text-muted-foreground">
-              {dashboardData?.stats?.totalSales || 0} total sales
-            </p>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Recent Orders */}
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle>Recent Orders</CardTitle>
-              <CardDescription>
-                Latest orders from your customers
-              </CardDescription>
-            </div>
-            <Button variant="outline" onClick={handleViewAllOrders}>
-              View All
-            </Button>
+          </Button> */}
           </div>
-        </CardHeader>
-        <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Order ID</TableHead>
-                <TableHead>Customer</TableHead>
-                <TableHead>Date</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead className="text-right">Total</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {dashboardData?.recentOrders?.map((order) => (
-                <TableRow key={order.id}>
-                  <TableCell>{order.id}</TableCell>
-                  <TableCell>
-                    <div>
-                      <div className="font-medium">{order.customer.name}</div>
-                      <div className="text-sm text-muted-foreground">
-                        {order.customer.email}
-                      </div>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    {format(new Date(order.orderDate), "MMM d, yyyy")}
-                  </TableCell>
-                  <TableCell>
-                    <Badge
-                      variant={
-                        order.status === "delivered"
-                          ? "default"
-                          : order.status === "cancelled"
-                          ? "destructive"
-                          : "secondary"
-                      }
-                    >
-                      {order.status}
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="text-right">
-                    ${order.total.toFixed(2)}
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
+        </div>
 
-      {/* Popular Products */}
-      <Card>
+        {/* Stats Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">
+                Total Products
+              </CardTitle>
+              <Package className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">
+                {dashboardData?.stats?.totalProducts || 0}
+              </div>
+              <p className="text-xs text-muted-foreground">
+                {dashboardData?.stats?.lowStockProducts || 0} low in stock
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">
+                Total Orders
+              </CardTitle>
+              <ShoppingCart className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">
+                {dashboardData?.stats?.totalOrders || 0}
+              </div>
+              <p className="text-xs text-muted-foreground">
+                {dashboardData?.stats?.pendingOrders || 0} pending orders
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">
+                Total Revenue
+              </CardTitle>
+              <DollarSign className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">
+                #{(dashboardData?.stats?.totalRevenue || 0).toFixed(2)}
+              </div>
+              <p className="text-xs text-muted-foreground">
+                {dashboardData?.stats?.totalSales || 0} total sales
+              </p>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Recent Orders */}
+        <Card>
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle>Recent Orders</CardTitle>
+                <CardDescription>
+                  Latest orders from your customers
+                </CardDescription>
+              </div>
+              <Button variant="outline" onClick={handleViewAllOrders}>
+                View All
+              </Button>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Order ID</TableHead>
+                  <TableHead>Customer</TableHead>
+                  <TableHead>Date</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead className="text-right">Total</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {dashboardData?.recentOrders?.map((order) => (
+                  <TableRow key={order.id}>
+                    <TableCell>{order.id}</TableCell>
+                    <TableCell>
+                      <div>
+                        <div className="font-medium">{order.customer.name}</div>
+                        <div className="text-sm text-muted-foreground">
+                          {order.customer.email}
+                        </div>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      {format(new Date(order.orderDate), "MMM d, yyyy")}
+                    </TableCell>
+                    <TableCell>
+                      <Badge
+                        variant={
+                          order.status === "delivered"
+                            ? "default"
+                            : order.status === "cancelled"
+                            ? "destructive"
+                            : "secondary"
+                        }
+                      >
+                        {order.status}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      ${order.total.toFixed(2)}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
+
+        {/* Popular Products */}
+        {/* <Card>
         <CardHeader>
           <div className="flex items-center justify-between">
             <div>
@@ -461,63 +468,64 @@ export default function VendorDashboard() {
             </TableBody>
           </Table>
         </CardContent>
-      </Card>
+      </Card> */}
 
-      {/* Inventory Alerts */}
-      {dashboardData?.inventoryAlerts &&
-        dashboardData.inventoryAlerts.length > 0 && (
-          <Card>
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <div>
-                  <CardTitle>Low Stock Alerts</CardTitle>
-                  <CardDescription>
-                    Products that need attention
-                  </CardDescription>
+        {/* Inventory Alerts */}
+        {dashboardData?.inventoryAlerts &&
+          dashboardData.inventoryAlerts.length > 0 && (
+            <Card>
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle>Low Stock Alerts</CardTitle>
+                    <CardDescription>
+                      Products that need attention
+                    </CardDescription>
+                  </div>
+                  <Button variant="outline" onClick={handleViewInventory}>
+                    View Inventory
+                  </Button>
                 </div>
-                <Button variant="outline" onClick={handleViewInventory}>
-                  View Inventory
-                </Button>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Product</TableHead>
-                    <TableHead>Category</TableHead>
-                    <TableHead>Price</TableHead>
-                    <TableHead>Stock</TableHead>
-                    <TableHead>Status</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {dashboardData?.inventoryAlerts?.map((product) => (
-                    <TableRow key={product.id}>
-                      <TableCell>{product.name}</TableCell>
-                      <TableCell>{product.category}</TableCell>
-                      <TableCell>${product.price.toFixed(2)}</TableCell>
-                      <TableCell>{product.stock}</TableCell>
-                      <TableCell>
-                        <Badge
-                          variant={
-                            product.status === "active"
-                              ? "default"
-                              : product.status === "inactive"
-                              ? "destructive"
-                              : "secondary"
-                          }
-                        >
-                          {product.status}
-                        </Badge>
-                      </TableCell>
+              </CardHeader>
+              <CardContent>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Product</TableHead>
+                      <TableHead>Category</TableHead>
+                      <TableHead>Price</TableHead>
+                      <TableHead>Stock</TableHead>
+                      <TableHead>Status</TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </CardContent>
-          </Card>
-        )}
-    </div>
+                  </TableHeader>
+                  <TableBody>
+                    {dashboardData?.inventoryAlerts?.map((product) => (
+                      <TableRow key={product.id}>
+                        <TableCell>{product.name}</TableCell>
+                        <TableCell>{product.category}</TableCell>
+                        <TableCell>${product.price.toFixed(2)}</TableCell>
+                        <TableCell>{product.stock}</TableCell>
+                        <TableCell>
+                          <Badge
+                            variant={
+                              product.status === "active"
+                                ? "default"
+                                : product.status === "inactive"
+                                ? "destructive"
+                                : "secondary"
+                            }
+                          >
+                            {product.status}
+                          </Badge>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </Card>
+          )}
+      </div>
+    </>
   );
 }

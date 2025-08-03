@@ -84,6 +84,7 @@ export interface Product {
   reviews?: any[];
   isFavorite?: boolean;
   createdAt: string;
+  accessories?: Array<{ _id: string; name: string; products: Product[] }>;
 }
 
 export type CategoryType = Category;
@@ -123,6 +124,7 @@ export interface ProductFormData {
     quantity: number;
   }>;
   vendor?: string;
+  accessories?: Array<{ _id: string; name: string; products: Product[] }>;
 }
 
 export interface AttributeType {

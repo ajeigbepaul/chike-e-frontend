@@ -8,7 +8,7 @@ import Link from "next/link";
 import { Eye, EyeOff } from "lucide-react";
 
 function LoginContent() {
-  const searchParams = useSearchParams();
+  // const searchParams = useSearchParams();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -17,25 +17,25 @@ function LoginContent() {
   const router = useRouter();
   const { update } = useSession();
 
-  useEffect(() => {
-    const verified = searchParams.get("verified");
-    const error = searchParams.get("error");
-    const registered = searchParams.get("registered");
+  // useEffect(() => {
+  //   const verified = searchParams.get("verified");
+  //   const error = searchParams.get("error");
+  //   const registered = searchParams.get("registered");
 
-    if (verified === "true") {
-      toast.success("Email verified successfully! Please log in.");
-    }
-    if (error === "invalid_token") {
-      toast.error(
-        "Invalid or expired verification link. Please try registering again."
-      );
-    }
-    if (registered === "true") {
-      toast.success(
-        "Registration successful! Please check your email to verify your account."
-      );
-    }
-  }, [searchParams]);
+  //   if (verified === "true") {
+  //     toast.success("Email verified successfully! Please log in.");
+  //   }
+  //   if (error === "invalid_token") {
+  //     toast.error(
+  //       "Invalid or expired verification link. Please try registering again."
+  //     );
+  //   }
+  //   if (registered === "true") {
+  //     console.log(
+  //       "Registration successful! Please check your email to verify your account."
+  //     );
+  //   }
+  // }, [searchParams]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

@@ -107,7 +107,7 @@ function VerifyEmailContent() {
           <p className="text-red-600 mb-6">{error}</p>
           <button
             onClick={() => router.push("/auth/signin")}
-            className="inline-block w-full bg-blue-600 text-white py-2 px-4 rounded hover:bg-blue-700 transition duration-200"
+            className="inline-block w-full bg-brand-yellow text-white py-2 px-4 rounded hover:bg-blue-700 transition duration-200"
           >
             Return to Login
           </button>

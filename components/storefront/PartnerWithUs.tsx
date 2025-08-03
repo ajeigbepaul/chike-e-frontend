@@ -113,10 +113,6 @@ export default function PartnerWithUs() {
           <DialogContent>
             <DialogHeader>
               <DialogTitle>Request Vendor Invitation</DialogTitle>
-              <DialogDescription>
-                Enter your email and name. Our team will review your request and
-                send you an invitation to become a vendor.
-              </DialogDescription>
             </DialogHeader>
             {isSuccess && !isError ? (
               <div className="text-green-600 text-center py-4">

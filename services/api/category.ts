@@ -67,6 +67,28 @@ const categoryService = {
   },
 
   /**
+   * Get category by slug
+   * @param slug Category slug
+   */
+  getCategoryBySlug: async (slug: string): Promise<ApiResponse<Category>> => {
+    try {
+      const response = await api.get(`/categories/slug/${slug}`);
+      return {
+        success: true,
+        message: "Category retrieved successfully",
+        data: response.data.data.category,
+      };
+    } catch (error) {
+      const axiosError = error as AxiosError<any>;
+      return {
+        success: false,
+        message:
+          axiosError.response?.data?.message || "Failed to retrieve category",
+      };
+    }
+  },
+
+  /**
    * Create a new category
    * @param data Category creation data
    */

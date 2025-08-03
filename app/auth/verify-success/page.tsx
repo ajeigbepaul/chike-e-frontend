@@ -67,7 +67,7 @@ function VerifySuccessContent() {
         </p>
         <Link
           href="/auth/signin?verified=true"
-          className="inline-block w-full bg-blue-600 text-white py-2 px-4 rounded hover:bg-blue-700 transition duration-200"
+          className="inline-block w-full bg-brand-yellow text-white py-2 px-4 rounded hover:bg-blue-700 transition duration-200"
         >
           Go to Login Now
         </Link>
