@@ -48,6 +48,8 @@ export async function middleware(request: NextRequest) {
     path === "/products" ||
     path.startsWith("/products") ||
     path.startsWith("/product") ||
+    path.startsWith("/category") ||
+    path.startsWith("/category/[slug]") ||
     path === "/checkout" ||
     path.startsWith("/checkout") ||
     path === "/cart" ||
@@ -144,6 +146,8 @@ export async function middleware(request: NextRequest) {
     if (
       path.startsWith("/products") ||
       path.startsWith("/product") ||
+      path.startsWith("/category") ||
+      path.startsWith("/category/[slug]") ||
       path === "/about" ||
       path.startsWith("/cart") ||
       path.startsWith("/checkout")
