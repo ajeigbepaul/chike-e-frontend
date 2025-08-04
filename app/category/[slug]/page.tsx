@@ -185,13 +185,13 @@ export default function CategoryPage() {
       },
       // Level 1
       {
-        header: "text-xl font-semibold",
+        header: "text-lg font-semibold",
         container: "bg-gray-50 rounded-lg p-4",
         margin: "mt-6",
       },
       // Level 2+
       {
-        header: "text-lg font-medium",
+        header: "text-sm font-medium",
         container: "bg-gray-50/50 rounded-md p-3",
         margin: "mt-4",
       },
