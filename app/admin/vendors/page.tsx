@@ -44,7 +44,6 @@ const VendorInviteDialog = dynamic(
 
 export default function VendorsPage() {
   const router = useRouter();
-  // const { toast } = useToast();
   const queryClient = useQueryClient();
   const [search, setSearch] = useState("");
   const [showInviteDialog, setShowInviteDialog] = useState(false);
@@ -60,7 +59,7 @@ export default function VendorsPage() {
     },
   });
 
-  // Fetch pending invitations
+  // Fetch pending invitations and requests
   const {
     data: invitationsData,
     isLoading: isInvitationsLoading,
@@ -85,7 +84,7 @@ export default function VendorsPage() {
       id: inv._id,
       name: inv.name,
       email: inv.email,
-      status: "pending",
+      status: inv.status, // Use request or pending
       joinedDate: inv.createdAt,
       isInvitation: true,
     })),
@@ -109,23 +108,32 @@ export default function VendorsPage() {
 
   const handleInviteVendor = async (data: VendorInviteRequest) => {
     try {
-      // setInviteLoading(true); // Keeping this line as per user's last instruction to leave invite vendor functionality as is
       const response = await vendorService.inviteVendor(data);
-
       if (response.success) {
         toast.success("Vendor invitation sent successfully");
         setShowInviteDialog(false);
-        // Refresh the vendor list to include the new invitation
-        // fetchVendors(); // Keeping this line as per user's last instruction to leave invite vendor functionality as is
-        queryClient.invalidateQueries({ queryKey: ["vendors"] }); // Invalidate to refetch
+        queryClient.invalidateQueries({ queryKey: ["vendors", "pending-invitations"] });
       } else {
         throw new Error(response.message || "Failed to send invitation");
       }
     } catch (error: any) {
       console.error("Invite vendor error:", error);
       toast.error(error.message || "Failed to send invitation");
-    } finally {
-      // setInviteLoading(false); // Keeping this line as per user's last instruction to leave invite vendor functionality as is
+    }
+  };
+
+  const handleApproveRequest = async (id: string) => {
+    try {
+      const response = await vendorService.approveVendorRequest(id);
+      if (response.success) {
+        toast.success("Vendor request approved and invitation sent successfully");
+        queryClient.invalidateQueries({ queryKey: ["pending-invitations"] });
+      } else {
+        throw new Error(response.message || "Failed to approve request");
+      }
+    } catch (error: any) {
+      console.error("Approve request error:", error);
+      toast.error(error.message || "Failed to approve vendor request");
     }
   };
 
@@ -133,40 +141,6 @@ export default function VendorsPage() {
     router.push(`/admin/vendors/${vendorId}`);
   };
 
-  // Handle vendor status update
-  // const handleStatusUpdate = async (
-  //   vendorId: string,
-  //   status: "active" | "inactive"
-  // ) => {
-  //   try {
-  //     setIsLoading(true);
-  //     const response = await vendorService.updateVendorStatus(vendorId, {
-  //       status,
-  //     });
-
-  //     if (response.success) {
-  //       toast({
-  //         title: "Success",
-  //         description: "Vendor status updated successfully",
-  //       });
-  //       // Refresh the vendor list to reflect the status change
-  //       fetchVendors();
-  //     } else {
-  //       throw new Error(response.message || "Failed to update vendor status");
-  //     }
-  //   } catch (error: any) {
-  //     console.error("Update vendor status error:", error);
-  //     toast({
-  //       title: "Error",
-  //       description: error.message || "Failed to update vendor status",
-  //       variant: "destructive",
-  //     });
-  //   } finally {
-  //     setIsLoading(false);
-  //   }
-  // };
-
-  // Mutations for admin actions
   const resendMutation = useMutation({
     mutationFn: (id: string) => vendorService.resendInvitation(id),
     onSuccess: (data) => {
@@ -194,14 +168,8 @@ export default function VendorsPage() {
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-bold">Vendor Management</h1>
         <div className="flex gap-2">
-          <Button
-            variant="outline"
-            onClick={handleRefresh}
-            disabled={isLoading}
-          >
-            <RefreshCw
-              className={`h-4 w-4 mr-2 ${isLoading ? "animate-spin" : ""}`}
-            />
+          <Button variant="outline" onClick={handleRefresh} disabled={isLoading}>
+            <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? "animate-spin" : ""}`} />
             Refresh
           </Button>
           <Button onClick={() => setShowInviteDialog(true)}>
@@ -229,9 +197,7 @@ export default function VendorsPage() {
           role="alert"
         >
           <span className="block sm:inline">
-            {error instanceof Error
-              ? error.message
-              : "An unknown error occurred."}
+            {error instanceof Error ? error.message : "An unknown error occurred."}
           </span>
           <Button
             variant="link"
@@ -251,7 +217,7 @@ export default function VendorsPage() {
               <TableHead>Email</TableHead>
               <TableHead>Status</TableHead>
               <TableHead>Joined/Requested</TableHead>
-              <TableHead className="w-[100px]">Actions</TableHead>
+              <TableHead className="w-[150px]">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -277,9 +243,9 @@ export default function VendorsPage() {
                       variant={
                         row.status === "active"
                           ? "default"
-                          : row.status === "pending"
-                          ? "secondary"
-                          : "outline"
+                          : row.status === "request"
+                          ? "outline"
+                          : "secondary"
                       }
                     >
                       {row.status}
@@ -293,17 +259,26 @@ export default function VendorsPage() {
                   <TableCell>
                     {row.isInvitation ? (
                       <div className="flex gap-2">
-                        <button
-                          className="inline-flex items-center px-2 py-1 text-xs font-medium rounded bg-blue-100 text-blue-800 hover:bg-blue-200 transition"
-                          onClick={() => resendMutation.mutate(row.id)}
-                          disabled={resendMutation.isPending}
-                          title="Send/Resend Invitation"
-                        >
-                          <Mail className="h-4 w-4 mr-1" />
-                          {resendMutation.isPending
-                            ? "Sending..."
-                            : "Send/Resend"}
-                        </button>
+                        {row.status === "request" ? (
+                          <button
+                            className="inline-flex items-center px-2 py-1 text-xs font-medium rounded bg-blue-100 text-blue-800 hover:bg-blue-200 transition"
+                            onClick={() => handleApproveRequest(row.id)}
+                            title="Approve Request and Send Invitation"
+                          >
+                            <Mail className="h-4 w-4 mr-1" />
+                            Approve Request
+                          </button>
+                        ) : (
+                          <button
+                            className="inline-flex items-center px-2 py-1 text-xs font-medium rounded bg-blue-100 text-blue-800 hover:bg-blue-200 transition"
+                            onClick={() => resendMutation.mutate(row.id)}
+                            disabled={resendMutation.isPending}
+                            title="Resend Invitation"
+                          >
+                            <Mail className="h-4 w-4 mr-1" />
+                            {resendMutation.isPending ? "Resending..." : "Resend"}
+                          </button>
+                        )}
                         <button
                           className="inline-flex items-center px-2 py-1 text-xs font-medium rounded bg-red-100 text-red-800 hover:bg-red-200 transition"
                           onClick={() => deleteMutation.mutate(row.id)}

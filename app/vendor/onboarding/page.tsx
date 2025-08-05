@@ -126,7 +126,7 @@ function VendorOnboardingContent() {
         throw new Error(response.message || "Failed to complete onboarding");
       }
       toast.success("Registration completed successfully");
-      router.push("/vendor/dashboard");
+      router.push("/auth/signin");
     } catch (error: any) {
       console.error("Error completing vendor onboarding:", error);
       toast.error(error.message || "Failed to complete registration");
@@ -253,7 +253,7 @@ function VendorOnboardingContent() {
               <Button type="submit" className="w-full" disabled={isLoading}>
                 {isLoading ? (
                   <>
-                    <Spinner className="mr-2 h-2 w-2" />
+                    {/* <Spinner className="mr-2 h-2 w-2" /> */}
                     Completing...
                   </>
                 ) : (

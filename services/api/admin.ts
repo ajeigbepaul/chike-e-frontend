@@ -58,4 +58,56 @@ export const adminApi = {
     );
     return response.data;
   },
+
+  getDashboardStats: async () => {
+    const response = await api.get("/admin/dashboard");
+    return response.data.data;
+  },
+
+  // Vendor management
+  getVendors: async (page?: number, limit?: number) => {
+    let url = "/admin/vendors";
+    if (page !== undefined && limit !== undefined) {
+      url += `?page=${page}&limit=${limit}`;
+    }
+    const response = await api.get(url);
+    return response.data;
+  },
+
+  getVendorById: async (vendorId: string) => {
+    const response = await api.get(`/admin/vendors/${vendorId}`);
+    return response.data.data;
+  },
+
+  deleteVendor: async (vendorId: string) => {
+    const response = await api.delete(`/admin/vendors/${vendorId}`);
+    return response.data;
+  },
+
+  updateVendorStatus: async (vendorId: string, statusData: { status: string }) => {
+    const response = await api.patch(`/admin/vendors/${vendorId}/status`, statusData);
+    return response.data;
+  },
+
+  // Vendor invitations
+  getPendingInvitations: async () => {
+    const response = await api.get("/admin/vendor-invitations");
+    return response.data.data;
+  },
+
+  resendInvitation: async (id: string) => {
+    const response = await api.post(`/admin/vendor-invitations/${id}/send`);
+    return response.data;
+  },
+
+  deleteInvitation: async (id: string) => {
+    const response = await api.delete(`/admin/vendor-invitations/${id}`);
+    return response.data;
+  },
+
+  // Vendor requests
+  approveVendorRequest: async (id: string) => {
+    const response = await api.patch(`/admin/vendor-requests/${id}/approve`);
+    return response.data;
+  },
 };

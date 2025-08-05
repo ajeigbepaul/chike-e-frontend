@@ -246,55 +246,55 @@ export default function Home() {
     </main>
   );
 
-  if (isAdvertError) {
-    return (
-      <main className="w-full">
-        <div className="relative md:h-screen h-[60vh] w-full bg-gray-100 flex items-center justify-center">
-          <div className="text-center">
-            <h2 className="text-2xl font-bold text-gray-800 mb-2">
-              Error Loading Hero Section
-            </h2>
-            <p className="text-gray-600">
-              Unable to load advertisement content.
-            </p>
-          </div>
-        </div>
-        <ProductCategories />
-        <FeaturedProducts
-          products={featured}
-          wishlist={wishlist}
-          onAddToCart={handleAddToCart}
-          onToggleWishlist={handleToggleWishlist}
-          isLoggedIn={isLoggedIn}
-          onRequireLogin={handleRequireLogin}
-        />
-        <TrendingProducts
-          products={trending}
-          wishlist={wishlist}
-          onAddToCart={handleAddToCart}
-          onToggleWishlist={handleToggleWishlist}
-          isLoggedIn={isLoggedIn}
-          onRequireLogin={handleRequireLogin}
-        />
-        <WhyUs />
-        <OurNewestArrivals
-          products={newest}
-          wishlist={wishlist}
-          onAddToCart={handleAddToCart}
-          onToggleWishlist={handleToggleWishlist}
-          isLoggedIn={isLoggedIn}
-          onRequireLogin={handleRequireLogin}
-        />
-        <MostOrderedProducts
-          products={mostOrdered}
-          wishlist={wishlist}
-          onAddToCart={handleAddToCart}
-          onToggleWishlist={handleToggleWishlist}
-          isLoggedIn={isLoggedIn}
-          onRequireLogin={handleRequireLogin}
-        />
-        <PartnerWithUs />
-      </main>
-    );
-  }
+  // if (isAdvertError) {
+  //   return (
+  //     <main className="w-full">
+  //       <div className="relative md:h-screen h-[60vh] w-full bg-gray-100 flex items-center justify-center">
+  //         <div className="text-center">
+  //           <h2 className="text-2xl font-bold text-gray-800 mb-2">
+  //             Error Loading Hero Section
+  //           </h2>
+  //           <p className="text-gray-600">
+  //             Unable to load advertisement content.
+  //           </p>
+  //         </div>
+  //       </div>
+  //       <ProductCategories />
+  //       <FeaturedProducts
+  //         products={featured}
+  //         wishlist={wishlist}
+  //         onAddToCart={handleAddToCart}
+  //         onToggleWishlist={handleToggleWishlist}
+  //         isLoggedIn={isLoggedIn}
+  //         onRequireLogin={handleRequireLogin}
+  //       />
+  //       <TrendingProducts
+  //         products={trending}
+  //         wishlist={wishlist}
+  //         onAddToCart={handleAddToCart}
+  //         onToggleWishlist={handleToggleWishlist}
+  //         isLoggedIn={isLoggedIn}
+  //         onRequireLogin={handleRequireLogin}
+  //       />
+  //       <WhyUs />
+  //       <OurNewestArrivals
+  //         products={newest}
+  //         wishlist={wishlist}
+  //         onAddToCart={handleAddToCart}
+  //         onToggleWishlist={handleToggleWishlist}
+  //         isLoggedIn={isLoggedIn}
+  //         onRequireLogin={handleRequireLogin}
+  //       />
+  //       <MostOrderedProducts
+  //         products={mostOrdered}
+  //         wishlist={wishlist}
+  //         onAddToCart={handleAddToCart}
+  //         onToggleWishlist={handleToggleWishlist}
+  //         isLoggedIn={isLoggedIn}
+  //         onRequireLogin={handleRequireLogin}
+  //       />
+  //       <PartnerWithUs />
+  //     </main>
+  //   );
+  // }
 }

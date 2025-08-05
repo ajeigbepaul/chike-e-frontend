@@ -34,7 +34,7 @@ export default function UnauthorizedPage() {
         <div className="space-y-3">
           <button
             onClick={() => router.push("/auth/signin")}
-            className="block w-full px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
+            className="block w-full px-4 py-2 bg-brand-yellow text-white rounded hover:bg-blue-700 transition-colors"
           >
             Return to Sign In
           </button>

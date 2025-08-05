@@ -44,7 +44,7 @@ const ProductsAdCard = () => (
       </button>
     </div>
     {/* Images */}
-    <div className="absolute md:w-32 h-40 md:w-[30rem] md:h-52 right-[1%] top-[5%] hidden md:block">
+    <div className="absolute md:w-32 h-40  md:h-52 right-[1%] top-[5%] hidden md:block">
       <Image
         src="/prodads.png"
         alt="Person 2"

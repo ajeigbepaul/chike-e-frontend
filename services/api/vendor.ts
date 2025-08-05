@@ -33,7 +33,7 @@ export interface Vendor {
   id: string;
   name: string;
   email: string;
-  status: "active" | "pending" | "inactive";
+  status: "request" | "pending" | "accepted" | "rejected";
   products: number;
   sales: number;
   joinedDate: string;
@@ -81,7 +81,7 @@ const vendorService = {
     inviteData: VendorInviteRequest
   ): Promise<ApiResponse> => {
     try {
-      const response = await api.post("/admin/vendors/invite", inviteData);
+      const response = await api.post("/vendors/invite", inviteData);
       return {
         success: true,
         message: "Invitation sent successfully",
@@ -281,11 +281,11 @@ const vendorService = {
    */
   getVendorById: async (vendorId: string): Promise<ApiResponse<Vendor>> => {
     try {
-      const response = await api.get(`/admin/vendors/${vendorId}`);
+      const response = await api.get(`/vendors/admin/${vendorId}`);
       return {
         success: true,
         message: "Vendor retrieved successfully",
-        data: response.data,
+        data: response.data.data,
       };
     } catch (error) {
       const axiosError = error as AxiosError<any>;
@@ -333,7 +333,7 @@ const vendorService = {
    */
   deleteVendor: async (vendorId: string): Promise<ApiResponse> => {
     try {
-      const response = await api.delete(`/admin/vendors/${vendorId}`);
+      const response = await api.delete(`/vendors/admin/${vendorId}`);
       return {
         success: true,
         message: "Vendor deleted successfully",
@@ -397,6 +397,23 @@ const vendorService = {
   /**
    * Get all pending vendor invitations (admin only)
    */
+  // getPendingInvitations: async (): Promise<ApiResponse<VendorInvitation[]>> => {
+  //   try {
+  //     const response = await api.get("/vendors/admin/vendor-invitations");
+  //     return {
+  //       success: true,
+  //       message: "Pending invitations retrieved successfully",
+  //       data: response.data.data,
+  //     };
+  //   } catch (error) {
+  //     const axiosError = error as AxiosError<any>;
+  //     return {
+  //       success: false,
+  //       message:
+  //         axiosError.response?.data?.message || "Failed to fetch invitations",
+  //     };
+  //   }
+  // },
   getPendingInvitations: async (): Promise<ApiResponse<VendorInvitation[]>> => {
     try {
       const response = await api.get("/vendors/admin/vendor-invitations");
@@ -406,15 +423,13 @@ const vendorService = {
         data: response.data.data,
       };
     } catch (error) {
-      const axiosError = error as AxiosError<any>;
+      const axiosError = error as any;
       return {
         success: false,
-        message:
-          axiosError.response?.data?.message || "Failed to fetch invitations",
+        message: axiosError.response?.data?.message || "Failed to fetch invitations",
       };
     }
   },
-
   /**
    * Admin: Resend a pending vendor invitation
    */
@@ -457,6 +472,29 @@ const vendorService = {
         success: false,
         message:
           axiosError.response?.data?.message || "Failed to delete invitation",
+      };
+    }
+  },
+
+  /**
+   * Admin: Approve a vendor request and send invitation
+   */
+  approveVendorRequest: async (id: string): Promise<ApiResponse> => {
+    try {
+      const response = await api.patch(
+        `/vendors/admin/vendor-requests/${id}/approve`
+      );
+      return {
+        success: true,
+        message: response.data?.message || "Vendor request approved successfully",
+        data: response.data,
+      };
+    } catch (error) {
+      const axiosError = error as AxiosError<any>;
+      return {
+        success: false,
+        message:
+          axiosError.response?.data?.message || "Failed to approve vendor request",
       };
     }
   },

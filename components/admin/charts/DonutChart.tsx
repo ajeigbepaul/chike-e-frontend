@@ -2,26 +2,34 @@
 
 import { Doughnut } from "react-chartjs-2";
 import { Chart as ChartJS, ArcElement, Tooltip, Legend } from "chart.js";
+import { useQuery } from "@tanstack/react-query";
+import { adminApi } from "@/services/api/admin";
+import Spinner from "../../Spinner";
 
 ChartJS.register(ArcElement, Tooltip, Legend);
 
 export function DonutChart() {
-  const data = {
-    labels: ["North", "South", "East", "West"],
+  const { data: dashboardStats, isLoading } = useQuery({
+    queryKey: ["dashboardStats"],
+    queryFn: adminApi.getDashboardStats,
+  });
+
+  if (isLoading) {
+    return <Spinner />;
+  }
+
+  const chartData = {
+    labels: dashboardStats?.salesByRegion?.map(r => r.region) || [],
     datasets: [
       {
-        data: [300, 250, 200, 150],
+        data: dashboardStats?.salesByRegion?.map(r => r.totalSales) || [],
         backgroundColor: [
           "rgba(59, 130, 246, 0.5)",
           "rgba(16, 185, 129, 0.5)",
-          "rgba(245, 158, 11, 0.5)",
-          "rgba(239, 68, 68, 0.5)",
         ],
         borderColor: [
           "rgb(59, 130, 246)",
           "rgb(16, 185, 129)",
-          "rgb(245, 158, 11)",
-          "rgb(239, 68, 68)",
         ],
         borderWidth: 1,
       },
@@ -37,5 +45,5 @@ export function DonutChart() {
     },
   };
 
-  return <Doughnut data={data} options={options} />;
+  return <Doughnut data={chartData} options={options} />;
 }
