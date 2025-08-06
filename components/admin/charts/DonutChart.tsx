@@ -8,8 +8,17 @@ import Spinner from "../../Spinner";
 
 ChartJS.register(ArcElement, Tooltip, Legend);
 
+interface RegionSales {
+  region: string;
+  totalSales: number;
+}
+
+interface DashboardStats {
+  salesByRegion?: RegionSales[];
+}
+
 export function DonutChart() {
-  const { data: dashboardStats, isLoading } = useQuery({
+  const { data: dashboardStats, isLoading } = useQuery<DashboardStats>({
     queryKey: ["dashboardStats"],
     queryFn: adminApi.getDashboardStats,
   });

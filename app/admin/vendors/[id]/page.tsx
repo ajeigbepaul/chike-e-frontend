@@ -71,7 +71,7 @@ export default function VendorDetailPage() {
     return <div className="text-center py-8">Vendor not found</div>;
   }
 
-  const { name, email, phone, businessName, address, bio, status, joinedDate, productsCount, totalOrders, totalRevenue } = vendor.data;
+  const { name, email, phone, businessName, address, bio, status, joinedDate, products, sales } = vendor.data;
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
@@ -141,7 +141,7 @@ export default function VendorDetailPage() {
                   <CardTitle className="text-base">Total Products</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-2xl font-bold">{productsCount}</p>
+                  <p className="text-2xl font-bold">{products || 0}</p>
                 </CardContent>
               </Card>
               <Card>
@@ -149,7 +149,7 @@ export default function VendorDetailPage() {
                   <CardTitle className="text-base">Total Orders</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-2xl font-bold">{totalOrders}</p>
+                  <p className="text-2xl font-bold">{0}</p>
                 </CardContent>
               </Card>
               <Card>
@@ -157,7 +157,7 @@ export default function VendorDetailPage() {
                   <CardTitle className="text-base">Total Revenue</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-2xl font-bold">${totalRevenue.toLocaleString()}</p>
+                  <p className="text-2xl font-bold">${sales ? sales.toLocaleString() : '0'}</p>
                 </CardContent>
               </Card>
             </div>
