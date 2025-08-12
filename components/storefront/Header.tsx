@@ -313,9 +313,8 @@ function HeaderContent() {
   return (
     <header className="sticky top-0 z-50 bg-white shadow-sm">
       <div className="max-w-6xl mx-auto px-0 sm:px-6">
-        {/* Top Bar */}
         <div className="flex items-center justify-between h-16">
-          {/* Logo and Desktop Nav */}
+          {/* Left side: Logo and navigation */}
           <div className="flex items-center">
             <Link href="/" className="flex-shrink-0">
               <Image
@@ -327,8 +326,6 @@ function HeaderContent() {
                 priority
               />
             </Link>
-
-            {/* Desktop Navigation */}
             <nav className="hidden md:flex ml-10 space-x-8">
               <Link
                 href="/"
@@ -346,7 +343,6 @@ function HeaderContent() {
               >
                 About
               </Link>
-              {/* Products nav: always show link, only show dropdown/caret on /products */}
               <div className="relative flex items-center">
                 <Link
                   href="/products"
@@ -381,22 +377,13 @@ function HeaderContent() {
             </nav>
           </div>
 
-          {/* Desktop Search and Actions */}
-          <div className="hidden md:flex items-center space-x-4">
-            {/* Fixed Cart Button */}
-            <button
-              className="p-2 text-gray-600 hover:text-brand-yellow transition-colors relative"
-              onClick={() => router.push("/cart")}
-            >
-              <ShoppingBag className="h-5 w-5" />
-              {renderCartBadge()}
-            </button>
-            {/* Fixed Search Suggestions */}
-            <div className="relative" ref={searchRef}>
+          {/* Center: Search bar */}
+          <div className="hidden md:flex flex-1 justify-center px-4">
+            <div className="relative w-full max-w-md" ref={searchRef}>
               <input
                 type="text"
                 placeholder="Search products..."
-                className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-yellow focus:border-transparent w-64"
+                className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-yellow focus:border-transparent w-full"
                 value={searchQuery}
                 onChange={handleSearchChange}
                 onFocus={() => setShowSuggestions(true)}
@@ -404,7 +391,17 @@ function HeaderContent() {
               <Search className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
               {renderSearchSuggestions()}
             </div>
+          </div>
 
+          {/* Right side: Icons */}
+          <div className="hidden md:flex items-center space-x-4">
+            <button
+              className="p-2 text-gray-600 hover:text-brand-yellow transition-colors relative"
+              onClick={() => router.push("/cart")}
+            >
+              <ShoppingBag className="h-5 w-5" />
+              {renderCartBadge()}
+            </button>
             <DropdownMenu
               trigger={
                 <button className="flex items-center space-x-1 p-2 text-gray-600 hover:text-brand-yellow transition-colors">
@@ -478,14 +475,14 @@ function HeaderContent() {
           </div>
 
           {/* Mobile menu button */}
-          <div className="md:hidden flex items-center space-x-4">
+          <div className="md:hidden flex items-center">
             <button
               className="p-2 text-gray-600 hover:text-brand-yellow"
               onClick={() => router.push("/cart")}
             >
               <ShoppingBag className="h-5 w-5" />
               {cartItemCount > 0 && (
-                <span className="absolute top-2 right-2 md:top-3 md:right-3 bg-red-500 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">
+                <span className="absolute top-2 right-12 bg-red-500 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">
                   {cartItemCount}
                 </span>
               )}
