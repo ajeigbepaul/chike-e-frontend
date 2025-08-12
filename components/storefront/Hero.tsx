@@ -7,6 +7,7 @@ import 'swiper/css';
 import 'swiper/css/pagination';
 import 'swiper/css/navigation';
 import Image from 'next/image';
+import Link from 'next/link';
 // import hero1 from '../../public/hero1.png';
 // import hero2 from '../../public/hero2.svg';
 
@@ -29,26 +30,6 @@ const HeroSection = ({ heroSlides }: HeroSectionProps) => {
   useEffect(() => {
     setMounted(true);
   }, []);
-
-  // Use the passed heroSlides prop instead of hardcoded data
-  // const heroSlides = [
-  //   {
-  //     id: 1,
-  //     title: "Order all your building materials",
-  //     subtitle: "with ease & transparency",
-  //     description: "We are transforming the way the World Buys Construction Materials - Smarter, Faster, and Accessible for All!",
-  //     cta: "Shop now",
-  //     image: "/hero.jpg"
-  //   },
-  //   {
-  //     id: 2,
-  //     title: "Premium quality materials",
-  //     subtitle: "delivered to your site",
-  //     description: "Get the best construction materials from trusted suppliers with guaranteed quality",
-  //     cta: "Browse products",
-  //     image: "/hero3.jpg"
-  //   },
-  // ];
 
   if (!mounted) return null;
 
@@ -112,9 +93,12 @@ const HeroSection = ({ heroSlides }: HeroSectionProps) => {
                   <p className="text-white text-sm md:text-lg mb-6 text-left max-w-2xl w-[50%]">{image.description}</p>
                 )}
                 {image.cta && (
+                  <Link href={'/products'}>
+                  
                   <button className="bg-white hover:bg-yellow-500 text-gray-900 font-bold py-3 px-8 rounded-full text-lg transition-colors duration-300">
                     {image.cta}
                   </button>
+                  </Link>
                 )}
               </div>
             </div>

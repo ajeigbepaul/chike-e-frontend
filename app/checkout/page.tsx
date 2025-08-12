@@ -62,10 +62,12 @@ function CheckoutContent() {
   const [coupon, setCoupon] = useState("");
   const [discount, setDiscount] = useState(0);
   const [couponError, setCouponError] = useState("");
+  const [quoteCheckoutData, setQuoteCheckoutData] = useState<any>(null);
+  const [isQuoteCheckout, setIsQuoteCheckout] = useState(false);
 
   const Delivery = 20000;
-  const itemsTotal = calculateSubtotal(items);
-  const vat = calculateVAT(items);
+  const itemsTotal = isQuoteCheckout ? quoteCheckoutData.price * quoteCheckoutData.quantity : calculateSubtotal(items);
+  const vat = calculateVAT([{ id: 'quote-vat-item', name: 'Quote Total', image: '', price: itemsTotal, quantity: 1 }]);
   const total = itemsTotal + vat + Delivery - discount;
 
   // Debug: Let's verify the calculation step by step
@@ -167,7 +169,12 @@ function CheckoutContent() {
 
     setIsLoading(true);
     try {
-      const orderItems = items.map((item) => ({
+      const orderItems = isQuoteCheckout ? [{
+        product: quoteCheckoutData.productId,
+        quantity: quoteCheckoutData.quantity,
+        price: quoteCheckoutData.price,
+        quoteId: quoteCheckoutData.quoteId,
+      }] : items.map((item) => ({
         product: item.id,
         quantity: item.quantity,
         price: item.price,
@@ -260,6 +267,15 @@ function CheckoutContent() {
 
   // Prefill from localStorage or API on mount
   useEffect(() => {
+    const storedQuote = sessionStorage.getItem('approvedQuote');
+    if (storedQuote) {
+      const parsedQuote = JSON.parse(storedQuote);
+      setQuoteCheckoutData(parsedQuote);
+      setIsQuoteCheckout(true);
+      // Clear sessionStorage after reading to prevent re-use on subsequent visits
+      sessionStorage.removeItem('approvedQuote');
+    }
+
     const saved = localStorage.getItem("checkoutInfo");
     if (saved) {
       const { customerAddress, deliveryDetails, paymentMethod } =
@@ -400,23 +416,41 @@ function CheckoutContent() {
                     Fulfilled by Sowit Courier
                   </p>
                   <div className="mt-3 space-y-3">
-                    {items.map((item) => (
-                      <div key={item.id} className="flex gap-3">
+                    {isQuoteCheckout ? (
+                      <div className="flex gap-3">
                         <Image
-                          src={item.image}
-                          alt={item.name}
+                          src={quoteCheckoutData.image || "/placeholder.png"}
+                          alt={quoteCheckoutData.productName}
                           width={56}
                           height={56}
                           className="w-14 h-14 object-cover rounded border border-border"
                         />
                         <div>
-                          <p className="text-foreground">{item.name}</p>
+                          <p className="text-foreground">{quoteCheckoutData.productName}</p>
                           <p className="text-sm text-muted-foreground">
-                            Qty: {item.quantity}
+                            Qty: {quoteCheckoutData.quantity}
                           </p>
                         </div>
                       </div>
-                    ))}
+                    ) : (
+                      items.map((item) => (
+                        <div key={item.id} className="flex gap-3">
+                          <Image
+                            src={item.image}
+                            alt={item.name}
+                            width={56}
+                            height={56}
+                            className="w-14 h-14 object-cover rounded border border-border"
+                          />
+                          <div>
+                            <p className="text-foreground">{item.name}</p>
+                            <p className="text-sm text-muted-foreground">
+                              Qty: {item.quantity}
+                            </p>
+                          </div>
+                        </div>
+                      ))
+                    )}
                   </div>
                   <Link
                     href="/cart"
@@ -479,24 +513,50 @@ function CheckoutContent() {
         {/* Order Summary */}
         <div className="w-full md:w-[350px] bg-white rounded-xl shadow p-6 flex flex-col gap-6">
           <div>
-            <h3 className="text-lg font-bold mb-4">Cart Details</h3>
-            <div className="flex justify-between mb-2 text-gray-700">
-              <span>Items ({items.length})</span>
-              <span>
-                ₦
-                {itemsTotal.toLocaleString(undefined, {
-                  maximumFractionDigits: 2,
-                })}
-              </span>
-            </div>
-            <div className="flex justify-between mb-2 text-gray-700">
-              <span>Door delivery</span>
-              <span>₦{Delivery.toLocaleString()}</span>
-            </div>
-            <div className="flex justify-between mb-2 text-gray-700">
-              <span>VAT</span>
-              <span>₦{vat.toLocaleString()}</span>
-            </div>
+            <h3 className="text-lg font-bold mb-4">
+              {isQuoteCheckout ? "Quote Details" : "Cart Details"}
+            </h3>
+            {isQuoteCheckout ? (
+              <>
+                <div className="flex justify-between mb-2 text-gray-700">
+                  <span>Product Price ({quoteCheckoutData.quantity} units)</span>
+                  <span>
+                    ₦
+                    {itemsTotal.toLocaleString(undefined, {
+                      maximumFractionDigits: 2,
+                    })}
+                  </span>
+                </div>
+                <div className="flex justify-between mb-2 text-gray-700">
+                  <span>Door delivery</span>
+                  <span>₦{Delivery.toLocaleString()}</span>
+                </div>
+                <div className="flex justify-between mb-2 text-gray-700">
+                  <span>VAT</span>
+                  <span>₦{vat.toLocaleString()}</span>
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="flex justify-between mb-2 text-gray-700">
+                  <span>Items ({items.length})</span>
+                  <span>
+                    ₦
+                    {itemsTotal.toLocaleString(undefined, {
+                      maximumFractionDigits: 2,
+                    })}
+                  </span>
+                </div>
+                <div className="flex justify-between mb-2 text-gray-700">
+                  <span>Door delivery</span>
+                  <span>₦{Delivery.toLocaleString()}</span>
+                </div>
+                <div className="flex justify-between mb-2 text-gray-700">
+                  <span>VAT</span>
+                  <span>₦{vat.toLocaleString()}</span>
+                </div>
+              </>
+            )}
             <div className="flex justify-between mb-4 text-lg font-bold">
               <span>SubTotal</span>
               <span className="text-brand-yellow">
@@ -845,5 +905,9 @@ export default function Checkout() {
     return null;
   }
 
-  return <CheckoutContent />;
+  return (
+    <Suspense fallback={<div>Loading checkout...</div>}>
+      <CheckoutContent />
+    </Suspense>
+  );
 }

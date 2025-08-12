@@ -15,23 +15,29 @@ const ProductCategories = () => {
   const nextRef = useRef(null);
 
   // Fetch categories from API
-  const {
-    data: categoriesResponse,
-    isLoading,
-    error,
-  } = useQuery({
+   // Fetch categories using the same pattern as sideNav
+   const { data: categories = [], isPending, isError } = useQuery({
     queryKey: ["categories"],
-    queryFn: categoryService.getAllCategories,
+    queryFn: async () => {
+      const response = await categoryService.getAllCategories();
+      if (!response.success) throw new Error(response.message);
+      return response.data || [];
+    },
   });
 
-  // Filter to get only main categories (no parent) and active ones
-  const mainCategories =
-    categoriesResponse?.data?.filter(
-      (category: Category) => !category.parent && category.isActive
-    ) || [];
+  // Filter main categories (level 0 or no parent)
+  const mainCategories = categories.filter(
+    (category) => !category.parent && category.isActive
+  );
 
+  // Filter to get only main categories (no parent) and active ones
+  // const mainCategories =
+  //   categoriesResponse?.filter(
+  //     (category: Category) => !category.parent && category.isActive
+  //   ) || [];
+  // console.log(categoriesResponse,"Main Categories")
   // Show loading skeleton if data is loading
-  if (isLoading) {
+  if (isPending) {
     return (
       <section className="py-16 px-4 sm:px-6 lg:px-8 max-w-6xl mx-auto">
         <div className="text-center mb-12">
@@ -59,7 +65,7 @@ const ProductCategories = () => {
   }
 
   // Show error state if there's an error
-  if (error) {
+  if (isError) {
     return (
       <section className="py-16 px-4 sm:px-6 lg:px-8 max-w-6xl mx-auto">
         <div className="text-center mb-12">
@@ -200,7 +206,8 @@ const ProductCategories = () => {
                   requirements.
                 </p>
                 <Link
-                  href={`/categories/${category._id}`}
+                
+                  href={`/category/${category.slug}`}
                   className="inline-flex text-sm p-2 rounded-full items-center text-brand-yellow font-medium hover:text-yellow-400 border bg-[#F7B50E1A] border-brand-yellow transition-colors"
                 >
                   Explore {category.name.toLowerCase()}

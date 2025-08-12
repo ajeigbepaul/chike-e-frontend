@@ -125,6 +125,7 @@ export interface ProductFormData {
   }>;
   vendor?: string;
   accessories?: Array<{ _id: string; name: string; products: Product[] }>;
+  tags?: string[];
 }
 
 export interface AttributeType {

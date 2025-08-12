@@ -110,6 +110,11 @@ export function Sidebar() {
         // { name: "Products", href: "/admin/reports/products" },
       ],
     },
+    {
+      name: "Quotes",
+      href: "/admin/quotes",
+      icon: <FileText className="h-5 w-5" />,
+    },
     // {
     //   name: "Settings",
     //   href: "/admin/settings",

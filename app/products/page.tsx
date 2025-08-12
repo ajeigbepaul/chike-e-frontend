@@ -6,6 +6,8 @@ import { Breadcrumb } from "@/components/ui/breadcrumb";
 import { CategoryNavigation } from "@/components/storefront/CategoryNavigation";
 import React, { Suspense } from "react";
 
+export const dynamic = 'force-dynamic';
+
 function ProductsGalleryFallback() {
   return (
     <div className="max-w-6xl mx-auto px-4 py-8">
@@ -42,7 +44,7 @@ function ProductsGalleryFallback() {
 export default function Products() {
   return (
     <main className="w-full">
-       <CategoryNavigation />
+       {/* <CategoryNavigation /> */}
       <div className="max-w-6xl mx-auto px-4 py-4 relative">
         <div className="mb-4">
           <Suspense fallback={<div className="h-6 bg-gray-200 rounded animate-pulse w-48"></div>}>

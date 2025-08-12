@@ -1,5 +1,5 @@
-import  api  from '../api';
-import { Product } from '@/types/product';
+import api from "../api";
+import { Product } from "@/types/product";
 
 interface ApiResponse {
   status: string;
@@ -8,54 +8,65 @@ interface ApiResponse {
   };
 }
 
-export const createProduct = async (formData: FormData): Promise<ApiResponse> => {
-    try {
-      const response = await api.post('/products', formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-      });
-      
-      return response.data;
-    } catch (error: any) {
-      console.error('Error creating product:', error);
-      throw new Error(
-        error.response?.data?.message ||
+export const createProduct = async (
+  formData: FormData
+): Promise<ApiResponse> => {
+  try {
+    const response = await api.post("/products", formData, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    });
+
+    return response.data;
+  } catch (error: any) {
+    console.error("Error creating product:", error);
+    throw new Error(
+      error.response?.data?.message ||
         error.message ||
-        'Failed to create product'
-      );
-    }
-  };
-  
-  export const updateProduct = async (productId: string, formData: FormData): Promise<ApiResponse> => {
-    try {
-      const response = await api.patch(`/products/${productId}`, formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-      });
-      
-      return response.data;
-    } catch (error: any) {
-      console.error('Error updating product:', error);
-      throw new Error(
-        error.response?.data?.message ||
+        "Failed to create product"
+    );
+  }
+};
+
+export const updateProduct = async (
+  productId: string,
+  formData: FormData
+): Promise<ApiResponse> => {
+  try {
+    const response = await api.patch(`/products/${productId}`, formData, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    });
+
+    return response.data;
+  } catch (error: any) {
+    console.error("Error updating product:", error);
+    throw new Error(
+      error.response?.data?.message ||
         error.message ||
-        'Failed to update product'
-      );
-    }
-  };
+        "Failed to update product"
+    );
+  }
+};
 
 export const getProduct = async (id: string): Promise<Product> => {
   const response = await api.get(`/products/${id}`);
   return response.data.data.product;
 };
 
-export const getProducts = async (page = 1, limit = 10): Promise<{ products: Product[]; pagination: { total: number; page: number; limit: number; pages: number } }> => {
+export const getProducts = async (
+  page = 1,
+  limit = 10
+): Promise<{
+  products: Product[];
+  pagination: { total: number; page: number; limit: number; pages: number };
+}> => {
   const response = await api.get(`/products?page=${page}&limit=${limit}`);
   return {
     products: response.data.data.products,
-    pagination: response.data.pagination
+    pagination: response.data.pagination,
   };
 };
 
@@ -63,8 +74,15 @@ export const deleteProduct = async (id: string): Promise<void> => {
   await api.delete(`/products/${id}`);
 };
 
-export const getTopProducts = async (): Promise<Array<{ name: string; image: string; totalSold: number; totalRevenue: number }>> => {
-  const response = await api.get('/admin/dashboard');
+export const getTopProducts = async (): Promise<
+  Array<{
+    name: string;
+    image: string;
+    totalSold: number;
+    totalRevenue: number;
+  }>
+> => {
+  const response = await api.get("/admin/dashboard");
   return response.data.data.topProducts;
 };
 
@@ -74,11 +92,42 @@ export const getRelatedProducts = async (id: string): Promise<Product[]> => {
 };
 
 export const getMostOrderedProducts = async (): Promise<Product[]> => {
-  const response = await api.get('/products/most-ordered');
+  const response = await api.get("/products/most-ordered");
   return response.data.data.products;
 };
 
-export const getAutocompleteSuggestions = async (query: string): Promise<Array<{ name: string; slug: string; imageCover: string; category?: string; brand?: string }>> => {
-  const response = await api.get(`/products/autocomplete?query=${encodeURIComponent(query)}`);
+export const getAutocompleteSuggestions = async (
+  query: string
+): Promise<
+  Array<{
+    name: string;
+    slug: string;
+    imageCover: string;
+    category?: string;
+    brand?: string;
+    type: "product" | "tag";
+    count?: number;
+  }>
+> => {
+  const response = await api.get(
+    `/products/autocomplete?query=${encodeURIComponent(query)}`
+  );
   return response.data.data.suggestions;
-}; 
+};
+
+export const getProductsByTag = async (
+  tag: string,
+  page: number = 1,
+  limit: number = 20
+): Promise<{
+  products: Product[];
+  pagination: { total: number; page: number; limit: number; pages: number };
+}> => {
+  const response = await api.get(
+    `/products/tag/${encodeURIComponent(tag)}?page=${page}&limit=${limit}`
+  );
+  return {
+    products: response.data.data.products,
+    pagination: response.data.pagination,
+  };
+};

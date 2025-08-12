@@ -191,7 +191,7 @@ export function CategoryDropdown({
                     className={`${
                       isMobile
                         ? "relative bg-gray-50 ml-4 border-l border-gray-200"
-                        : "submenu absolute left-full top-0 bg-white border border-gray-200 rounded-md shadow-lg z-50 min-w-[240px]"
+                        : "submenu absolute left-full top-0 bg-white border border-gray-200 rounded-md shadow-lg z-[60] min-w-[240px]"
                     } ${
                       !isMobile
                         ? isInHoverPath(category._id)
@@ -260,8 +260,8 @@ export function CategoryDropdown({
         <div
           className={`${
             isMobile
-              ? "fixed inset-0 bg-white z-50 overflow-y-auto pt-16 pb-8 px-4"
-              : "absolute top-full left-0 mt-1 bg-white border border-gray-200 rounded-md shadow-lg z-50 min-w-[200px]"
+              ? "fixed inset-0 bg-white z-[60] overflow-y-auto pt-16 pb-8 px-4"
+              : "absolute top-full left-0 mt-1 bg-white border border-gray-200 rounded-md shadow-lg z-[60] min-w-[200px]"
           }`}
           onMouseLeave={() => {
             if (!isMobile) {

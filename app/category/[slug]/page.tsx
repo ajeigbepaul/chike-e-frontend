@@ -325,7 +325,7 @@ export default function CategoryPage() {
   if (categoriesLoading || productsLoading) {
     return (
       <main className="w-full">
-        <CategoryNavigation />
+        {/* <CategoryNavigation /> */}
         <div className="max-w-6xl mx-auto px-4 py-4 relative z-50">
           <div className="mb-4">
             <Breadcrumb />
@@ -342,7 +342,7 @@ export default function CategoryPage() {
   if (!mainCategory) {
     return (
       <main className="w-full">
-        <CategoryNavigation />
+        {/* <CategoryNavigation /> */}
         <div className="max-w-6xl mx-auto px-4 py-4 relative z-50">
           <div className="mb-4">
             <Breadcrumb />
@@ -364,7 +364,7 @@ export default function CategoryPage() {
 
   return (
     <main className="w-full">
-      <CategoryNavigation />
+      {/* <CategoryNavigation /> */}
       <div className="max-w-6xl mx-auto px-4 py-4 relative z-10">
         <div className="mb-4">
           <Breadcrumb />

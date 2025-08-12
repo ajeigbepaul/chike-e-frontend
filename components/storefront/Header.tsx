@@ -103,10 +103,20 @@ function HeaderContent() {
     setShowSuggestions(true);
   };
 
-  const handleSuggestionSelect = (suggestion: string) => {
+  const handleSuggestionSelect = (
+    suggestion: string,
+    type?: "product" | "tag"
+  ) => {
     setSearchQuery(suggestion);
     setShowSuggestions(false);
-    router.push(`/search?q=${encodeURIComponent(suggestion)}`);
+
+    if (type === "tag") {
+      // Navigate to tag page
+      router.push(`/tag/${encodeURIComponent(suggestion)}`);
+    } else {
+      // Navigate to search results for products
+      router.push(`/search?q=${encodeURIComponent(suggestion)}`);
+    }
   };
 
   // Handler to update category filter in URL
@@ -150,6 +160,7 @@ function HeaderContent() {
       <SearchSuggestions
         query={searchQuery}
         onSelect={handleSuggestionSelect}
+        // triggerRef={searchRef}
       />
     );
   };
@@ -186,37 +197,37 @@ function HeaderContent() {
             trigger={<div className="px-4 flex items-center">Products</div>}
           /> */}
           {/* Products nav: always show link, only show dropdown/caret on /products */}
-              <div className="relative flex items-center ml-4 md:ml-0">
-                <Link
-                  href="/products"
-                  className={`${
-                    pathname.startsWith("/products")
-                      ? "text-brand-yellow"
-                      : "text-gray-900"
-                  } hover:text-brand-yellow transition-colors`}
-                >
-                  Products
-                </Link>
-                {pathname.startsWith("/products") && (
-                  <CategoryDropdown
-                    categories={categories}
-                    isMobile={isMobile}
-                    setIsMobile={setIsMobile}
-                    onCategorySelect={handleHeaderCategorySelect}
-                    trigger={
-                      <button
-                        className={`p-1 ${
-                          pathname.startsWith("/products")
-                            ? "text-brand-yellow"
-                            : "text-gray-900"
-                        } hover:text-brand-yellow transition-colors focus:outline-none`}
-                      >
-                        <ChevronDown className="h-4 w-4" />
-                      </button>
-                    }
-                  />
-                )}
-              </div>
+          <div className="relative flex items-center ml-4 md:ml-0">
+            <Link
+              href="/products"
+              className={`${
+                pathname.startsWith("/products")
+                  ? "text-brand-yellow"
+                  : "text-gray-900"
+              } hover:text-brand-yellow transition-colors`}
+            >
+              Products
+            </Link>
+            {pathname.startsWith("/products") && (
+              <CategoryDropdown
+                categories={categories}
+                isMobile={isMobile}
+                setIsMobile={setIsMobile}
+                onCategorySelect={handleHeaderCategorySelect}
+                trigger={
+                  <button
+                    className={`p-1 ${
+                      pathname.startsWith("/products")
+                        ? "text-brand-yellow"
+                        : "text-gray-900"
+                    } hover:text-brand-yellow transition-colors focus:outline-none`}
+                  >
+                    <ChevronDown className="h-4 w-4" />
+                  </button>
+                }
+              />
+            )}
+          </div>
           <Link
             href="/contact"
             className={`block px-4 py-2 ${
@@ -361,7 +372,7 @@ function HeaderContent() {
                             : "text-gray-900"
                         } hover:text-brand-yellow transition-colors focus:outline-none`}
                       >
-                        <ChevronDown className="h-4 w-4" />
+                        {/* <ChevronDown className="h-4 w-4" /> */}
                       </button>
                     }
                   />

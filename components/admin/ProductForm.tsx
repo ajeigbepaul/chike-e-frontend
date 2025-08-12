@@ -484,9 +484,19 @@ export function ProductForm({
         formData.accessories.forEach((acc, i) => {
           submissionFormData.append(`accessories[${i}][name]`, acc.name);
           acc.products.forEach((pid, j) => {
-            const productId = typeof pid === 'string' ? pid : pid._id;
-            submissionFormData.append(`accessories[${i}][products][${j}]`, productId);
+            const productId = typeof pid === "string" ? pid : pid._id;
+            submissionFormData.append(
+              `accessories[${i}][products][${j}]`,
+              productId
+            );
           });
+        });
+      }
+
+      // Add tags
+      if (formData.tags && Array.isArray(formData.tags)) {
+        formData.tags.forEach((tag, i) => {
+          submissionFormData.append(`tags[${i}]`, tag);
         });
       }
       // Submit the form
@@ -781,6 +791,27 @@ export function ProductForm({
                       ))}
                     </select>
                   )}
+                </div>
+
+                <div>
+                  <label className="text-sm font-medium">Tags</label>
+                  <Input
+                    name="tags"
+                    placeholder="Enter tags separated by commas (e.g., pot, kitchen, cookware)"
+                    defaultValue={formData.tags?.join(", ") || ""}
+                    onChange={(e) => {
+                      const tagsString = e.target.value;
+                      const tagsArray = tagsString
+                        .split(",")
+                        .map((tag) => tag.trim().toLowerCase())
+                        .filter((tag) => tag.length > 0);
+                      updateFormData({ tags: tagsArray });
+                    }}
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    Separate tags with commas. Tags help customers find your
+                    products more easily.
+                  </p>
                 </div>
 
                 {/* Vendor field - admin can select any vendor, but defaults to their own vendor ID */}

@@ -1,25 +1,32 @@
-"use client"
-import { useState, useRef, useEffect } from 'react';
+"use client";
+import { useState, useRef, useEffect } from "react";
 
 interface DropdownMenuProps {
   trigger: React.ReactNode;
   children: React.ReactNode;
-  align?: 'left' | 'right';
+  align?: "left" | "right";
 }
 
-export function DropdownMenu({ trigger, children, align = 'right' }: DropdownMenuProps) {
+export function DropdownMenu({
+  trigger,
+  children,
+  align = "right",
+}: DropdownMenuProps) {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(event.target as Node)
+      ) {
         setIsOpen(false);
       }
     };
 
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
   return (
@@ -33,7 +40,11 @@ export function DropdownMenu({ trigger, children, align = 'right' }: DropdownMen
         {trigger}
       </div>
       {isOpen && (
-        <div className={`absolute ${align === 'right' ? 'right-0' : 'left-0'} mt-2 w-48 bg-white rounded-md shadow-lg z-50 py-1`}>
+        <div
+          className={`absolute ${
+            align === "right" ? "right-0" : "left-0"
+          } mt-2 w-48 bg-white rounded-md shadow-lg z-[55] py-1`}
+        >
           {children}
         </div>
       )}

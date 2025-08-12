@@ -5,6 +5,8 @@ import { CheckCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useSearchParams } from "next/navigation";
 
+export const dynamic = 'force-dynamic'
+
 function SuccessContent() {
   const searchParams = useSearchParams();
   // You can use searchParams here if needed

@@ -6,11 +6,12 @@ import { ClientProviders } from "@/components/ClientProviders";
 import { Header } from "@/components/storefront/Header";
 import Footer from "@/components/storefront/Footer";
 import { usePathname } from "next/navigation";
-import { useEffect } from "react";
+import { useEffect, Suspense } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { RootState } from "@/store/store";
 import { setCart } from "@/store/cartSlice";
 import VendorHeader from "@/components/vendor/VendorHeader";
+import { CategoryNavigation } from "@/components/storefront/CategoryNavigation";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -87,7 +88,10 @@ export default function RootLayout({
       >
         <NextAuthProvider>
           <ClientProviders>
-            {!isAdmin && !isVendor && <Header />}
+            <Suspense fallback={<div></div>}>
+              {!isAdmin && !isVendor && <Header />}
+              {!isAdmin && !isVendor &&  <CategoryNavigation />}
+            </Suspense>
             {isVendor && <VendorHeader />}
             <main className="flex-grow">
               <CartPersistenceWatcher />
