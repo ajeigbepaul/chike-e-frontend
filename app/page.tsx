@@ -242,7 +242,6 @@ export default function Home() {
         isLoggedIn={isLoggedIn}
         onRequireLogin={handleRequireLogin}
       />
-      <PartnerWithUs />
     </main>
   );
 

@@ -2,6 +2,7 @@ import ProductCard, { ProductCardSkeleton } from "./ProductCard";
 import React from "react";
 
 import type { Product } from "@/types/product";
+import Link from "next/link";
 
 interface MostOrderedProductsProps {
   products: Product[];
@@ -41,9 +42,12 @@ const MostOrderedProducts = ({
             leo.
           </p>
         </div>
+        <Link href="/products">
         <button className="self-start md:self-center px-8 py-2 rounded-full bg-gray-900 text-white font-semibold hover:bg-brand-yellow hover:text-gray-900 transition text-lg">
           Shop now
         </button>
+        </Link>
+        
       </div>
       {/* Gallery */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">

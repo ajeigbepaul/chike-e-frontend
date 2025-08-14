@@ -10,6 +10,7 @@ import { useEffect, Suspense } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { RootState } from "@/store/store";
 import { setCart } from "@/store/cartSlice";
+import PartnerWithUs from "@/components/storefront/PartnerWithUs"
 import VendorHeader from "@/components/vendor/VendorHeader";
 import { CategoryNavigation } from "@/components/storefront/CategoryNavigation";
 
@@ -97,6 +98,10 @@ export default function RootLayout({
               <CartPersistenceWatcher />
               {children}
             </main>
+            <div className="w-full">
+
+            {!isAdmin && !isVendor && <PartnerWithUs />}
+            </div>
             {!isAdmin && !isVendor && <Footer />}
             <BotpressWidget />
           </ClientProviders>

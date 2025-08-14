@@ -7,6 +7,7 @@ import 'swiper/css/navigation';
 import { useRef } from 'react';
 import type { Product } from '@/types/product';
 import ProductCard from '@/components/storefront/ProductCard';
+import Link from 'next/link';
 
 interface OurNewestArrivalsProps {
   products: Product[];
@@ -104,7 +105,10 @@ const OurNewestArrivals = ({
           </div>
           <div className="flex flex-col justify-end flex-1">
             <p className="text-gray-700 text-lg mb-6">Discover our new collections now! Experience newest models in outdoor and indoor materials.</p>
+            <Link href="/products">
+
             <button className="self-start px-6 py-2 rounded-full border-2 border-brand-yellow text-brand-yellow font-semibold hover:bg-brand-yellow hover:text-white transition text-base">Shop now</button>
+            </Link>
           </div>
         </div>
       </div>

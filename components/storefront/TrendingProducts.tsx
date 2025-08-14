@@ -7,6 +7,7 @@ import 'swiper/css/navigation';
 import ProductCard, { ProductCardSkeleton } from './ProductCard';
 
 import type { Product } from '@/types/product';
+import Link from 'next/link';
 
 interface TrendingProductsProps {
   products: Product[];
@@ -94,7 +95,10 @@ const TrendingProducts = ({
             ))}
       </Swiper>
       <div className="flex justify-center mt-4">
+      <Link href="/products">
+
         <button className="px-8 py-2 rounded-full bg-gray-900 text-white font-semibold hover:bg-brand-yellow hover:text-gray-900 transition text-lg">Shop now</button>
+      </Link>
       </div>
     </section>
   );
