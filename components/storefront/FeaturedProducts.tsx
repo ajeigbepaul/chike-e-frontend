@@ -54,6 +54,7 @@ const FeaturedProducts = ({
                 isLoggedIn={isLoggedIn}
                 onRequireLogin={onRequireLogin}
                 quantity={product.quantity || 0}
+                moq={product.moq || 1}
               />
             ))}
       </div>

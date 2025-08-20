@@ -10,8 +10,7 @@ import RequestQuoteDialog from "@/components/RequestQuoteDialog";
 export default function ProductInfo({ product }: { product: Product }) {
   const dispatch = useDispatch();
   const { data: session } = useSession();
-  const [quantity, setQuantity] = useState(1);
-  
+  const [quantity, setQuantity] = useState(product?.moq || 1);
 
   // Quote state management
   const {
@@ -26,16 +25,16 @@ export default function ProductInfo({ product }: { product: Product }) {
     refetch: refetchQuote,
   } = useQuoteState(product._id, product.name);
   const maxQty =
-  quote && quote.status === 'accepted' && quote.approvedQuantity
-    ? quote.approvedQuantity
-    : product.quantity;
-const outOfStock = maxQty < 1;
+    quote && quote.status === "accepted" && quote.approvedQuantity
+      ? quote.approvedQuantity
+      : product.quantity;
+  const outOfStock = maxQty < 1;
 
-useEffect(() => {
-  if (quote && quote.status === 'accepted' && quote.approvedQuantity) {
-    setQuantity(quote.approvedQuantity);
-  }
-}, [quote]);
+  useEffect(() => {
+    if (quote && quote.status === "accepted" && quote.approvedQuantity) {
+      setQuantity(quote.approvedQuantity);
+    }
+  }, [quote]);
   const handleAddToCart = () => {
     if (quantity > maxQty) {
       toast.error("Cannot add more than available stock");
@@ -69,6 +68,11 @@ useEffect(() => {
         <span className="text-gray-400 ml-2">
           • {product.stockQuantity || product.quantity} available
         </span>
+        {product.moq && product.moq > 1 && (
+          <div className="text-xs text-gray-600 bg-gray-100 px-2 py-1 rounded-full font-medium">
+            Min. order: {product.moq}
+          </div>
+        )}
       </div>
       <div className="mb-2 text-gray-700">{product.description}</div>
       <div className="flex items-center gap-2 mb-2">
@@ -131,7 +135,11 @@ useEffect(() => {
             type="button"
             className="px-2 py-1 cursor-pointer rounded border border-gray-300 bg-white text-lg disabled:opacity-50"
             onClick={() => setQuantity((q) => Math.max(1, q - 1))}
-            disabled={outOfStock || quantity <= 1 || !!(quote && quote.status === 'accepted')}
+            disabled={
+              outOfStock ||
+              quantity <= (product.moq || 1) ||
+              !!(quote && quote.status === "accepted")
+            }
           >
             –
           </button>
@@ -145,13 +153,17 @@ useEffect(() => {
               setQuantity(val);
             }}
             className="text-center border rounded px-2 py-2 w-10"
-            disabled={outOfStock || !!(quote && quote.status === 'accepted')}
+            disabled={outOfStock || !!(quote && quote.status === "accepted")}
           />
           <button
             type="button"
             className="px-2 py-1 cursor-pointer rounded border border-gray-300 bg-white text-lg disabled:opacity-50"
             onClick={() => setQuantity((q) => Math.min(maxQty, q + 1))}
-            disabled={outOfStock || quantity >= maxQty || !!(quote && quote.status === 'accepted')}
+            disabled={
+              outOfStock ||
+              quantity >= maxQty ||
+              !!(quote && quote.status === "accepted")
+            }
           >
             +
           </button>
@@ -165,73 +177,84 @@ useEffect(() => {
         >
           {outOfStock ? "Out of stock" : "Add to cart"}
         </button>
-        
+
         {/* Dynamic Quote Button */}
         {!session ? (
           // Show login prompt if not authenticated
           <button
             className="flex-1 border border-yellow-400 text-yellow-600 py-3 rounded-full font-semibold hover:bg-yellow-50 transition-colors"
             onClick={() => {
-              toast.error('Please login to request a quote');
-              window.location.href = '/auth/signin';
+              toast.error("Please login to request a quote");
+              window.location.href = "/auth/signin";
             }}
           >
             Request Quote
           </button>
-        ) : buttonState === 'request' || buttonState === 'rejected' ? (
+        ) : buttonState === "request" || buttonState === "rejected" ? (
           // Show quote dialog for new requests or after rejection
-          <RequestQuoteDialog 
-            product={product} 
-            onSubmitQuote={(quoteData) => submitQuote(quoteData, product.imageCover)}
+          <RequestQuoteDialog
+            product={product}
+            onSubmitQuote={(quoteData) =>
+              submitQuote(quoteData, product.imageCover)
+            }
             isLoading={quoteLoading}
           >
-            <button 
+            <button
               className={`flex-1 border py-3 rounded-full font-semibold transition-colors cursor-pointer ${buttonColor}`}
               disabled={quoteDisabled}
             >
-              {quoteLoading ? 'Loading...' : buttonText}
+              {quoteLoading ? "Loading..." : buttonText}
             </button>
           </RequestQuoteDialog>
         ) : (
           // Show status button for pending/approved states
-          <button 
+          <button
             className={`flex-1 border py-3 rounded-full font-semibold transition-colors ${buttonColor} ${
-              quoteDisabled ? 'cursor-not-allowed' : 'cursor-pointer'
+              quoteDisabled ? "cursor-not-allowed" : "cursor-pointer"
             }`}
             disabled={quoteDisabled}
-            onClick={buttonState === 'approved' ? handlePayment : undefined}
+            onClick={buttonState === "approved" ? handlePayment : undefined}
           >
-            {quoteLoading ? 'Loading...' : buttonText}
+            {quoteLoading ? "Loading..." : buttonText}
           </button>
         )}
       </div>
-      
+
       {/* Quote Status Information */}
       {quote && (
         <div className="mb-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
           <div className="text-sm text-blue-800 font-semibold mb-1">
             Quote Status: {quote.status.toUpperCase()}
           </div>
-          {quote.status === 'pending' && (
+          {quote.status === "pending" && (
             <p className="text-xs text-blue-600">
-              Your quote request has been submitted. We'll review it and get back to you soon.
+              Your quote request has been submitted. We'll review it and get
+              back to you soon.
             </p>
           )}
-          {quote.status === 'accepted' && quote.approvedPrice && quote.approvedQuantity && (
-            <div className="text-xs text-blue-600">
-              <p>Approved Price: ₦{quote.approvedPrice.toLocaleString()} per unit</p>
-              <p>Approved Quantity: {quote.approvedQuantity} units</p>
-              <p className="font-semibold mt-1">
-                Total: ₦{(quote.approvedPrice * quote.approvedQuantity).toLocaleString()}
-              </p>
-            </div>
-          )}
-          {quote.status === 'rejected' && quote.responseMessage && (
+          {quote.status === "accepted" &&
+            quote.approvedPrice &&
+            quote.approvedQuantity && (
+              <div className="text-xs text-blue-600">
+                <p>
+                  Approved Price: ₦{quote.approvedPrice.toLocaleString()} per
+                  unit
+                </p>
+                <p>Approved Quantity: {quote.approvedQuantity} units</p>
+                <p className="font-semibold mt-1">
+                  Total: ₦
+                  {(
+                    quote.approvedPrice * quote.approvedQuantity
+                  ).toLocaleString()}
+                </p>
+              </div>
+            )}
+          {quote.status === "rejected" && quote.responseMessage && (
             <p className="text-xs text-blue-600">
               Admin Response: {quote.responseMessage}
             </p>
           )}
-          {quote.responseMessage && quote.status !== 'rejected' && (
+          {quote.responseMessage && quote.status !== "rejected" && (
             <p className="text-xs text-blue-600">
               Message: {quote.responseMessage}
             </p>

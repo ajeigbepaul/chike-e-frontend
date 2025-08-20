@@ -326,6 +326,7 @@ export function ProductForm({
       const submissionFormData = new FormData();
 
       // Add basic fields from component state
+      submissionFormData.append("moq", String(formData.moq || 1));
       submissionFormData.append("name", formData.name || "");
       submissionFormData.append("description", formData.description || "");
       submissionFormData.append("summary", formData.summary || "");
@@ -687,6 +688,20 @@ export function ProductForm({
                     required
                     onChange={(e) =>
                       updateFormData({ quantity: Number(e.target.value) || 0 })
+                    }
+                  />
+                </div>
+
+                <div>
+                  <label className="text-sm font-medium">Minimum Order Quantity (MOQ) *</label>
+                  <Input
+                    type="number"
+                    name="moq"
+                    min="1"
+                    defaultValue={formData.moq || 1}
+                    required
+                    onChange={(e) =>
+                      updateFormData({ moq: Number(e.target.value) || 1 })
                     }
                   />
                 </div>

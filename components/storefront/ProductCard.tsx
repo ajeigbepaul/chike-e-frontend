@@ -18,6 +18,7 @@ export default function ProductCard({
   isLoggedIn = false,
   onRequireLogin,
   quantity = 1,
+  moq = 1,
 }: {
   id: string | number;
   title: string;
@@ -34,6 +35,7 @@ export default function ProductCard({
   isLoggedIn?: boolean;
   onRequireLogin?: () => void;
   quantity?: number;
+  moq?: number;
 }) {
   return (
     <div className="group relative bg-white rounded-2xl border border-gray-100 overflow-hidden hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
@@ -168,11 +170,18 @@ export default function ProductCard({
           </div>
 
           {/* Stock indicator */}
-          {quantity > 0 && quantity <= 5 && (
-            <div className="text-xs text-orange-600 bg-orange-50 px-2 py-1 rounded-full font-medium">
-              Only {quantity} left
-            </div>
-          )}
+          <div className="flex flex-col gap-1 items-end">
+            {quantity > 0 && quantity <= 5 && (
+              <div className="text-xs text-orange-600 bg-orange-50 px-2 py-1 rounded-full font-medium">
+                Only {quantity} left
+              </div>
+            )}
+            {moq && moq > 1 && (
+              <div className="text-xs text-gray-600 bg-gray-100 px-2 py-1 rounded-full font-medium">
+                Min. order: {moq}
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>

@@ -77,7 +77,7 @@ export default function PartnerWithUs() {
   };
 
   return (
-    <section className="relative bg-[#232323] text-white py-16 px-4 sm:px-6 lg:px-8 overflow-hidden max-w-7xl mx-auto mt-10">
+    <section className="relative bg-[#232323] text-white py-16 px-4 sm:px-6 lg:px-8 overflow-hidden w-full mt-10">
       {/* Absolute images */}
       <div className="hidden md:block">
         <div className="absolute -top-10 -left-10 w-48 h-48 rounded-full border-4 border-white overflow-hidden z-10">

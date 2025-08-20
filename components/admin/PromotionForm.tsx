@@ -36,7 +36,7 @@ export function PromotionForm({ promotion }: PromotionFormProps) {
         isActive: true,
         applicableTo: "all_products",
         minimumOrderAmount: 0,
-        maximumDiscountAmount: undefined,
+        // maximumDiscountAmount: undefined,
         usageLimit: undefined,
       };
     }
@@ -125,7 +125,7 @@ export function PromotionForm({ promotion }: PromotionFormProps) {
             >
               <option value="percentage">Percentage Discount</option>
               <option value="fixed_amount">Fixed Amount Discount</option>
-              <option value="buy_x_get_y">Buy X Get Y</option>
+              {/* <option value="buy_x_get_y">Buy X Get Y</option> */}
             </select>
           </div>
 
@@ -184,8 +184,8 @@ export function PromotionForm({ promotion }: PromotionFormProps) {
               required
             >
               <option value="all_products">All Products</option>
-              <option value="specific_products">Specific Products</option>
-              <option value="specific_categories">Specific Categories</option>
+              {/* <option value="specific_products">Specific Products</option>
+              <option value="specific_categories">Specific Categories</option> */}
             </select>
           </div>
 
@@ -204,7 +204,7 @@ export function PromotionForm({ promotion }: PromotionFormProps) {
             />
           </div>
 
-          <div>
+          {/* <div>
             <label className="text-sm font-medium">Maximum Discount Amount</label>
             <Input
               type="number"
@@ -214,7 +214,7 @@ export function PromotionForm({ promotion }: PromotionFormProps) {
               min={0}
               placeholder="No limit"
             />
-          </div>
+          </div> */}
 
           <div>
             <label className="text-sm font-medium">Usage Limit</label>

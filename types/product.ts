@@ -85,6 +85,7 @@ export interface Product {
   isFavorite?: boolean;
   createdAt: string;
   accessories?: Array<{ _id: string; name: string; products: Product[] }>;
+  moq?: number; // Minimum order quantity
 }
 
 export type CategoryType = Category;
@@ -126,6 +127,7 @@ export interface ProductFormData {
   vendor?: string;
   accessories?: Array<{ _id: string; name: string; products: Product[] }>;
   tags?: string[];
+  moq?: number;
 }
 
 export interface AttributeType {

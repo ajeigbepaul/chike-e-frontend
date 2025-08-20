@@ -196,8 +196,10 @@ export function ProductTable({
                     {product.name}
                   </TableCell>
                   <TableCell className="px-2">₦{product.price}</TableCell>
-                  <TableCell className="px-2">
-                    <div className="flex items-center space-x-1">
+                  
+                  <TableCell className="px-2 flex item-center space-x-2">
+                    
+                    <div className="flex items-center space-x-1 ">
                       <Button
                         size="icon"
                         variant="outline"
@@ -237,6 +239,11 @@ export function ProductTable({
                           "Update"
                         )}
                       </Button>
+                    </div>
+                    <div className="pt-1">
+                      {product.quantity < 5 ? (
+                      <span className="text-red-500 font-semibold ">Low stock</span>
+                    ) : null}
                     </div>
                   </TableCell>
                   <TableCell className="px-2 text-sm">

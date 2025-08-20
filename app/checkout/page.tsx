@@ -4,7 +4,12 @@ import { useSelector, useDispatch } from "react-redux";
 import Link from "next/link";
 import Image from "next/image";
 import orderService from "@/services/api/order";
-import { clearCart, calculateSubtotal, calculateVAT, calculateTotalWithVAT } from "@/store/cartSlice";
+import {
+  clearCart,
+  calculateSubtotal,
+  calculateVAT,
+  calculateTotalWithVAT,
+} from "@/store/cartSlice";
 import {
   clearCheckout,
   setCustomerAddress,
@@ -66,8 +71,18 @@ function CheckoutContent() {
   const [isQuoteCheckout, setIsQuoteCheckout] = useState(false);
 
   const Delivery = 20000;
-  const itemsTotal = isQuoteCheckout ? quoteCheckoutData.price * quoteCheckoutData.quantity : calculateSubtotal(items);
-  const vat = calculateVAT([{ id: 'quote-vat-item', name: 'Quote Total', image: '', price: itemsTotal, quantity: 1 }]);
+  const itemsTotal = isQuoteCheckout
+    ? quoteCheckoutData.price * quoteCheckoutData.quantity
+    : calculateSubtotal(items);
+  const vat = calculateVAT([
+    {
+      id: "quote-vat-item",
+      name: "Quote Total",
+      image: "",
+      price: itemsTotal,
+      quantity: 1,
+    },
+  ]);
   const total = itemsTotal + vat + Delivery - discount;
 
   // Debug: Let's verify the calculation step by step
@@ -134,6 +149,32 @@ function CheckoutContent() {
     closeModal();
   };
 
+  // const handleApplyCoupon = async () => {
+  //   setCouponError("");
+  //   if (!coupon) {
+  //     setCouponError("Please enter a coupon code.");
+  //     return;
+  //   }
+  //   if (discount > 0) {
+  //     setCouponError("A coupon has already been applied.");
+  //     return;
+  //   }
+  //   try {
+  //     const cartItems = items.map((item) => ({
+  //       product: item.id,
+  //       quantity: item.quantity,
+  //       price: item.price,
+  //       category: item.category, // ensure category is available
+  //     }));
+  //     const res = await validateCoupon({ code: coupon, cartItems });
+  //     setDiscount(res.discount);
+  //     toast.success(res.promotion.message || "Coupon applied!");
+  //   } catch (err: any) {
+  //     setDiscount(0);
+  //     setCouponError(err.message || "Invalid coupon code");
+  //     toast.error(err.message || "Invalid coupon code");
+  //   }
+  // };
   const handleApplyCoupon = async () => {
     setCouponError("");
     if (!coupon) {
@@ -149,9 +190,38 @@ function CheckoutContent() {
         product: item.id,
         quantity: item.quantity,
         price: item.price,
-        category: item.category, // ensure category is available
+        category: item.category,
       }));
       const res = await validateCoupon({ code: coupon, cartItems });
+
+      // Check if coupon has expired
+      if (res.promotion?.endDate) {
+        const now = new Date();
+        const endDate = new Date(res.promotion.endDate);
+        if (now > endDate) {
+          setDiscount(0);
+          setCouponError("This coupon has expired.");
+          toast.error("This coupon has expired.");
+          return;
+        }
+      }
+
+      // Check minimum order amount
+      if (
+        res.promotion?.minimumOrderAmount &&
+        items.reduce((sum, item) => sum + item.price * item.quantity, 0) <
+          res.promotion.minimumOrderAmount
+      ) {
+        setDiscount(0);
+        setCouponError(
+          `Order total must be at least ₦${res.promotion.minimumOrderAmount.toLocaleString()} to use this coupon.`
+        );
+        toast.error(
+          `Order total must be at least ₦${res.promotion.minimumOrderAmount.toLocaleString()} to use this coupon.`
+        );
+        return;
+      }
+
       setDiscount(res.discount);
       toast.success(res.promotion.message || "Coupon applied!");
     } catch (err: any) {
@@ -160,7 +230,6 @@ function CheckoutContent() {
       toast.error(err.message || "Invalid coupon code");
     }
   };
-
   const handleConfirmOrder = async () => {
     if (!customerAddress || !deliveryDetails || !paymentMethod) {
       toast.error("Please complete all checkout steps");
@@ -169,16 +238,20 @@ function CheckoutContent() {
 
     setIsLoading(true);
     try {
-      const orderItems = isQuoteCheckout ? [{
-        product: quoteCheckoutData.productId,
-        quantity: quoteCheckoutData.quantity,
-        price: quoteCheckoutData.price,
-        quoteId: quoteCheckoutData.quoteId,
-      }] : items.map((item) => ({
-        product: item.id,
-        quantity: item.quantity,
-        price: item.price,
-      }));
+      const orderItems = isQuoteCheckout
+        ? [
+            {
+              product: quoteCheckoutData.productId,
+              quantity: quoteCheckoutData.quantity,
+              price: quoteCheckoutData.price,
+              quoteId: quoteCheckoutData.quoteId,
+            },
+          ]
+        : items.map((item) => ({
+            product: item.id,
+            quantity: item.quantity,
+            price: item.price,
+          }));
 
       const orderPayload = {
         orderItems,
@@ -267,13 +340,13 @@ function CheckoutContent() {
 
   // Prefill from localStorage or API on mount
   useEffect(() => {
-    const storedQuote = sessionStorage.getItem('approvedQuote');
+    const storedQuote = sessionStorage.getItem("approvedQuote");
     if (storedQuote) {
       const parsedQuote = JSON.parse(storedQuote);
       setQuoteCheckoutData(parsedQuote);
       setIsQuoteCheckout(true);
       // Clear sessionStorage after reading to prevent re-use on subsequent visits
-      sessionStorage.removeItem('approvedQuote');
+      sessionStorage.removeItem("approvedQuote");
     }
 
     const saved = localStorage.getItem("checkoutInfo");
@@ -426,7 +499,9 @@ function CheckoutContent() {
                           className="w-14 h-14 object-cover rounded border border-border"
                         />
                         <div>
-                          <p className="text-foreground">{quoteCheckoutData.productName}</p>
+                          <p className="text-foreground">
+                            {quoteCheckoutData.productName}
+                          </p>
                           <p className="text-sm text-muted-foreground">
                             Qty: {quoteCheckoutData.quantity}
                           </p>
@@ -519,7 +594,9 @@ function CheckoutContent() {
             {isQuoteCheckout ? (
               <>
                 <div className="flex justify-between mb-2 text-gray-700">
-                  <span>Product Price ({quoteCheckoutData.quantity} units)</span>
+                  <span>
+                    Product Price ({quoteCheckoutData.quantity} units)
+                  </span>
                   <span>
                     ₦
                     {itemsTotal.toLocaleString(undefined, {

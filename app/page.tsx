@@ -200,7 +200,7 @@ export default function Home() {
     cta: advert.cta,
     image: advert.image,
   }));
-
+ console.log(featured,"This are the featured products")
   return (
     <main className="w-full">
       {isAdvertLoading ? (

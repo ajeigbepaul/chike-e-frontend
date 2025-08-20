@@ -3,7 +3,6 @@
 import ProductsAdCard from "@/components/storefront/ProductsAdCard";
 import ProductsGallerySection from "@/components/storefront/ProductsGallerySection";
 import { Breadcrumb } from "@/components/ui/breadcrumb";
-import { CategoryNavigation } from "@/components/storefront/CategoryNavigation";
 import React, { Suspense } from "react";
 
 export const dynamic = 'force-dynamic';

@@ -291,6 +291,7 @@ function ProductGalleryContent({ initialProducts }: ProductsGallerySectionProps)
         (Array.isArray(p.subCategories) && p.subCategories.includes(selectedCategory))
       );
     }
+    console.log(filteredProducts,"FilteredProducts")
     if (selectedBrand !== 'All') {
       result = result.filter(p =>
         (typeof p.brand === 'object' && p.brand !== null && '_id' in p.brand && p.brand._id === selectedBrand) ||

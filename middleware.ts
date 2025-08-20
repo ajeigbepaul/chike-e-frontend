@@ -50,6 +50,8 @@ export async function middleware(request: NextRequest) {
     path.startsWith("/product") ||
     path.startsWith("/category") ||
     path.startsWith("/category/[slug]") ||
+    path.startsWith("/tag") ||
+    path.startsWith("/tag/[slug]") ||
     path === "/checkout" ||
     path.startsWith("/checkout") ||
     path === "/cart" ||

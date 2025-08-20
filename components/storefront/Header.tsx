@@ -189,13 +189,7 @@ function HeaderContent() {
           >
             About Us
           </Link>
-          {/* <CategoryDropdown
-            categories={categories}
-            isMobile={true}
-            setIsMobile={setIsMobile}
-            onCategorySelect={handleHeaderCategorySelect}
-            trigger={<div className="px-4 flex items-center">Products</div>}
-          /> */}
+         
           {/* Products nav: always show link, only show dropdown/caret on /products */}
           <div className="relative flex items-center ml-4 md:ml-0">
             <Link
