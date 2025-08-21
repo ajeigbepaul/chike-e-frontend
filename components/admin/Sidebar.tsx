@@ -114,6 +114,9 @@ export function Sidebar() {
       name: "Quotes",
       href: "/admin/quotes",
       icon: <FileText className="h-5 w-5" />,
+      subItems: [
+        { name: "Quote History", href: "/admin/quotes/history" },
+      ],
     },
     // {
     //   name: "Settings",

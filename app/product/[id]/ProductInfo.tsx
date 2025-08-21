@@ -10,7 +10,7 @@ import RequestQuoteDialog from "@/components/RequestQuoteDialog";
 export default function ProductInfo({ product }: { product: Product }) {
   const dispatch = useDispatch();
   const { data: session } = useSession();
-  const [quantity, setQuantity] = useState(product?.moq || 1);
+  const [quantity, setQuantity] = useState(1);
 
   // Quote state management
   const {
@@ -47,6 +47,7 @@ export default function ProductInfo({ product }: { product: Product }) {
         price: product.price,
         quantity,
         image: product.imageCover,
+        moq: product.moq || 1,
       })
     );
     toast.success("Added to cart");
@@ -137,7 +138,7 @@ export default function ProductInfo({ product }: { product: Product }) {
             onClick={() => setQuantity((q) => Math.max(1, q - 1))}
             disabled={
               outOfStock ||
-              quantity <= (product.moq || 1) ||
+              quantity <= 1 ||
               !!(quote && quote.status === "accepted")
             }
           >
@@ -200,8 +201,14 @@ export default function ProductInfo({ product }: { product: Product }) {
             isLoading={quoteLoading}
           >
             <button
-              className={`flex-1 border py-3 rounded-full font-semibold transition-colors cursor-pointer ${buttonColor}`}
-              disabled={quoteDisabled}
+              className={`flex-1 border py-3 rounded-full font-semibold transition-colors 
+                ${
+                  quantity < (product?.moq || 1)
+                    ? "cursor-not-allowed bg-gray-200 text-white border-gray-200 opacity-70"
+                    : "cursor-pointer " + buttonColor
+                }
+              `}
+              disabled={quoteDisabled || quantity < (product?.moq || 1)}
             >
               {quoteLoading ? "Loading..." : buttonText}
             </button>

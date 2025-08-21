@@ -10,6 +10,7 @@ const navItems = [
   { label: 'Inbox', href: '/account/inbox', key: 'inbox', icon: <Mail className="w-6 h-6 mr-2" /> },
   { label: 'Pending Reviews', href: '/account/reviews', key: 'reviews', icon: <FileText className="w-6 h-6 mr-2" /> },
   { label: 'Wishlist', href: '/account/wishlist', key: 'wishlist', icon: <Heart className="w-6 h-6 mr-2" /> },
+  { label: 'Quotes', href: '/account/quote', key: 'quotes', icon: <FileText className="w-6 h-6 mr-2" /> },
 ];
 
 export default function AccountSideNav() {

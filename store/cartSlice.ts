@@ -6,6 +6,7 @@ interface CartItem {
   price: number;
   quantity: number;
   image: string;
+  moq?: number; // Minimum Order Quantity
   category?: string; // Added for promotion/coupon compatibility
 }
 
@@ -18,10 +19,14 @@ interface CartState {
 const VAT_RATE = 0.07;
 
 // Utility functions for cart calculations
-export const calculateItemTotal = (price: number, quantity: number) => price * quantity;
+export const calculateItemTotal = (price: number, quantity: number) =>
+  price * quantity;
 
-export const calculateSubtotal = (items: CartItem[]) => 
-  items.reduce((sum, item) => sum + calculateItemTotal(item.price, item.quantity), 0);
+export const calculateSubtotal = (items: CartItem[]) =>
+  items.reduce(
+    (sum, item) => sum + calculateItemTotal(item.price, item.quantity),
+    0
+  );
 
 export const calculateVAT = (items: CartItem[]) => {
   const subtotal = calculateSubtotal(items);
@@ -47,10 +52,31 @@ export const cartSlice = createSlice({
       const existingItem = state.items.find(
         (item) => item.id === action.payload.id
       );
+      // Always ensure moq is present in the payload
+      const payloadWithMOQ = {
+        ...action.payload,
+        moq: action.payload.moq !== undefined ? action.payload.moq : 1,
+      };
       if (existingItem) {
-        existingItem.quantity += action.payload.quantity;
+        existingItem.quantity += payloadWithMOQ.quantity;
+        // Update moq and other fields if present in payload
+        if (payloadWithMOQ.moq !== undefined) {
+          existingItem.moq = payloadWithMOQ.moq;
+        }
+        if (payloadWithMOQ.name) {
+          existingItem.name = payloadWithMOQ.name;
+        }
+        if (payloadWithMOQ.price) {
+          existingItem.price = payloadWithMOQ.price;
+        }
+        if (payloadWithMOQ.image) {
+          existingItem.image = payloadWithMOQ.image;
+        }
+        if (payloadWithMOQ.category) {
+          existingItem.category = payloadWithMOQ.category;
+        }
       } else {
-        state.items.push(action.payload);
+        state.items.push(payloadWithMOQ);
       }
     },
     removeFromCart: (state, action: PayloadAction<string>) => {

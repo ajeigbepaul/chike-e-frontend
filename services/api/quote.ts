@@ -12,11 +12,25 @@ export interface QuoteRequest {
   expectedPrice?: number;
   urgency?: 'low' | 'medium' | 'high';
   image?: string;
+  serialnos?: string; // New field for serial numbers
+}
+
+export interface Message {
+  sender: string;
+  content: string;
+  createdAt: string;
+}
+
+export interface ProductInfo {
+  _id: string;
+  name: string;
+  imageCover: string;
+  serialNumber?: string;
 }
 
 export interface QuoteResponse {
   _id: string;
-  productId: string;
+  productId: ProductInfo;
   productName: string;
   quantity: number;
   customerName: string;
@@ -34,6 +48,7 @@ export interface QuoteResponse {
   createdAt: string;
   updatedAt: string;
   image?: string;
+  messages: Message[];
 }
 
 interface ApiResponse<T> {
@@ -72,6 +87,30 @@ export const getQuoteRequests = async (page = 1, limit = 10): Promise<{
       error.response?.data?.message ||
       error.message ||
       'Failed to fetch quote requests'
+    );
+  }
+};
+
+export const getQuotesForUser = async (
+  customerEmail: string,
+  page = 1,
+  limit = 10
+): Promise<{
+  quotes: QuoteResponse[];
+  pagination: { total: number; page: number; limit: number; pages: number };
+}> => {
+  try {
+    const response = await api.get<ApiResponse<{
+      quotes: QuoteResponse[];
+      pagination: { total: number; page: number; limit: number; pages: number };
+    }>>(`/quotes/user?customerEmail=${encodeURIComponent(customerEmail)}&page=${page}&limit=${limit}`);
+    return response.data.data;
+  } catch (error: any) {
+    console.error('Error fetching user quote requests:', error);
+    throw new Error(
+      error.response?.data?.message ||
+      error.message ||
+      'Failed to fetch user quote requests'
     );
   }
 };
@@ -134,6 +173,29 @@ export const getProductQuoteForCustomer = async (
       error.response?.data?.message ||
       error.message ||
       'Failed to fetch product quote for customer'
+    );
+  }
+};
+
+
+// patchQuoteMessage
+// services/api/quote.ts
+export const patchQuoteMessage = async (
+  quoteId: string,
+  data: { sender: string; content: string }
+): Promise<QuoteResponse> => {
+  try {
+    const response = await api.patch<ApiResponse<{ quote: QuoteResponse }>>(
+      `/quotes/${quoteId}/messages`,
+      data
+    );
+    return response.data.data.quote;
+  } catch (error: any) {
+    console.error('Error patching quote message:', error);
+    throw new Error(
+      error.response?.data?.message ||
+      error.message ||
+      'Failed to patch quote message'
     );
   }
 };

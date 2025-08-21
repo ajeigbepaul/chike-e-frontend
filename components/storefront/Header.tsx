@@ -456,6 +456,13 @@ function HeaderContent() {
                       </Badge>
                     )}
                   </Link>
+                  <Link
+                    href="/account/quote"
+                    className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-brand-yellow/10"
+                  >
+                    <ShoppingBag className="mr-2 h-4 w-4" />
+                    Quotes
+                  </Link>
                   <button
                     className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-brand-yellow/10"
                     onClick={handleSignOut}

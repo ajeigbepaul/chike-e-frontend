@@ -42,6 +42,7 @@ interface QuoteFormData {
   message?: string;
   expectedPrice?: number;
   urgency: 'low' | 'medium' | 'high';
+  serialnos:string;
 }
 
 export default function RequestQuoteDialog({ product, children, onSubmitQuote, isLoading }: RequestQuoteDialogProps) {
@@ -57,6 +58,7 @@ export default function RequestQuoteDialog({ product, children, onSubmitQuote, i
       message: "",
       expectedPrice: 0,
       urgency: "medium",
+      serialnos: "",
     },
   });
 
@@ -85,6 +87,7 @@ export default function RequestQuoteDialog({ product, children, onSubmitQuote, i
           message: data.message,
           expectedPrice: data.expectedPrice,
           urgency: data.urgency,
+          serialnos: data.serialnos,
         });
         setOpen(false);
         form.reset();
@@ -104,6 +107,7 @@ export default function RequestQuoteDialog({ product, children, onSubmitQuote, i
         message: data.message,
         expectedPrice: data.expectedPrice,
         urgency: data.urgency,
+        serialnos: product.serialNumber || "",
       };
 
       quoteMutation.mutate(quoteRequest);

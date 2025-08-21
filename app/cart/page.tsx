@@ -1,7 +1,13 @@
 "use client";
 import { useSelector, useDispatch } from "react-redux";
 import { RootState } from "@/store/store";
-import { updateQuantity, removeFromCart, calculateSubtotal, calculateVAT, calculateTotalWithVAT } from "@/store/cartSlice";
+import {
+  updateQuantity,
+  removeFromCart,
+  calculateSubtotal,
+  calculateVAT,
+  calculateTotalWithVAT,
+} from "@/store/cartSlice";
 import { Star } from "lucide-react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
@@ -19,6 +25,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import toast from "react-hot-toast";
 
 export default function CartPage() {
   const cart = useSelector((state: RootState) => state.cart.items);
@@ -65,9 +72,23 @@ export default function CartPage() {
     );
   };
 
+  // Disable checkout if any cart item's quantity is less than its moq
+  const isCheckoutDisabled = cart.some(
+    (item) => item.quantity < (item.moq || 1)
+  );
+  const handleRoute = () => {
+    if (isCheckoutDisabled) {
+      toast.error('Please ensure all items meet their minimum order quantity.');
+    }
+    router.push('/checkout');
+  }
   return (
     <div className="max-w-6xl mx-auto py-8 px-2 md:px-10">
-      <Suspense fallback={<div className="h-6 bg-gray-200 rounded animate-pulse w-48"></div>}>
+      <Suspense
+        fallback={
+          <div className="h-6 bg-gray-200 rounded animate-pulse w-48"></div>
+        }
+      >
         <Breadcrumb />
       </Suspense>
       <div className="flex flex-col md:flex-row gap-8">
@@ -81,6 +102,7 @@ export default function CartPage() {
           ) : (
             <div className="space-y-4">
               {cart.map((item) => {
+                console.log(item, "item");
                 const reviews = getProductReviews(item.id);
                 const averageRating = getAverageRating(reviews);
 
@@ -112,6 +134,11 @@ export default function CartPage() {
                             ({reviews.length} review
                             {reviews.length !== 1 ? "s" : ""})
                           </span>
+                          {item?.moq && item?.moq > 1 && (
+                            <div className="text-xs text-gray-600 bg-gray-100 px-2 py-1 rounded-full font-medium">
+                              Min. order: {item?.moq}
+                            </div>
+                          )}
                         </span>
                       </div>
                       <div className="font-bold text-lg truncate mb-1">
@@ -184,6 +211,11 @@ export default function CartPage() {
                             })
                           )
                         }
+                        //             disabled={
+                        //   outOfStock ||
+                        //   quantity <= (product.moq || 1) ||
+                        //   !!(quote && quote.status === "accepted")
+                        // }
                         disabled={item.quantity <= 1}
                       >
                         –
@@ -258,8 +290,9 @@ export default function CartPage() {
             </div>
           </div>
           <button
-            onClick={() => router.push("/checkout")}
-            className="w-full bg-gray-900 text-white py-3 rounded-full font-semibold text-lg hover:bg-brand-yellow hover:text-gray-900 transition"
+            disabled={isCheckoutDisabled}
+            onClick={handleRoute}
+            className={`w-full ${isCheckoutDisabled ? "bg-gray-300" : "bg-gray-900 hover:bg-brand-yellow hover:text-gray-900"} text-white py-3 rounded-full font-semibold text-lg  transition`}
           >
             Checkout ₦
             {total.toLocaleString(undefined, { maximumFractionDigits: 2 })}
