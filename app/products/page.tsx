@@ -52,7 +52,7 @@ export default function Products() {
         </div>
       </div>
      
-      <ProductsAdCard />
+      {/* <ProductsAdCard /> */}
       <Suspense fallback={<ProductsGalleryFallback />}>
         <ProductsGallerySection initialProducts={[]} />
       </Suspense>

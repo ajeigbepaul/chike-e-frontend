@@ -61,6 +61,7 @@ function CheckoutContent() {
   );
   const [isModalOpen, setIsModalOpen] = useState<string | null>(null);
   const [pendingOrderId, setPendingOrderId] = useState<string | null>(null);
+  const [orderNos, setOrderNos]=useState<string>("")
   const [isLoading, setIsLoading] = useState(false);
   const [showOrderConfirmation, setShowOrderConfirmation] = useState(false);
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
@@ -265,12 +266,14 @@ function CheckoutContent() {
       };
 
       // Create order first
-      console.log("Creating order with payload:", orderPayload);
+      // console.log("Creating order with payload:", orderPayload);
       const orderRes = await orderService.createOrder(orderPayload);
-      console.log("Order creation response:", orderRes);
+      // console.log("Order creation response:", orderRes);
       const orderId = orderRes.data?.order?._id || orderRes.data?.order?.id;
-      console.log("Extracted Order ID:", orderId);
+      const orderNos = orderRes.data?.order?.orderId || orderRes.data?.order?.orderId;
+      // console.log("Extracted Order ID:", orderId);
       setPendingOrderId(orderId);
+      setOrderNos(orderNos)
       setIsLoading(false);
 
       console.log("=== ORDER CREATION COMPLETE ===");
@@ -315,6 +318,7 @@ function CheckoutContent() {
     dispatch(clearCart());
     dispatch(clearCheckout());
     setPendingOrderId(null);
+    setOrderNos("")
     setShowOrderConfirmation(false);
     setIsProcessingPayment(false);
     router.push("/checkout/success");
@@ -736,7 +740,7 @@ function CheckoutContent() {
                 <AlertCircle className="w-5 h-5 text-green-600 mt-0.5" />
                 <div>
                   <h4 className="font-medium text-green-800">
-                    Order #{pendingOrderId}
+                    Order #{orderNos}
                   </h4>
                   <p className="text-sm text-green-700 mt-1">
                     Your order has been created successfully. You can now

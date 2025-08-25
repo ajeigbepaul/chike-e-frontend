@@ -39,7 +39,7 @@ export default function OrdersPage() {
           (o: any) =>
             (o.status || "").replace(" ", "-").toLowerCase() === activeTab
         );
-
+  console.log(filtered,'Filtered Orders:')
   return (
     <div className="max-w-4xl mx-auto py-8">
       <h1 className="text-2xl font-bold mb-6">My Orders</h1>
@@ -82,8 +82,12 @@ export default function OrdersPage() {
                   }
                 >
                   <div>
-                    <div className="font-semibold text-lg flex items-center gap-2">
-                      Order #{order._id || order.id}
+                    <div className="font-semibold text-lg flex items-start gap-2">
+                      <div>
+                        <h2>OrderNos #{order?.orderId || ""}</h2>
+                        <span className="text-[12px] text-gray-500">{order?._id || order?.id}</span>
+                      </div>
+                      
                       <span className="ml-2 text-xs px-2 py-1 rounded bg-gray-100 text-gray-700 font-normal">
                         {order.status || "PENDING"}
                       </span>
