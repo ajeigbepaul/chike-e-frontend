@@ -34,6 +34,7 @@ import dynamic from "next/dynamic";
 import { useSearchParams } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { validateCoupon } from "@/services/api/promotion";
+import { useQuery, useMutation } from "@tanstack/react-query";
 
 // Dynamically import PaystackPayment to avoid SSR issues
 const PaystackPayment = dynamic(
@@ -59,9 +60,20 @@ function CheckoutContent() {
   const { customerAddress, deliveryDetails, paymentMethod } = useSelector(
     (state: RootState) => state.checkout
   );
+
+  // Consider sections complete only when required fields are non-empty
+  const isCustomerComplete = !!(
+    customerAddress &&
+    customerAddress.name?.trim() &&
+    customerAddress.address?.trim() &&
+    customerAddress.phone?.trim()
+  );
+  const isDeliveryComplete = !!(
+    deliveryDetails && deliveryDetails.pickupStation?.trim()
+  );
   const [isModalOpen, setIsModalOpen] = useState<string | null>(null);
   const [pendingOrderId, setPendingOrderId] = useState<string | null>(null);
-  const [orderNos, setOrderNos]=useState<string>("")
+  const [orderNos, setOrderNos] = useState<string>("");
   const [isLoading, setIsLoading] = useState(false);
   const [showOrderConfirmation, setShowOrderConfirmation] = useState(false);
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
@@ -87,20 +99,20 @@ function CheckoutContent() {
   const total = itemsTotal + vat + Delivery - discount;
 
   // Debug: Let's verify the calculation step by step
-  console.log("=== CART CALCULATION DEBUG ===");
-  console.log("Items in cart:", items);
-  console.log("Items total calculation:", itemsTotal);
-  console.log("VAT:", vat);
-  console.log("Delivery:", Delivery);
-  console.log("Final total:", total);
-  console.log("Expected total should be:", itemsTotal + 5000 + 20000);
-  console.log("=== END DEBUG ===");
-  console.log(
-    "DELIVERY DETAILS:",
-    customerAddress,
-    deliveryDetails,
-    paymentMethod
-  );
+  // console.log("=== CART CALCULATION DEBUG ===");
+  // console.log("Items in cart:", items);
+  // console.log("Items total calculation:", itemsTotal);
+  // console.log("VAT:", vat);
+  // console.log("Delivery:", Delivery);
+  // console.log("Final total:", total);
+  // console.log("Expected total should be:", itemsTotal + 5000 + 20000);
+  // console.log("=== END DEBUG ===");
+  // console.log(
+  //   "DELIVERY DETAILS:",
+  //   customerAddress,
+  //   deliveryDetails,
+  //   paymentMethod
+  // );
   const openModal = (type: string) => setIsModalOpen(type);
   const closeModal = () => setIsModalOpen(null);
 
@@ -111,14 +123,62 @@ function CheckoutContent() {
     email: customerAddress?.email || "",
   });
 
+  // Pickup stations list (adjust with real stations)
+  const pickupStations = [
+    "Lagos - Ikeja Pickup Station",
+    "Abuja - Central Pickup Station",
+    "Port Harcourt - GRA Pickup Station",
+  ];
+
+  // Always estimate delivery as 7 days from now
+  const getEstimatedDeliveryDate = () => {
+    const d = new Date();
+    d.setDate(d.getDate() + 7);
+    return d.toLocaleDateString();
+  };
+
   const [deliveryForm, setDeliveryForm] = useState({
     pickupStation: deliveryDetails?.pickupStation || "",
-    deliveryDate: deliveryDetails?.deliveryDate || "",
+    deliveryDate: deliveryDetails?.deliveryDate || getEstimatedDeliveryDate(),
   });
 
   const [paymentForm, setPaymentForm] = useState(paymentMethod || "");
 
-  const handleSaveCustomerAddress = () => {
+  // Fetch checkout info from the database (no localStorage usage)
+  type CheckoutInfo = {
+    customerAddress?: {
+      name: string;
+      address: string;
+      phone: string;
+      email?: string;
+    };
+    deliveryDetails?: { pickupStation: string; deliveryDate: string };
+    paymentMethod?: string;
+  } | null;
+
+  const { data: fetchedCheckoutInfo } = useQuery<CheckoutInfo>({
+    queryKey: ["checkout-info"],
+    queryFn: orderService.getCheckoutInfo,
+  });
+
+  useEffect(() => {
+    if (fetchedCheckoutInfo) {
+      if (fetchedCheckoutInfo.customerAddress)
+        dispatch(setCustomerAddress(fetchedCheckoutInfo.customerAddress));
+      if (fetchedCheckoutInfo.deliveryDetails)
+        dispatch(setDeliveryDetails(fetchedCheckoutInfo.deliveryDetails));
+      if (fetchedCheckoutInfo.paymentMethod)
+        dispatch(setPaymentMethod(fetchedCheckoutInfo.paymentMethod));
+    }
+  }, [fetchedCheckoutInfo, dispatch]);
+
+  // Mutation to update checkout info in the database
+  const updateCheckoutMutation = useMutation({
+    mutationFn: (checkoutInfo: any) =>
+      orderService.updateCheckoutInfo(checkoutInfo),
+  });
+
+  const handleSaveCustomerAddress = async () => {
     if (
       !customerForm.name ||
       !customerForm.address ||
@@ -128,26 +188,62 @@ function CheckoutContent() {
       alert("Please fill all fields.");
       return;
     }
-    dispatch(setCustomerAddress(customerForm));
-    closeModal();
+    try {
+      await updateCheckoutMutation.mutateAsync({
+        customerAddress: customerForm,
+        deliveryDetails,
+        paymentMethod,
+      });
+      dispatch(setCustomerAddress(customerForm));
+      toast.success("Customer information saved");
+      closeModal();
+    } catch (err: any) {
+      toast.error(err?.message || "Failed to save customer information");
+    }
   };
 
-  const handleSaveDeliveryDetails = () => {
-    if (!deliveryForm.pickupStation || !deliveryForm.deliveryDate) {
-      alert("Please fill all fields.");
+  const handleSaveDeliveryDetails = async () => {
+    if (!deliveryForm.pickupStation) {
+      alert("Please select a pickup station.");
       return;
     }
-    dispatch(setDeliveryDetails(deliveryForm));
-    closeModal();
+    const fixedDate = getEstimatedDeliveryDate();
+    const payload = {
+      pickupStation: deliveryForm.pickupStation,
+      deliveryDate: fixedDate,
+    };
+    try {
+      await updateCheckoutMutation.mutateAsync({
+        customerAddress,
+        deliveryDetails: payload,
+        paymentMethod,
+      });
+      setDeliveryForm(payload);
+      dispatch(setDeliveryDetails(payload));
+      toast.success("Delivery details saved");
+      closeModal();
+    } catch (err: any) {
+      toast.error(err?.message || "Failed to save delivery details");
+    }
   };
 
-  const handleSavePaymentMethod = () => {
+  const handleSavePaymentMethod = async () => {
     if (!paymentForm) {
       alert("Please select a payment method.");
       return;
     }
-    dispatch(setPaymentMethod(paymentForm));
-    closeModal();
+    try {
+      await updateCheckoutMutation.mutateAsync({
+        customerAddress,
+        deliveryDetails,
+        paymentMethod: paymentForm,
+      });
+      dispatch(setPaymentMethod(paymentForm));
+      toast.success("Payment method saved");
+      closeModal();
+    } catch (err: any) {
+      toast.error(err?.message || "Failed to save payment method");
+    }
   };
 
   // const handleApplyCoupon = async () => {
@@ -270,10 +366,11 @@ function CheckoutContent() {
       const orderRes = await orderService.createOrder(orderPayload);
       // console.log("Order creation response:", orderRes);
       const orderId = orderRes.data?.order?._id || orderRes.data?.order?.id;
-      const orderNos = orderRes.data?.order?.orderId || orderRes.data?.order?.orderId;
+      const orderNos =
+        orderRes.data?.order?.orderId || orderRes.data?.order?.orderId;
       // console.log("Extracted Order ID:", orderId);
       setPendingOrderId(orderId);
-      setOrderNos(orderNos)
+      setOrderNos(orderNos);
       setIsLoading(false);
 
       console.log("=== ORDER CREATION COMPLETE ===");
@@ -318,7 +415,7 @@ function CheckoutContent() {
     dispatch(clearCart());
     dispatch(clearCheckout());
     setPendingOrderId(null);
-    setOrderNos("")
+    setOrderNos("");
     setShowOrderConfirmation(false);
     setIsProcessingPayment(false);
     router.push("/checkout/success");
@@ -342,77 +439,16 @@ function CheckoutContent() {
     }
   };
 
-  // Prefill from localStorage or API on mount
+  // Only handle session quote; remove all localStorage usage. Data comes from DB via React Query.
   useEffect(() => {
     const storedQuote = sessionStorage.getItem("approvedQuote");
     if (storedQuote) {
       const parsedQuote = JSON.parse(storedQuote);
       setQuoteCheckoutData(parsedQuote);
       setIsQuoteCheckout(true);
-      // Clear sessionStorage after reading to prevent re-use on subsequent visits
       sessionStorage.removeItem("approvedQuote");
     }
-
-    const saved = localStorage.getItem("checkoutInfo");
-    if (saved) {
-      const { customerAddress, deliveryDetails, paymentMethod } =
-        JSON.parse(saved);
-      if (customerAddress) dispatch(setCustomerAddress(customerAddress));
-      if (deliveryDetails) dispatch(setDeliveryDetails(deliveryDetails));
-      if (paymentMethod) dispatch(setPaymentMethod(paymentMethod));
-    } else {
-      // Fetch from API if not in localStorage
-      import("@/services/api/user").then(({ default: userService }) => {
-        userService
-          .getCheckoutInfo()
-          .then((data) => {
-            console.log("InfoData from API:", data?.data);
-            const { checkoutInfo, user } = data.data || {};
-            if (checkoutInfo) {
-              if (checkoutInfo.customerAddress)
-                dispatch(setCustomerAddress(checkoutInfo.customerAddress));
-              if (checkoutInfo.deliveryDetails)
-                dispatch(setDeliveryDetails(checkoutInfo.deliveryDetails));
-              if (checkoutInfo.paymentMethod)
-                dispatch(setPaymentMethod(checkoutInfo.paymentMethod));
-              // Save to localStorage for next time
-              localStorage.setItem(
-                "checkoutInfo",
-                JSON.stringify(checkoutInfo)
-              );
-            } else if (user) {
-              // Optionally prefill with user info if no checkoutInfo
-              dispatch(
-                setCustomerAddress({
-                  name: user.name,
-                  email: user.email,
-                  phone: user.phone,
-                  address: user.addresses?.[0]?.street || "",
-                })
-              );
-            }
-          })
-          .catch((err) => {
-            // Optionally handle error
-            console.error("Failed to fetch checkout info:", err);
-          });
-      });
-    }
   }, [dispatch]);
-
-  // Save to localStorage whenever info changes
-  useEffect(() => {
-    if (customerAddress && deliveryDetails && paymentMethod) {
-      localStorage.setItem(
-        "checkoutInfo",
-        JSON.stringify({
-          customerAddress,
-          deliveryDetails,
-          paymentMethod,
-        })
-      );
-    }
-  }, [customerAddress, deliveryDetails, paymentMethod]);
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-8 bg-background min-h-screen theme-transition">
@@ -428,7 +464,7 @@ function CheckoutContent() {
                 <span className="text-lg">
                   <CheckCircle
                     className={`w-5 h-5 ${
-                      customerAddress ? "text-green-500" : "text-gray-400"
+                      isCustomerComplete ? "text-green-500" : "text-gray-400"
                     }`}
                   />
                 </span>
@@ -442,15 +478,15 @@ function CheckoutContent() {
                 onClick={() => openModal("customer")}
                 className="flex items-center gap-1"
               >
-                {customerAddress ? "Edit" : "Add"}
+                {isCustomerComplete ? "Edit" : "Add"}
                 <ChevronRight className="w-4 h-4" />
               </Button>
             </div>
-            {customerAddress ? (
+            {isCustomerComplete ? (
               <div className="mt-4 space-y-2 text-foreground">
-                <p>{customerAddress.name}</p>
-                <p>{customerAddress.address}</p>
-                <p>{customerAddress.phone}</p>
+                <p>{customerAddress?.name}</p>
+                <p>{customerAddress?.address}</p>
+                <p>{customerAddress?.phone}</p>
               </div>
             ) : (
               <p className="text-muted-foreground mt-2">
@@ -465,7 +501,7 @@ function CheckoutContent() {
                 <span className="text-lg">
                   <CheckCircle
                     className={`w-5 h-5 ${
-                      deliveryDetails ? "text-green-500" : "text-gray-400"
+                      isDeliveryComplete ? "text-green-500" : "text-gray-400"
                     }`}
                   />
                 </span>
@@ -479,14 +515,14 @@ function CheckoutContent() {
                 onClick={() => openModal("delivery")}
                 className="flex items-center gap-1"
               >
-                {deliveryDetails ? "Edit" : "Add"}
+                {isDeliveryComplete ? "Edit" : "Add"}
                 <ChevronRight className="w-4 h-4" />
               </Button>
             </div>
-            {deliveryDetails ? (
+            {isDeliveryComplete ? (
               <div className="mt-4 space-y-2 text-foreground">
-                <p>Pick-up Station: {deliveryDetails.pickupStation}</p>
-                <p>Estimated Delivery: {deliveryDetails.deliveryDate}</p>
+                <p>Pick-up Station: {deliveryDetails?.pickupStation}</p>
+                <p>Estimated Delivery: {deliveryDetails?.deliveryDate}</p>
                 <div className="mt-4 p-4 border border-border rounded-lg">
                   <p className="font-medium">Shipment Details</p>
                   <p className="text-sm text-muted-foreground">
@@ -857,8 +893,8 @@ function CheckoutContent() {
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-3 mt-4">
-            <input
-              type="text"
+            {/* Fixed to Pickup Stations only */}
+            <select
               value={deliveryForm.pickupStation}
               onChange={(e) =>
                 setDeliveryForm({
@@ -866,20 +902,25 @@ function CheckoutContent() {
                   pickupStation: e.target.value,
                 })
               }
-              placeholder="Pickup Station"
               className="w-full p-3 border border-border rounded-lg bg-input-background text-foreground"
-            />
+            >
+              <option value="" disabled>
+                Select Pickup Station
+              </option>
+              {pickupStations.map((s) => (
+                <option key={s} value={s}>
+                  {s}
+                </option>
+              ))}
+            </select>
+
+            {/* Estimated delivery fixed to 7 days */}
             <input
               type="text"
               value={deliveryForm.deliveryDate}
-              onChange={(e) =>
-                setDeliveryForm({
-                  ...deliveryForm,
-                  deliveryDate: e.target.value,
-                })
-              }
-              placeholder="Estimated Delivery Date"
-              className="w-full p-3 border border-border rounded-lg bg-input-background text-foreground"
+              readOnly
+              className="w-full p-3 border border-border rounded-lg bg-gray-100 text-foreground"
+              placeholder="Estimated Delivery (7 days)"
             />
           </div>
           <DialogFooter className="mt-6 flex justify-end gap-3">

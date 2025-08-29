@@ -1,7 +1,16 @@
 // frontend/app/account/page.tsx
 "use client"
 
+import  userService from "@/services/api/user";
+import { useQuery } from "@tanstack/react-query";
+
 export default function AccountPage() {
+
+  const { data, isLoading } = useQuery({
+    queryKey: ["user"],
+    queryFn: () => userService.getCurrentUser(),
+  })
+  console.log(data,"Current User")
   // Mock data
   const user = {
     name: "paul ajeigbe",
@@ -13,7 +22,7 @@ export default function AccountPage() {
     },
     storeCredit: 0,
   };
-
+  
   return (
     <div className="max-w-6xl mx-auto py-2">
       <h1 className="text-2xl font-semibold mb-6">Account Overview</h1>
@@ -21,11 +30,11 @@ export default function AccountPage() {
         {/* Account Details */}
         <div className="bg-white rounded-lg border p-6 flex flex-col gap-2">
           <h2 className="font-semibold text-lg mb-2">ACCOUNT DETAILS</h2>
-          <div className="text-gray-900 font-medium">{user.name}</div>
-          <div className="text-gray-500">{user.email}</div>
+          <div className="text-gray-900 font-medium">{data?.data?.user?.name}</div>
+          <div className="text-gray-500">{data?.data?.user?.email}</div>
         </div>
         {/* Address Book */}
-        <div className="bg-white rounded-xl border p-6 flex flex-col gap-2">
+        {/* <div className="bg-white rounded-xl border p-6 flex flex-col gap-2">
           <div className="flex items-center justify-between mb-2">
             <h2 className="font-semibold text-lg">ADDRESS BOOK</h2>
             <button className="text-brand-yellow hover:text-yellow-600">
@@ -36,7 +45,7 @@ export default function AccountPage() {
           <div className="text-gray-700">{user.address.name}</div>
           <div className="text-gray-500">{user.address.details}</div>
           <div className="text-gray-500">{user.address.phone}</div>
-        </div>
+        </div> */}
         {/* Store Credit */}
         {/* <div className="bg-white rounded-xl border p-6 flex flex-col gap-2">
           <h2 className="font-semibold text-lg mb-2">JUMIA STORE CREDIT</h2>

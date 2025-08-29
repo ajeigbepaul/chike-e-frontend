@@ -69,6 +69,15 @@ const userService = {
     });
     return res.data;
   },
-};
+
+  async getCurrentUser(): Promise<UserResponse> {
+    const res = await api.get("/users/me", {
+      withCredentials: true,
+    });
+    return res.data;
+  },
+
+}
+
 
 export default userService;
