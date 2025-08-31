@@ -9,6 +9,7 @@ export function StatsGrid() {
     queryKey: ['dashboardStats'],
     queryFn: adminApi.getDashboardStats,
   });
+  console.log(dashboardStats,'DashboardStats...')
 
   if (isLoading) {
     return (

@@ -10,9 +10,10 @@ import { useEffect, Suspense } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { RootState } from "@/store/store";
 import { setCart } from "@/store/cartSlice";
-import PartnerWithUs from "@/components/storefront/PartnerWithUs"
+import PartnerWithUs from "@/components/storefront/PartnerWithUs";
 import VendorHeader from "@/components/vendor/VendorHeader";
 import { CategoryNavigation } from "@/components/storefront/CategoryNavigation";
+import ChatWidget from "@/components/ChatWidget";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -51,27 +52,7 @@ function CartPersistenceWatcher() {
   return null;
 }
 
-function BotpressWidget() {
-  useEffect(() => {
-    if (typeof window !== "undefined" && !window.botpressWidgetAdded) {
-      // Inject the Botpress webchat script
-      const script1 = document.createElement("script");
-      script1.src = "https://cdn.botpress.cloud/webchat/v3.2/inject.js";
-      script1.defer = true;
-      document.body.appendChild(script1);
-
-      // Inject your bot-specific config script
-      const script2 = document.createElement("script");
-      script2.src =
-        "https://files.bpcontent.cloud/2025/07/18/13/20250718132403-5A9MHTAE.js";
-      script2.defer = true;
-      document.body.appendChild(script2);
-
-      window.botpressWidgetAdded = true;
-    }
-  }, []);
-  return null;
-}
+// Removed Botpress widget in favor of custom ChatWidget
 
 export default function RootLayout({
   children,
@@ -91,7 +72,7 @@ export default function RootLayout({
           <ClientProviders>
             <Suspense fallback={<div></div>}>
               {!isAdmin && !isVendor && <Header />}
-              {!isAdmin && !isVendor &&  <CategoryNavigation />}
+              {!isAdmin && !isVendor && <CategoryNavigation />}
             </Suspense>
             {isVendor && <VendorHeader />}
             <main className="flex-grow">
@@ -99,11 +80,11 @@ export default function RootLayout({
               {children}
             </main>
             <div className="w-full">
-
-            {!isAdmin && !isVendor && <PartnerWithUs />}
+              {!isAdmin && !isVendor && <PartnerWithUs />}
             </div>
             {!isAdmin && !isVendor && <Footer />}
-            <BotpressWidget />
+            {/* Replace Botpress with our custom ChatWidget */}
+            {!isAdmin && !isVendor && <ChatWidget />}
           </ClientProviders>
         </NextAuthProvider>
       </body>
