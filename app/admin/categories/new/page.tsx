@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useToast } from "@/components/ui/use-toast";
+// import { useToast } from "@/components/ui/use-toast";
 import { Category } from "../types";
 import categoryService, { CreateCategoryData } from "@/services/api/category";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -18,10 +18,11 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import React from "react";
+import toast from "react-hot-toast";
 
 export default function NewCategoryPage() {
   const router = useRouter();
-  const { toast } = useToast();
+  // const { toast } = useToast();
   const queryClient = useQueryClient();
 
   // State for category selection path
@@ -91,18 +92,20 @@ export default function NewCategoryPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["categories"] });
-      toast({
-        title: "Success",
-        description: "Category created successfully!",
-      });
+      // toast({
+      //   title: "Success",
+      //   description: "Category created successfully!",
+      // });
+      toast.success("Category created successfully!");
       // Do NOT route away here
     },
     onError: (error: Error) => {
-      toast({
-        title: "Error",
-        description: error.message,
-        variant: "destructive",
-      });
+      // toast({
+      //   title: "Error",
+      //   description: error.message,
+      //   variant: "destructive",
+      // });
+      toast.error(error.message);
     },
   });
 
@@ -110,11 +113,12 @@ export default function NewCategoryPage() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!newCategoryName.trim()) {
-      toast({
-        title: "Validation",
-        description: "Please enter a category name",
-        variant: "destructive",
-      });
+      // toast({
+      //   title: "Validation",
+      //   description: "Please enter a category name",
+      //   variant: "destructive",
+      // });
+      toast.error("Please enter a category name");
       return;
     }
 
@@ -122,13 +126,11 @@ export default function NewCategoryPage() {
       selectionPath.length > 0
         ? selectionPath[selectionPath.length - 1].id
         : undefined;
-    const order = getSubcategories(parentId || null).length;
-
+    // Do not send 'order'; let backend auto-assign next sibling order
     if (selectionPath.length === 0 && imageFile) {
       // Main category with image
       const formData = new FormData();
       formData.append("name", newCategoryName);
-      formData.append("order", order.toString());
       formData.append("isActive", "true");
       formData.append("image", imageFile);
       createCategoryMutation.mutate(formData as any);
@@ -137,7 +139,6 @@ export default function NewCategoryPage() {
       createCategoryMutation.mutate({
         name: newCategoryName,
         parent: parentId,
-        order,
         isActive: true,
       });
     }
