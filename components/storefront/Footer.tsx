@@ -22,24 +22,27 @@ const Footer = () => (
         <div>
           <h3 className="font-semibold text-gray-900 mb-2">About us</h3>
           <ul className="space-y-1 text-gray-700">
-            <li><a href="#" className="hover:underline">Our company</a></li>
+            <p>We are your one-stop solution for all your interior design needs.</p>
+            {/* <li><a href="#" className="hover:underline">Our company</a></li>
             <li><a href="#" className="hover:underline">Careers</a></li>
-            <li><a href="#" className="hover:underline">Press kits</a></li>
+            <li><a href="#" className="hover:underline">Press kits</a></li> */}
+             {/* <li><a href="/about" className="hover:underline">About us</a></li> */}
           </ul>
+          
         </div>
         <div>
           <h3 className="font-semibold text-gray-900 mb-2">Legal</h3>
           <ul className="space-y-1 text-gray-700">
-            <li><a href="#" className="hover:underline">Terms of use</a></li>
-            <li><a href="#" className="hover:underline">Privacy policy</a></li>
-            <li><a href="#" className="hover:underline">About us</a></li>
+            <li><a href="/termofuse" className="hover:underline">Terms of use</a></li>
+            <li><a href="/privacypolicy" className="hover:underline">Privacy policy</a></li>
+           
           </ul>
         </div>
         <div>
           <h3 className="font-semibold text-gray-900 mb-2">Support</h3>
           <ul className="space-y-1 text-gray-700">
-            <li><a href="#" className="hover:underline">Contact us</a></li>
-            <li><a href="#" className="hover:underline">FAQ</a></li>
+            <li><a href="/contactus" className="hover:underline">Contact us</a></li>
+            <li><a href="/faq" className="hover:underline">FAQ</a></li>
           </ul>
         </div>
       </div>

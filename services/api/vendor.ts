@@ -238,6 +238,25 @@ const vendorService = {
     }
   },
 
+  // Get authenticated vendor's products
+  getMyProducts: async (): Promise<ApiResponse> => {
+    try {
+      const response = await api.get("/vendors/my-products");
+      return {
+        success: true,
+        message: "Products retrieved successfully",
+        data: response.data,
+      };
+    } catch (error) {
+      const axiosError = error as AxiosError<any>;
+      return {
+        success: false,
+        message:
+          axiosError.response?.data?.message || "Failed to retrieve products",
+      };
+    }
+  },
+
   /**
    * Admin: Get all vendors
    * @param page Optional page number for pagination
@@ -426,7 +445,8 @@ const vendorService = {
       const axiosError = error as any;
       return {
         success: false,
-        message: axiosError.response?.data?.message || "Failed to fetch invitations",
+        message:
+          axiosError.response?.data?.message || "Failed to fetch invitations",
       };
     }
   },
@@ -486,7 +506,8 @@ const vendorService = {
       );
       return {
         success: true,
-        message: response.data?.message || "Vendor request approved successfully",
+        message:
+          response.data?.message || "Vendor request approved successfully",
         data: response.data,
       };
     } catch (error) {
@@ -494,7 +515,8 @@ const vendorService = {
       return {
         success: false,
         message:
-          axiosError.response?.data?.message || "Failed to approve vendor request",
+          axiosError.response?.data?.message ||
+          "Failed to approve vendor request",
       };
     }
   },

@@ -30,6 +30,7 @@ import {
   Plus,
 } from "lucide-react";
 import vendorService from "@/services/api/vendor";
+
 import Spinner from "@/components/Spinner";
 
 // TypeScript interfaces for dashboard data
@@ -71,6 +72,86 @@ interface DashboardData {
   inventoryAlerts: Product[];
 }
 
+type MyProduct = {
+  id: string;
+  name: string;
+  price: number;
+  quantity: number;
+  image: string;
+  moq?: number;
+  category?: string;
+};
+
+import dynamic from "next/dynamic";
+const VendorProductCard = dynamic(
+  () => import("@/components/vendor/VendorProductCard"),
+  { ssr: false }
+);
+
+function VendorProductsGrid() {
+  const [loading, setLoading] = useState(true);
+  const [items, setItems] = useState<MyProduct[]>([]);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      try {
+        const res = await vendorService.getMyProducts();
+        if (!res.success)
+          throw new Error(res.message || "Failed to load products");
+        const data = res.data?.data || res.data;
+        if (mounted) setItems(Array.isArray(data) ? data : []);
+      } catch (e: any) {
+        if (mounted) setError(e.message || "Failed to load products");
+      } finally {
+        if (mounted) setLoading(false);
+      }
+    })();
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+        {Array.from({ length: 4 }).map((_, i) => (
+          <div key={i} className="h-80 rounded-xl bg-gray-100 animate-pulse" />
+        ))}
+      </div>
+    );
+  }
+
+  if (error) {
+    return <div className="text-sm text-red-600">{error}</div>;
+  }
+
+  if (!items.length) return null;
+
+  return (
+    <div className="space-y-3">
+      <div className="flex items-center justify-between">
+        <h2 className="text-lg font-semibold">Your Products</h2>
+      </div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+        {items.map((p) => (
+          <VendorProductCard
+            key={p.id}
+            id={p.id}
+            title={p.name}
+            image={p.image}
+            price={`₦${p.price.toFixed(2)}`}
+            quantity={p.quantity}
+            moq={p.moq || 1}
+            category={p.category}
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export default function VendorDashboard() {
   // Add custom vendor header
   // ...existing code...
@@ -89,13 +170,13 @@ export default function VendorDashboard() {
 
     try {
       const response = await vendorService.getDashboardStats();
-
+      console.log(response, "Vendor Response");
       if (!response.success) {
         throw new Error(response.message || "Failed to fetch dashboard data");
       }
 
       // Ensure the response data has the expected structure
-      const data = response.data;
+      const data = response.data.data;
       if (!data || typeof data !== "object") {
         throw new Error("Invalid dashboard data structure");
       }
@@ -294,10 +375,6 @@ export default function VendorDashboard() {
               <RefreshCw className="h-4 w-4 mr-2" />
               Refresh
             </Button>
-            {/* <Button onClick={handleAddProduct}>
-            <Plus className="h-4 w-4 mr-2" />
-            Add Product
-          </Button> */}
           </div>
         </div>
 
@@ -355,6 +432,9 @@ export default function VendorDashboard() {
           </Card>
         </div>
 
+        {/* Vendor Products Grid */}
+        <VendorProductsGrid />
+
         {/* Recent Orders */}
         <Card>
           <CardHeader>
@@ -365,9 +445,6 @@ export default function VendorDashboard() {
                   Latest orders from your customers
                 </CardDescription>
               </div>
-              <Button variant="outline" onClick={handleViewAllOrders}>
-                View All
-              </Button>
             </div>
           </CardHeader>
           <CardContent>
@@ -419,57 +496,6 @@ export default function VendorDashboard() {
           </CardContent>
         </Card>
 
-        {/* Popular Products */}
-        {/* <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle>Popular Products</CardTitle>
-              <CardDescription>Your best-selling products</CardDescription>
-            </div>
-            <Button variant="outline" onClick={handleViewInventory}>
-              View Inventory
-            </Button>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Product</TableHead>
-                <TableHead>Category</TableHead>
-                <TableHead>Price</TableHead>
-                <TableHead>Stock</TableHead>
-                <TableHead>Status</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {dashboardData?.popularProducts?.map((product) => (
-                <TableRow key={product.id}>
-                  <TableCell>{product.name}</TableCell>
-                  <TableCell>{product.category}</TableCell>
-                  <TableCell>${product.price.toFixed(2)}</TableCell>
-                  <TableCell>{product.stock}</TableCell>
-                  <TableCell>
-                    <Badge
-                      variant={
-                        product.status === "active"
-                          ? "default"
-                          : product.status === "inactive"
-                          ? "destructive"
-                          : "secondary"
-                      }
-                    >
-                      {product.status}
-                    </Badge>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card> */}
-
         {/* Inventory Alerts */}
         {dashboardData?.inventoryAlerts &&
           dashboardData.inventoryAlerts.length > 0 && (
@@ -482,9 +508,6 @@ export default function VendorDashboard() {
                       Products that need attention
                     </CardDescription>
                   </div>
-                  <Button variant="outline" onClick={handleViewInventory}>
-                    View Inventory
-                  </Button>
                 </div>
               </CardHeader>
               <CardContent>

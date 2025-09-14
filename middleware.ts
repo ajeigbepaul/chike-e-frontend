@@ -45,6 +45,10 @@ export async function middleware(request: NextRequest) {
     path.startsWith("/favicon.ico") ||
     path === "/" ||
     path === "/about" ||
+    path === "/contactus" ||
+    path === "/faq" ||
+    path === "/termofuse" ||
+    path === "/privacypolicy" ||
     path === "/products" ||
     path.startsWith("/products") ||
     path.startsWith("/product") ||

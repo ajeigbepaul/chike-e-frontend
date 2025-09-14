@@ -329,14 +329,14 @@ function HeaderContent() {
               >
                 Home
               </Link>
-              <Link
+              {/* <Link
                 href="/about"
                 className={`${
                   pathname === "/about" ? "text-brand-yellow" : "text-gray-900"
                 } hover:text-brand-yellow transition-colors`}
               >
                 About
-              </Link>
+              </Link> */}
               <div className="relative flex items-center">
                 <Link
                   href="/products"

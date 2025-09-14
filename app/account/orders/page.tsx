@@ -1,9 +1,10 @@
 "use client";
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import orderService from "@/services/api/order";
 import Image from "next/image";
-import { ChevronDown, ChevronUp } from "lucide-react";
+import { ChevronDown, ChevronUp, FileDown } from "lucide-react";
+import { toast } from "react-hot-toast";
 
 const tabs = [
   { label: "All Orders", value: "all" },
@@ -15,6 +16,7 @@ const tabs = [
 export default function OrdersPage() {
   const [activeTab, setActiveTab] = useState("all");
   const [expanded, setExpanded] = useState<string | null>(null);
+  const [downloadingId, setDownloadingId] = useState<string | null>(null);
 
   const {
     data: orders = [],
@@ -39,7 +41,30 @@ export default function OrdersPage() {
           (o: any) =>
             (o.status || "").replace(" ", "-").toLowerCase() === activeTab
         );
-  console.log(filtered,'Filtered Orders:')
+
+  const downloadMutation = useMutation({
+    mutationFn: async (orderId: string) => {
+      setDownloadingId(orderId);
+      const blob = await orderService.downloadInvoice(orderId);
+      // Trigger browser download
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `invoice-${orderId}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+    },
+    onError: (err: any) => {
+      const msg = err?.response?.data?.message || "Failed to download invoice";
+      toast.error(msg);
+    },
+    onSettled: () => {
+      setDownloadingId(null);
+    },
+  });
+
   return (
     <div className="max-w-4xl mx-auto py-8">
       <h1 className="text-2xl font-bold mb-6">My Orders</h1>
@@ -85,9 +110,11 @@ export default function OrdersPage() {
                     <div className="font-semibold text-lg flex items-start gap-2">
                       <div>
                         <h2>OrderNos #{order?.orderId || ""}</h2>
-                        <span className="text-[12px] text-gray-500">{order?._id || order?.id}</span>
+                        <span className="text-[12px] text-gray-500">
+                          {order?._id || order?.id}
+                        </span>
                       </div>
-                      
+
                       <span className="ml-2 text-xs px-2 py-1 rounded bg-gray-100 text-gray-700 font-normal">
                         {order.status || "PENDING"}
                       </span>
@@ -110,6 +137,25 @@ export default function OrdersPage() {
                         ? order.totalPrice.toLocaleString()
                         : order.total || ""}
                     </span>
+                    <button
+                      className="inline-flex items-center gap-1 text-xs px-2 py-1 rounded bg-gray-900 text-white hover:bg-gray-700 disabled:opacity-60"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        const id = order._id || order.id;
+                        downloadMutation.mutate(id);
+                      }}
+                      disabled={
+                        downloadMutation.isPending &&
+                        downloadingId === (order._id || order.id)
+                      }
+                      title="Download invoice PDF"
+                    >
+                      <FileDown className="w-4 h-4" />
+                      {downloadMutation.isPending &&
+                      downloadingId === (order._id || order.id)
+                        ? "Downloading..."
+                        : "Invoice"}
+                    </button>
                     {isOpen ? (
                       <ChevronUp className="w-5 h-5 text-brand-yellow" />
                     ) : (
