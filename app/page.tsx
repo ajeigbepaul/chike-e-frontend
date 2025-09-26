@@ -28,19 +28,21 @@ export default function Home() {
   const isLoggedIn = !!session;
   const router = useRouter();
   const dispatch = useDispatch();
-  
+
   // Handle login redirect flag
   useEffect(() => {
-    if (typeof window !== 'undefined') {
+    if (typeof window !== "undefined") {
       const urlParams = new URLSearchParams(window.location.search);
-      if (urlParams.has('_login_redirect')) {
+      if (urlParams.has("_login_redirect")) {
         // Set flag in sessionStorage and clean up URL
-        sessionStorage.setItem('just-logged-in', 'true');
-        
+        sessionStorage.setItem("just-logged-in", "true");
+
         // Remove the parameter from URL
-        urlParams.delete('_login_redirect');
-        const newUrl = `${window.location.pathname}${urlParams.toString() ? '?' + urlParams.toString() : ''}`;
-        window.history.replaceState({}, '', newUrl);
+        urlParams.delete("_login_redirect");
+        const newUrl = `${window.location.pathname}${
+          urlParams.toString() ? "?" + urlParams.toString() : ""
+        }`;
+        window.history.replaceState({}, "", newUrl);
       }
     }
   }, []);
@@ -49,14 +51,14 @@ export default function Home() {
   useEffect(() => {
     if (session?.user?.role === "admin") {
       // Check if the user just completed a login redirect
-      const justLoggedIn = sessionStorage.getItem('just-logged-in');
-      
+      const justLoggedIn = sessionStorage.getItem("just-logged-in");
+
       if (justLoggedIn) {
         // Clear the flag and don't redirect - let them go where they intended
-        sessionStorage.removeItem('just-logged-in');
+        sessionStorage.removeItem("just-logged-in");
         return;
       }
-      
+
       // Only redirect to admin dashboard if they're navigating directly to homepage
       const timer = setTimeout(() => {
         router.push("/admin/dashboard");
@@ -118,10 +120,8 @@ export default function Home() {
   // Add to cart handler
   const handleAddToCart = useCallback(
     (product: any) => {
-      if (!isLoggedIn) {
-        router.push("/auth/signin");
-        return;
-      }
+      // ✅ REMOVED: No authentication check for Add to Cart
+      // Users can add to cart without being logged in
       dispatch(
         addToCart({
           id: product._id,
@@ -133,7 +133,7 @@ export default function Home() {
       );
       toast.success("Added to cart");
     },
-    [isLoggedIn, router, dispatch]
+    [dispatch]
   );
 
   // Wishlist toggle handler
@@ -200,7 +200,7 @@ export default function Home() {
     cta: advert.cta,
     image: advert.image,
   }));
- console.log(featured,"This are the featured products")
+  console.log(featured, "This are the featured products");
   return (
     <main className="w-full">
       {isAdvertLoading ? (

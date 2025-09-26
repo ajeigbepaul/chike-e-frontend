@@ -8,6 +8,7 @@ interface CartItem {
   image: string;
   moq?: number; // Minimum Order Quantity
   category?: string; // Added for promotion/coupon compatibility
+  color?: string; // Selected color for the product
 }
 
 interface CartState {
@@ -50,7 +51,8 @@ export const cartSlice = createSlice({
   reducers: {
     addToCart: (state, action: PayloadAction<CartItem>) => {
       const existingItem = state.items.find(
-        (item) => item.id === action.payload.id
+        (item) =>
+          item.id === action.payload.id && item.color === action.payload.color
       );
       // Always ensure moq is present in the payload
       const payloadWithMOQ = {
@@ -74,6 +76,9 @@ export const cartSlice = createSlice({
         }
         if (payloadWithMOQ.category) {
           existingItem.category = payloadWithMOQ.category;
+        }
+        if (payloadWithMOQ.color !== undefined) {
+          existingItem.color = payloadWithMOQ.color;
         }
       } else {
         state.items.push(payloadWithMOQ);

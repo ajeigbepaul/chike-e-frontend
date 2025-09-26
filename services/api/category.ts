@@ -134,8 +134,8 @@ const categoryService = {
       const formData = new FormData();
 
       if (updateData.name) formData.append("name", updateData.name);
-      if (updateData.parent !== undefined)
-        formData.append("parent", updateData.parent || "");
+      if (updateData.parent && updateData.parent.trim() !== "")
+        formData.append("parent", updateData.parent);
       if (updateData.isActive !== undefined)
         formData.append("isActive", String(updateData.isActive));
       if (updateData.order !== undefined)

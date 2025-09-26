@@ -175,23 +175,37 @@ export const authOptions: NextAuthOptions = {
             const decodedCallbackUrl = decodeURIComponent(callbackUrl);
             console.log("Decoded callback URL:", decodedCallbackUrl);
             
-            // Validate that the callback URL is from the same origin
-            const callbackUrlObj = new URL(decodedCallbackUrl);
-            const baseUrlObj = new URL(baseUrl);
+            // ✅ FIX: Handle both absolute and relative URLs
+            let finalRedirectUrl;
             
-            if (callbackUrlObj.origin === baseUrlObj.origin) {
-              console.log("Valid callback URL, redirecting to:", decodedCallbackUrl);
+            if (decodedCallbackUrl.startsWith('http')) {
+              // It's an absolute URL - validate origin
+              const callbackUrlObj = new URL(decodedCallbackUrl);
+              const baseUrlObj = new URL(baseUrl);
               
-              // Add a flag to indicate this is a login redirect
-              // We'll append it as a query parameter and handle it client-side
-              const redirectUrl = new URL(decodedCallbackUrl);
-              redirectUrl.searchParams.set('_login_redirect', '1');
-              
-              return redirectUrl.toString();
+              if (callbackUrlObj.origin === baseUrlObj.origin) {
+                finalRedirectUrl = decodedCallbackUrl;
+              } else {
+                console.log("Invalid callback URL origin, redirecting to homepage");
+                finalRedirectUrl = baseUrl;
+              }
+            } else if (decodedCallbackUrl.startsWith('/')) {
+              // It's a relative URL - construct absolute URL
+              finalRedirectUrl = `${baseUrl}${decodedCallbackUrl}`;
             } else {
-              console.log("Invalid callback URL origin, redirecting to homepage");
-              return `${baseUrl}/?_login_redirect=1`;
+              // Invalid format - redirect to homepage
+              console.log("Invalid callback URL format, redirecting to homepage");
+              finalRedirectUrl = baseUrl;
             }
+            
+            console.log("Final redirect URL:", finalRedirectUrl);
+            
+            // Add a flag to indicate this is a login redirect
+            const redirectUrl = new URL(finalRedirectUrl);
+            redirectUrl.searchParams.set('_login_redirect', '1');
+            
+            return redirectUrl.toString();
+            
           } catch (error) {
             console.error("Error processing callback URL:", error);
             console.log("Malformed callback URL, redirecting to homepage");

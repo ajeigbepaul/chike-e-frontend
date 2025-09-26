@@ -69,7 +69,7 @@ export default function ProductCard({
 
         {/* Action buttons */}
         <div className="absolute top-3 right-3 flex flex-col gap-2 z-20">
-          {/* Wishlist button */}
+          {/* Wishlist button - ONLY require login for wishlist */}
           <button
             type="button"
             className="bg-white/90 backdrop-blur-sm rounded-full p-2.5 text-gray-600 hover:text-red-500 hover:bg-white transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-110"
@@ -79,6 +79,7 @@ export default function ProductCard({
               if (isLoggedIn) {
                 onFavoriteToggle?.();
               } else if (onRequireLogin) {
+                // ✅ ONLY wishlist requires login
                 onRequireLogin();
               }
             }}
@@ -114,11 +115,10 @@ export default function ProductCard({
               e.preventDefault();
               e.stopPropagation();
               if (quantity === 0) return;
-              if (isLoggedIn) {
-                onAddToCart?.();
-              } else if (onRequireLogin) {
-                onRequireLogin();
-              }
+              
+              // ✅ REMOVED: No authentication check for Add to Cart
+              // Users can add to cart without being logged in
+              onAddToCart?.();
             }}
             disabled={quantity === 0}
           >

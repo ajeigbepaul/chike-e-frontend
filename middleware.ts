@@ -15,9 +15,10 @@ const protectedRoutes: Record<string, string[]> = {
   "/admin/users/:id": ["admin"],
   "/admin/orders/:id": ["admin"],
 
-  // User routes - allow both user and admin roles
-  // Index route is public and accessible to all
+  // User routes
   "/profile": ["user", "admin", "vendor"],
+  "/orders": ["user", "admin", "vendor"],
+  "/account": ["user", "admin", "vendor"],
 
   // Vendor routes
   "/vendor/dashboard": ["vendor"],
@@ -25,56 +26,71 @@ const protectedRoutes: Record<string, string[]> = {
   "/vendor/orders": ["vendor"],
   "/vendor/settings": ["vendor"],
   "/vendor/stats": ["vendor"],
+  
+  // Checkout requires authentication (any authenticated role)
+  "/checkout": ["user", "admin", "vendor"],
 };
+
+// Public routes that don't require authentication
+const publicRoutes = [
+  "/",
+  "/about",
+  "/contactus",
+  "/faq",
+  "/termofuse",
+  "/privacypolicy",
+  "/products",
+  "/product/[slug]",
+  "/category/[slug]",
+  "/tag/[slug]",
+  "/cart", // ✅ Cart remains public - users can view without auth
+  "/auth/signin",
+  "/auth/signup",
+  "/auth/forgot-password",
+];
 
 export async function middleware(request: NextRequest) {
   const path = request.nextUrl.pathname;
+  
   // Skip static files with extensions
   if (/\.[^\/]+$/.test(path)) {
     return NextResponse.next();
   }
+  
   console.log("=== MIDDLEWARE DEBUG ===");
   console.log("Middleware processing path:", path);
   console.log("Full URL:", request.url);
 
-  // Allow access to public paths and API routes
-  const isPublicRoute = 
-    path.startsWith("/_next") ||
-    path.startsWith("/api") ||
-    path.startsWith("/static") ||
-    path.startsWith("/favicon.ico") ||
-    path === "/" ||
-    path === "/about" ||
-    path === "/contactus" ||
-    path === "/faq" ||
-    path === "/termofuse" ||
-    path === "/privacypolicy" ||
-    path === "/products" ||
-    path.startsWith("/products") ||
-    path.startsWith("/product") ||
-    path.startsWith("/category") ||
-    path.startsWith("/category/[slug]") ||
-    path.startsWith("/tag") ||
-    path.startsWith("/tag/[slug]") ||
-    path === "/checkout" ||
-    path.startsWith("/checkout") ||
-    path === "/cart" ||
-    path.startsWith("/cart") ||
-    path === "/orders" ||
-    path.startsWith("/orders") ||
-    path === "/account" ||
-    path.startsWith("/account") ||
-    path.startsWith("/auth/") ||
-    (path.startsWith("/vendor/onboarding") &&
-      new URL(request.url).searchParams.has("token"));
-      
-  if (isPublicRoute) {
-    console.log("Path is in public routes, allowing access");
-    console.log("Specific match for checkout:", path === "/checkout" || path.startsWith("/checkout"));
+  // Check if current route is public
+  const isPublicRoute = publicRoutes.some(route => {
+    if (route.includes('[slug]')) {
+      // Handle dynamic routes like /product/[slug]
+      const basePattern = route.replace('/[slug]', '');
+      return path.startsWith(basePattern) && path.split('/').length === 3;
+    }
+    return path === route || path.startsWith(route + '/');
+  });
+
+  // Allow public routes (including API routes, static files, etc.)
+  if (isPublicRoute || 
+      path.startsWith("/_next") ||
+      path.startsWith("/api") ||
+      path.startsWith("/static")) {
+    console.log("Public route access allowed:", path);
     return NextResponse.next();
   }
 
-  // Get the token with multiple fallback methods
+  // Special handling for vendor onboarding with token
+  if (path.startsWith("/vendor/onboarding")) {
+    const hasToken = new URL(request.url).searchParams.has("token");
+    if (!hasToken) {
+      return NextResponse.redirect(new URL("/unauthorized", request.url));
+    }
+    console.log("Vendor onboarding with token allowed");
+    return NextResponse.next();
+  }
+
+  // Get the token with multiple fallback methods (preserving your robust checking)
   let token = null;
 
   try {
@@ -88,7 +104,7 @@ export async function middleware(request: NextRequest) {
     console.log("Method 1 (getToken) error:", error);
   }
 
-  // Method 2: Try with different cookie names
+  // Method 2: Try with different cookie names (your production-safe check)
   if (!token) {
     try {
       const sessionToken = request.cookies.get(
@@ -119,113 +135,93 @@ export async function middleware(request: NextRequest) {
   }
 
   console.log("Final token status:", token ? "Present" : "Missing");
-  console.log(
-    "Token details:",
-    token
-      ? {
-          role: token.role,
-          exp: token.exp,
-          iat: token.iat,
-          id: token.id,
-        }
-      : "No token"
-  );
 
-  // Debug: Log all cookies to see what's available
-  console.log("All cookies:", request.cookies.getAll());
-
-  // Handle auth pages - let NextAuth handle redirects
+  // Handle auth pages
   if (path.startsWith("/auth/")) {
-    console.log("Auth page access, allowing NextAuth to handle");
+    console.log("Auth page access");
+    
+    // If user is already authenticated and tries to access auth pages, redirect them back
+    if (token) {
+      const callbackUrl = request.nextUrl.searchParams.get('callbackUrl');
+      const returnUrl = callbackUrl || '/';
+      console.log("Already authenticated, redirecting to:", returnUrl);
+      return NextResponse.redirect(new URL(returnUrl, request.url));
+    }
+    
     return NextResponse.next();
   }
 
-  // Handle protected routes
+  // 🔑 KEY IMPROVEMENT: CHECKOUT-SPECIFIC REDIRECT LOGIC
+  // Special handling for checkout page - redirect to cart after login
+  if (path === "/checkout" && !token) {
+    console.log("Unauthenticated user trying to access checkout, redirecting to login");
+    
+    const loginUrl = new URL("/auth/signin", request.url);
+    
+    // ✅ CRITICAL: Set callbackUrl to /cart instead of /checkout
+    // This ensures user returns to cart page after login where they can proceed to checkout
+    loginUrl.searchParams.set("callbackUrl", encodeURI(new URL("/cart", request.url).toString()));
+    
+    console.log("Redirecting to login with cart return URL");
+    return NextResponse.redirect(loginUrl);
+  }
+
+  // 🔑 GLOBAL REDIRECT LOGIC for other protected routes
+  // If user is not authenticated and trying to access ANY other non-public route
   if (!token) {
-    // Allow index page to be accessed without authentication
-    if (path === "/") {
-      console.log("No token but accessing index page, allowing");
-      return NextResponse.next();
-    }
-
-    // Allow public routes even without token
-    if (
-      path.startsWith("/products") ||
-      path.startsWith("/product") ||
-      path.startsWith("/category") ||
-      path.startsWith("/category/[slug]") ||
-      path === "/about" ||
-      path.startsWith("/cart") ||
-      path.startsWith("/checkout")
-    ) {
-      console.log("No token but accessing public route, allowing");
-      return NextResponse.next();
-    }
-
-    console.log("No token found, redirecting to login");
-    const url = new URL("/auth/signin", request.url);
-    url.searchParams.set("callbackUrl", encodeURI(request.url));
-    return NextResponse.redirect(url);
+    console.log("No token found for protected route, redirecting to login");
+    
+    const loginUrl = new URL("/auth/signin", request.url);
+    
+    // ✅ For other protected routes, return to the exact page they were trying to access
+    loginUrl.searchParams.set("callbackUrl", encodeURI(request.url));
+    
+    console.log("Redirecting to login with return URL:", request.url);
+    return NextResponse.redirect(loginUrl);
   }
 
   // Check token expiration
-  if (
-    token.exp &&
-    typeof token.exp === "number" &&
-    token.exp * 1000 < Date.now()
-  ) {
+  if (token.exp && typeof token.exp === "number" && token.exp * 1000 < Date.now()) {
     console.log("Token expired, redirecting to login");
     const url = new URL("/auth/signin", request.url);
+    
+    // ✅ Handle expired token for checkout differently
+    if (path === "/checkout") {
+      url.searchParams.set("callbackUrl", encodeURI(new URL("/cart", request.url).toString()));
+    } else {
+      url.searchParams.set("callbackUrl", encodeURI(request.url)); // Return to original page
+    }
+    
     url.searchParams.set("error", "TokenExpired");
     return NextResponse.redirect(url);
   }
 
   // Get user role from token
   const userRole = token.role as string;
-  console.log("User role for protected route:", userRole);
+  console.log("User role:", userRole);
   console.log("Current path:", path);
 
-  // Special handling for admin routes
+  // Role-based access control
   if (path.startsWith("/admin")) {
-    // If no token but we're in production, allow access (temporary fix)
-    if (!token && process.env.NODE_ENV === "production") {
-      console.log("Production: Token missing but allowing admin route access");
-      return NextResponse.next();
-    }
-
-    // If we have a token, check the role
-    if (token && userRole !== "admin") {
+    if (userRole !== "admin") {
       console.log("Non-admin user trying to access admin route");
       return NextResponse.redirect(new URL("/unauthorized", request.url));
     }
-
-    // If no token at all, redirect to login
-    if (!token) {
-      console.log("No token for admin route, redirecting to login");
-      const url = new URL("/auth/signin", request.url);
-      url.searchParams.set("callbackUrl", encodeURI(request.url));
-      return NextResponse.redirect(url);
-    }
-
-    console.log("Admin accessing admin route, allowing");
+    console.log("Admin access granted");
     return NextResponse.next();
   }
 
-  // Special handling for vendor routes
   if (path.startsWith("/vendor") && !path.startsWith("/vendor/onboarding")) {
     if (userRole !== "vendor") {
       console.log("Non-vendor user trying to access vendor route");
       return NextResponse.redirect(new URL("/unauthorized", request.url));
     }
-    console.log("Vendor accessing vendor route, allowing");
+    console.log("Vendor access granted");
     return NextResponse.next();
   }
 
-
-
-  // For non-admin routes, check against protected routes
+  // Check against protected routes configuration
   const [matchingRoute, params] = findMatchingRoute(path);
-
   if (matchingRoute) {
     const allowedRoles = protectedRoutes[matchingRoute];
     if (!allowedRoles.includes(userRole)) {
@@ -234,7 +230,7 @@ export async function middleware(request: NextRequest) {
     }
   }
 
-  console.log("Allowing access to route");
+  console.log("Access granted to:", path);
   return NextResponse.next();
 }
 

@@ -11,6 +11,9 @@ export default function ProductInfo({ product }: { product: Product }) {
   const dispatch = useDispatch();
   const { data: session } = useSession();
   const [quantity, setQuantity] = useState(1);
+  const [selectedColor, setSelectedColor] = useState<string>(
+    product.colors && product.colors.length > 0 ? product.colors[0] : ""
+  );
 
   // Quote state management
   const {
@@ -48,6 +51,7 @@ export default function ProductInfo({ product }: { product: Product }) {
         quantity,
         image: product.imageCover,
         moq: product.moq || 1,
+        color: selectedColor,
       })
     );
     toast.success("Added to cart");
@@ -112,18 +116,27 @@ export default function ProductInfo({ product }: { product: Product }) {
             </>
           )}
       </div>
-      <div className="flex items-center gap-4 mb-4">
-        <div className="flex items-center gap-2">
-          <span>Colours:</span>
-          {(product.colors || []).map((color, i) => (
-            <span
-              key={i}
-              className="inline-block w-5 h-5 rounded-full border-2 border-gray-300"
-              style={{ background: color }}
-            ></span>
-          ))}
+      {product.colors && product.colors.length > 0 && (
+        <div className="flex items-center gap-4 mb-4">
+          <div className="flex items-center gap-2">
+            <span>Colors:</span>
+            {(product.colors || []).map((color, i) => (
+              <button
+                key={i}
+                type="button"
+                className={`inline-block w-6 h-6 rounded-full border-2 cursor-pointer transition-all ${
+                  selectedColor === color
+                    ? "border-black scale-110"
+                    : "border-gray-300 hover:border-gray-500"
+                }`}
+                style={{ background: color }}
+                onClick={() => setSelectedColor(color)}
+                title={color}
+              ></button>
+            ))}
+          </div>
         </div>
-      </div>
+      )}
       <div className="flex items-center gap-4 mb-4">
         <div className="flex items-center gap-2">
           <span>Size:</span>

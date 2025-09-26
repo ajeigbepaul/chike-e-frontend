@@ -10,12 +10,12 @@ import {
 } from "@/store/cartSlice";
 import { Star } from "lucide-react";
 import Image from "next/image";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import reviewService from "@/services/api/review";
 import ReviewForm from "@/components/storefront/ReviewForm";
 import ReviewList from "@/components/storefront/ReviewList";
-import { useState, Suspense } from "react";
+import { useState, Suspense, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Breadcrumb } from "@/components/ui/breadcrumb";
 import {
@@ -26,11 +26,14 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import toast from "react-hot-toast";
+import { useSession } from "next-auth/react";
 
-export default function CartPage() {
+function CartPageContent() {
   const cart = useSelector((state: RootState) => state.cart.items);
   const dispatch = useDispatch();
   const router = useRouter();
+  const { data: session, status } = useSession();
+  const searchParams = useSearchParams();
   const [selectedProductForReview, setSelectedProductForReview] = useState<
     string | null
   >(null);
@@ -76,12 +79,45 @@ export default function CartPage() {
   const isCheckoutDisabled = cart.some(
     (item) => item.quantity < (item.moq || 1)
   );
+
+  // Check if user just logged in successfully
+  const loginSuccess = searchParams.get("login_success");
+
+  useEffect(() => {
+    // Show success message if user just logged in
+    if (loginSuccess === "1") {
+      toast.success(
+        "Successfully logged in! You can now proceed to checkout.",
+        {
+          duration: 4000,
+          icon: "✅",
+        }
+      );
+
+      // Clean up the URL by removing the login_success parameter
+      const newSearchParams = new URLSearchParams(searchParams.toString());
+      newSearchParams.delete("login_success");
+      const newUrl = `${window.location.pathname}${
+        newSearchParams.toString() ? `?${newSearchParams.toString()}` : ""
+      }`;
+      router.replace(newUrl);
+    }
+  }, [loginSuccess, searchParams, router]);
+
   const handleRoute = () => {
     if (isCheckoutDisabled) {
-      toast.error('Please ensure all items meet their minimum order quantity.');
+      toast.error("Please ensure all items meet their minimum order quantity.");
     }
-    router.push('/checkout');
-  }
+    if (!session) {
+      // This shouldn't happen due to middleware, but just in case
+      toast.error("Please log in to proceed to checkout");
+      router.push("/auth/signin?callbackUrl=" + encodeURIComponent("/cart"));
+      return;
+    }
+
+    // User is authenticated, proceed to checkout
+    router.push("/checkout");
+  };
   return (
     <div className="max-w-6xl mx-auto py-8 px-2 md:px-10">
       <Suspense
@@ -292,7 +328,11 @@ export default function CartPage() {
           <button
             disabled={isCheckoutDisabled}
             onClick={handleRoute}
-            className={`w-full ${isCheckoutDisabled ? "bg-gray-300" : "bg-gray-900 hover:bg-brand-yellow hover:text-gray-900"} text-white py-3 rounded-full font-semibold text-lg  transition`}
+            className={`w-full ${
+              isCheckoutDisabled
+                ? "bg-gray-300"
+                : "bg-gray-900 hover:bg-brand-yellow hover:text-gray-900"
+            } text-white py-3 rounded-full font-semibold text-lg  transition`}
           >
             Checkout ₦
             {total.toLocaleString(undefined, { maximumFractionDigits: 2 })}
@@ -300,5 +340,19 @@ export default function CartPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function CartPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex justify-center items-center min-h-screen">
+          Loading cart...
+        </div>
+      }
+    >
+      <CartPageContent />
+    </Suspense>
   );
 }

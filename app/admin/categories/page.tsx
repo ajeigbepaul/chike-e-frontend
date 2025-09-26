@@ -370,7 +370,30 @@ export default function CategoriesPage() {
         </div>
       </div>
 
-      {/* Remove the CategoryForm modal logic here */}
+      {/* Category Edit/Create Dialog */}
+      <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>
+              {selectedCategory ? "Edit Category" : "Add Category"}
+            </DialogTitle>
+          </DialogHeader>
+          <CategoryForm
+            initialData={selectedCategory}
+            categories={categories}
+            onSubmit={handleFormSubmit}
+            isEdit={!!selectedCategory}
+            onCancel={() => {
+              setIsFormOpen(false);
+              setSelectedCategory(null);
+            }}
+            isSubmitting={
+              createCategoryMutation.isPending ||
+              updateCategoryMutation.isPending
+            }
+          />
+        </DialogContent>
+      </Dialog>
 
       <div className="mt-6">
         <CategoryTree

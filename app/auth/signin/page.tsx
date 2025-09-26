@@ -3,12 +3,13 @@
 import { useEffect, useState, Suspense } from "react";
 import { signIn, useSession, getSession } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
+
 import { toast } from "react-hot-toast";
 import Link from "next/link";
 import { Eye, EyeOff } from "lucide-react";
 
 function LoginContent() {
-  // const searchParams = useSearchParams();
+  const searchParams = useSearchParams();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -16,27 +17,18 @@ function LoginContent() {
   const [showPassword, setShowPassword] = useState(false);
   const router = useRouter();
   const { update } = useSession();
+  
+  // Get the callbackUrl from search params
+  const callbackUrl = searchParams.get('callbackUrl') || '/';
+  const decodedCallbackUrl = decodeURIComponent(callbackUrl);
 
-  // useEffect(() => {
-  //   const verified = searchParams.get("verified");
-  //   const error = searchParams.get("error");
-  //   const registered = searchParams.get("registered");
-
-  //   if (verified === "true") {
-  //     toast.success("Email verified successfully! Please log in.");
-  //   }
-  //   if (error === "invalid_token") {
-  //     toast.error(
-  //       "Invalid or expired verification link. Please try registering again."
-  //     );
-  //   }
-  //   if (registered === "true") {
-  //     console.log(
-  //       "Registration successful! Please check your email to verify your account."
-  //     );
-  //   }
-  // }, [searchParams]);
-
+  useEffect(() => {
+    console.log('🔍 Login Page Debug:');
+    console.log('🔍 Callback URL:', callbackUrl);
+    console.log('🔍 Decoded Callback URL:', decodedCallbackUrl);
+    console.log('🔍 Full search params:', searchParams.toString());
+  }, [callbackUrl, decodedCallbackUrl, searchParams]);
+  
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
@@ -58,16 +50,26 @@ function LoginContent() {
         const updatedSession = await getSession();
 
         toast.success("Logged in successfully!");
-
-        switch (updatedSession?.user?.role) {
-          case "admin":
-            router.push("/admin/dashboard");
-            break;
-          case "vendor":
-            router.push("/vendor/dashboard");
-            break;
-          default:
-            router.push("/");
+        
+        // ✅ IMPROVED: Handle cart/checkout flow specifically
+        if (result?.url) {
+          // If NextAuth provides a URL, use it (it includes the callbackUrl)
+          console.log('NextAuth provided URL:', result.url);
+          window.location.href = result.url;
+        } else {
+          // ✅ ENHANCED: Smart redirect logic
+          console.log('Manual redirect to:', decodedCallbackUrl);
+          
+          // Check if the callback URL is the cart page
+          if (decodedCallbackUrl.includes('/cart')) {
+            // Add a success parameter to show user they can now checkout
+            const cartUrl = new URL(decodedCallbackUrl);
+            cartUrl.searchParams.set('login_success', '1');
+            router.push(cartUrl.toString());
+          } else {
+            // For other callback URLs, redirect normally
+            router.push(decodedCallbackUrl);
+          }
         }
       }
     } catch (error: any) {
@@ -77,10 +79,23 @@ function LoginContent() {
     }
   };
 
+  // ✅ ENHANCED: Show context-aware messaging
+  const isFromCheckout = decodedCallbackUrl.includes('/cart');
+  const loginMessage = isFromCheckout 
+    ? "Please log in to proceed with checkout"
+    : "Login to your account";
+
   return (
     <div className="flex items-center justify-center min-h-screen bg-gray-100">
       <div className="max-w-md w-full p-6 bg-white rounded-lg shadow-md">
-        <h2 className="text-2xl font-bold mb-6 text-center">Login</h2>
+        <h2 className="text-2xl font-bold mb-2 text-center">Login</h2>
+        {isFromCheckout && (
+          <p className="text-sm text-gray-600 mb-4 text-center">
+            You need to be logged in to complete your purchase
+          </p>
+        )}
+        <p className="text-lg mb-6 text-center text-gray-700">{loginMessage}</p>
+        
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="block text-sm font-medium mb-2" htmlFor="email">
@@ -134,13 +149,13 @@ function LoginContent() {
             disabled={isLoading}
             className="w-full bg-brand-yellow text-white py-2 rounded hover:bg-yellow-600 transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {isLoading ? "Logging in..." : "Login"}
+            {isLoading ? "Logging in..." : isFromCheckout ? "Login & Continue to Cart" : "Login"}
           </button>
         </form>
         <p className="mt-4 text-center text-sm text-gray-600">
           Don&apos;t have an account?{" "}
           <Link
-            href="/auth/signup"
+            href={`/auth/signup${callbackUrl !== '/' ? `?callbackUrl=${encodeURIComponent(callbackUrl)}` : ''}`}
             className="text-brand-yellow hover:text-yellow-500"
           >
             Sign up
@@ -150,6 +165,7 @@ function LoginContent() {
     </div>
   );
 }
+
 export default function LoginPage() {
   return (
     <Suspense

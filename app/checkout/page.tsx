@@ -569,7 +569,7 @@ function CheckoutContent() {
                   </div>
                   <Link
                     href="/cart"
-                    className="inline-block mt-3 text-secondary hover:underline"
+                    className="inline-block mt-3 text-gray-400 hover:underline"
                   >
                     Modify cart
                   </Link>
@@ -620,7 +620,7 @@ function CheckoutContent() {
           </div>
           <Link
             href="/products"
-            className="inline-block text-gray-700 mt-6  hover:underline"
+            className="inline-block text-gray-900 mt-6  hover:underline"
           >
             Continue shopping
           </Link>

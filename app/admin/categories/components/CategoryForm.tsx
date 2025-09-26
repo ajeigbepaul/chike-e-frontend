@@ -14,7 +14,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Switch } from "@/components/ui/switch";
-import { useState, useRef } from "react";
+import React, { useState, useRef } from "react";
 
 interface CategoryFormData {
   name: string;
@@ -60,6 +60,21 @@ export function CategoryForm({
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // Update form data when initialData changes (for editing different categories)
+  React.useEffect(() => {
+    if (initialData) {
+      setFormData({
+        name: initialData.name || "",
+        isActive: initialData.isActive ?? true,
+        order: initialData.order || 0,
+        parent: initialData.parent || "",
+        level: initialData.level,
+        image: undefined as File | undefined,
+      });
+      setImagePreview(null); // Reset image preview when switching categories
+    }
+  }, [initialData]);
+
   // Determine if this is a main category (no parent or level === 1)
   const isMainCategory = !formData.parent;
 
@@ -92,7 +107,12 @@ export function CategoryForm({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onSubmit(formData);
+    // Separate image from other form data for API
+    const { image, ...dataWithoutImage } = formData;
+    const submitData = image
+      ? { ...dataWithoutImage, image }
+      : dataWithoutImage;
+    onSubmit(submitData);
   };
 
   return (
