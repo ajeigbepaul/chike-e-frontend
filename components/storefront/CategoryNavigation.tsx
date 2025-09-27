@@ -104,7 +104,7 @@ export function CategoryNavigation({ className }: CategoryNavigationProps) {
                 onCategorySelect={handleHeaderCategorySelect}
                 trigger={
                   <button
-                    className={`p-1 font-semibold cursor-pointer text-brand-yellow border-r-3 pr-3 transition-colors focus:outline-none`}
+                    className={`p-1 font-semibold cursor-pointer text-brand-yellow pr-3 transition-colors focus:outline-none`}
                   >
                     All Category
                     {/* <ChevronDown className="h-4 w-4" /> */}
