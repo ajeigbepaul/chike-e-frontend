@@ -194,10 +194,10 @@ export default function AccountQuoteHistory() {
                       {selectedQuote.productName}
                     </Link>
                   </div>
-                  <div className="flex justify-between">
+                  {/* <div className="flex justify-between">
                     <span className="text-gray-600">Serial Number:</span>
                     <span className="font-medium">{selectedQuote.productId.serialNumber || 'N/A'}</span>
-                  </div>
+                  </div> */}
                   <div className="flex justify-between">
                     <span className="text-gray-600">Your Message:</span>
                     <span className="font-medium text-right max-w-xs">{selectedQuote.message}</span>
