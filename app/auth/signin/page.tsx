@@ -7,6 +7,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "react-hot-toast";
 import Link from "next/link";
 import { Eye, EyeOff } from "lucide-react";
+import { useLoadingOverlayContext } from "@/components/ClientProviders";
 
 function LoginContent() {
   const searchParams = useSearchParams();
@@ -17,23 +18,26 @@ function LoginContent() {
   const [showPassword, setShowPassword] = useState(false);
   const router = useRouter();
   const { update } = useSession();
-  
+  const { showOverlay, hideOverlay } = useLoadingOverlayContext();
+
   // Get the callbackUrl from search params
-  const callbackUrl = searchParams.get('callbackUrl') || '/';
+  const callbackUrl = searchParams.get("callbackUrl") || "/";
   const decodedCallbackUrl = decodeURIComponent(callbackUrl);
 
   useEffect(() => {
-    console.log('🔍 Login Page Debug:');
-    console.log('🔍 Callback URL:', callbackUrl);
-    console.log('🔍 Decoded Callback URL:', decodedCallbackUrl);
-    console.log('🔍 Full search params:', searchParams.toString());
+    console.log("🔍 Login Page Debug:");
+    console.log("🔍 Callback URL:", callbackUrl);
+    console.log("🔍 Decoded Callback URL:", decodedCallbackUrl);
+    console.log("🔍 Full search params:", searchParams.toString());
   }, [callbackUrl, decodedCallbackUrl, searchParams]);
-  
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
 
     try {
+      showOverlay("Signing you in");
+
       const result = await signIn("credentials", {
         email,
         password,
@@ -42,37 +46,44 @@ function LoginContent() {
 
       if (result?.error) {
         toast.error(result.error);
+        hideOverlay();
+        return;
+      }
+
+      await update();
+
+      const updatedSession = await getSession();
+      const isAdmin = updatedSession?.user?.role === "admin";
+
+      if (isAdmin) {
+        showOverlay("Preparing admin dashboard");
       } else {
-        // Update the session to get the latest data
-        await update();
+        hideOverlay();
+      }
 
-        // Get the updated session with the user role
-        const updatedSession = await getSession();
+      toast.success("Logged in successfully!");
 
-        toast.success("Logged in successfully!");
-        
-        // ✅ IMPROVED: Handle cart/checkout flow specifically
-        if (result?.url) {
-          // If NextAuth provides a URL, use it (it includes the callbackUrl)
-          console.log('NextAuth provided URL:', result.url);
-          window.location.href = result.url;
+      if (isAdmin) {
+        router.replace("/admin/dashboard");
+        return;
+      }
+
+      if (result?.url) {
+        console.log("NextAuth provided URL:", result.url);
+        window.location.href = result.url;
+      } else {
+        console.log("Manual redirect to:", decodedCallbackUrl);
+
+        if (decodedCallbackUrl.includes("/cart")) {
+          const cartUrl = new URL(decodedCallbackUrl);
+          cartUrl.searchParams.set("login_success", "1");
+          router.push(cartUrl.toString());
         } else {
-          // ✅ ENHANCED: Smart redirect logic
-          console.log('Manual redirect to:', decodedCallbackUrl);
-          
-          // Check if the callback URL is the cart page
-          if (decodedCallbackUrl.includes('/cart')) {
-            // Add a success parameter to show user they can now checkout
-            const cartUrl = new URL(decodedCallbackUrl);
-            cartUrl.searchParams.set('login_success', '1');
-            router.push(cartUrl.toString());
-          } else {
-            // For other callback URLs, redirect normally
-            router.push(decodedCallbackUrl);
-          }
+          router.push(decodedCallbackUrl);
         }
       }
     } catch (error: any) {
+      hideOverlay();
       toast.error(error.message || "An error occurred. Please try again.");
     } finally {
       setIsLoading(false);
@@ -80,8 +91,8 @@ function LoginContent() {
   };
 
   // ✅ ENHANCED: Show context-aware messaging
-  const isFromCheckout = decodedCallbackUrl.includes('/cart');
-  const loginMessage = isFromCheckout 
+  const isFromCheckout = decodedCallbackUrl.includes("/cart");
+  const loginMessage = isFromCheckout
     ? "Please log in to proceed with checkout"
     : "Login to your account";
 
@@ -95,7 +106,7 @@ function LoginContent() {
           </p>
         )}
         <p className="text-lg mb-6 text-center text-gray-700">{loginMessage}</p>
-        
+
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="block text-sm font-medium mb-2" htmlFor="email">
@@ -149,13 +160,21 @@ function LoginContent() {
             disabled={isLoading}
             className="w-full bg-brand-yellow text-white py-2 rounded hover:bg-yellow-600 transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {isLoading ? "Logging in..." : isFromCheckout ? "Login & Continue to Cart" : "Login"}
+            {isLoading
+              ? "Logging in..."
+              : isFromCheckout
+              ? "Login & Continue to Cart"
+              : "Login"}
           </button>
         </form>
         <p className="mt-4 text-center text-sm text-gray-600">
           Don&apos;t have an account?{" "}
           <Link
-            href={`/auth/signup${callbackUrl !== '/' ? `?callbackUrl=${encodeURIComponent(callbackUrl)}` : ''}`}
+            href={`/auth/signup${
+              callbackUrl !== "/"
+                ? `?callbackUrl=${encodeURIComponent(callbackUrl)}`
+                : ""
+            }`}
             className="text-brand-yellow hover:text-yellow-500"
           >
             Sign up

@@ -6,6 +6,7 @@ import { useEffect } from "react";
 import { Sidebar } from "@/components/admin/Sidebar";
 import { AdminHeader } from "@/components/admin/Header";
 import { SidebarProvider } from "@/contexts/SidebarContext";
+import { useLoadingOverlayContext } from "@/components/ClientProviders";
 
 export default function AdminLayout({
   children,
@@ -14,9 +15,15 @@ export default function AdminLayout({
 }) {
   const { data: session, status } = useSession();
   const router = useRouter();
+  const { hideOverlay } = useLoadingOverlayContext();
 
   useEffect(() => {
-    // If session is loaded and user is not admin, redirect to unauthorized
+    if (status === "authenticated" && session?.user?.role === "admin") {
+      hideOverlay();
+    }
+  }, [status, session, hideOverlay]);
+
+  useEffect(() => {
     if (status === "authenticated" && session?.user?.role !== "admin") {
       const timer = setTimeout(() => {
         router.push("/unauthorized");
@@ -24,7 +31,6 @@ export default function AdminLayout({
       return () => clearTimeout(timer);
     }
 
-    // If session is loaded and user is admin but we're not on an admin route, redirect to admin dashboard
     if (status === "authenticated" && session?.user?.role === "admin") {
       const currentPath = window.location.pathname;
       if (!currentPath.startsWith("/admin")) {

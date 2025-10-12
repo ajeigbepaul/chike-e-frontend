@@ -33,15 +33,26 @@ export default function WishlistPage() {
   });
 
   return (
-    <div className="max-w-5xl mx-auto py-8">
-      <h1 className="text-2xl font-bold mb-6">Wishlist</h1>
+    <div className="space-y-6 pb-8">
+      <div className="flex flex-col gap-3 rounded-2xl bg-white p-6 shadow-sm">
+        <h1 className="text-xl font-semibold text-gray-900 sm:text-2xl">
+          Wishlist
+        </h1>
+        <p className="text-sm text-gray-500">
+          Save products you love and access them quickly across all of your
+          devices.
+        </p>
+      </div>
+
       {isLoading ? (
-        <div>Loading...</div>
+        <div className="flex justify-center py-12">
+          <div className="h-10 w-10 animate-spin rounded-full border-2 border-brand-yellow border-t-transparent" />
+        </div>
       ) : validWishlistItems.length === 0 ? (
-        <div className="text-center py-12">
-          <div className="w-24 h-24 mx-auto mb-4 bg-gray-100 rounded-full flex items-center justify-center">
+        <div className="rounded-2xl border border-dashed border-gray-300 bg-white px-6 py-16 text-center">
+          <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-gray-100">
             <svg
-              className="w-12 h-12 text-gray-400"
+              className="h-10 w-10 text-gray-400"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -54,21 +65,22 @@ export default function WishlistPage() {
               />
             </svg>
           </div>
-          <h3 className="text-lg font-semibold text-gray-900 mb-2">
+          <h3 className="text-lg font-semibold text-gray-900">
             Your wishlist is empty
           </h3>
-          <p className="text-gray-500 mb-4">
-            Start adding products to your wishlist to see them here.
+          <p className="mt-2 text-sm text-gray-500">
+            Start adding products to keep track of your favourites and come back
+            to them later.
           </p>
           <button
             onClick={() => (window.location.href = "/")}
-            className="px-6 py-2 bg-brand-yellow text-gray-900 font-semibold rounded-full hover:bg-yellow-500 transition-colors"
+            className="mt-6 inline-flex items-center justify-center rounded-full bg-brand-yellow px-6 py-2 text-sm font-semibold text-gray-900 transition-colors hover:bg-yellow-500"
           >
             Browse Products
           </button>
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3">
           {validWishlistItems.map((item: any) => (
             <div
               key={item.product?._id || item.productId?._id || item._id}
@@ -88,7 +100,7 @@ export default function WishlistPage() {
                 }
               />
               <button
-                className="absolute top-2 left-2 px-3 py-1 rounded-full border border-red-400 text-red-500 bg-white hover:bg-red-50 transition text-xs z-10"
+                className="absolute left-2 top-2 rounded-full border border-red-400 bg-white px-3 py-1 text-xs font-medium text-red-500 transition hover:bg-red-50"
                 onClick={() => removeMutation.mutate(item.productId._id)}
               >
                 Remove

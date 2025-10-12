@@ -65,80 +65,109 @@ export default function OrdersPage() {
     },
   });
 
+//   <nav className="flex flex-1 items-center gap-2 overflow-x-auto whitespace-nowrap [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+//   ...
+// </nav>
+
   return (
-    <div className="max-w-4xl mx-auto py-8">
-      <h1 className="text-2xl font-bold mb-6">My Orders</h1>
-      <div className="flex gap-6 border-b mb-6">
-        {tabs.map((tab) => (
-          <button
-            key={tab.value}
-            className={`pb-2 text-lg font-medium border-b-2 transition-colors ${
-              activeTab === tab.value
-                ? "border-brand-yellow text-brand-yellow"
-                : "border-transparent text-gray-700 hover:text-brand-yellow"
-            }`}
-            onClick={() => setActiveTab(tab.value)}
-          >
-            {tab.label}
-          </button>
-        ))}
+    <div className="space-y-6 pb-10">
+      <div className="flex flex-col gap-4 rounded-2xl bg-white p-6 shadow-sm">
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+          <h1 className="text-xl font-semibold text-gray-900 sm:text-2xl">
+            My Orders
+          </h1>
+          <div className="flex w-full gap-2 overflow-x-auto whitespace-nowrap [scrollbar-width:none] [&::-webkit-scrollbar]:hidden rounded-full border border-gray-200 bg-gray-50 p-1 text-sm shadow-inner sm:w-auto sm:gap-3">
+            {tabs.map((tab) => (
+              <button
+                key={tab.value}
+                className={`flex-1 whitespace-nowrap rounded-full px-3 py-2 font-medium transition-colors sm:flex-none ${
+                  activeTab === tab.value
+                    ? "bg-brand-yellow text-gray-900"
+                    : "text-gray-600 hover:text-brand-yellow"
+                }`}
+                onClick={() => setActiveTab(tab.value)}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
+        </div>
+        <p className="text-sm text-gray-500">
+          Track current deliveries, see order details, and download invoices all
+          in one place.
+        </p>
       </div>
+
       <div className="space-y-4">
         {isLoading ? (
-          <div>Loading...</div>
+          <div className="flex justify-center py-12">
+            <div className="h-10 w-10 animate-spin rounded-full border-2 border-brand-yellow border-t-transparent" />
+          </div>
         ) : isError ? (
-          <div className="text-red-500">Failed to load orders.</div>
+          <div className="rounded-xl border border-red-200 bg-red-50 p-6 text-red-600">
+            Failed to load orders. Please try again.
+          </div>
         ) : filtered.length === 0 ? (
-          <div className="text-gray-500">No orders found.</div>
+          <div className="rounded-xl border border-dashed border-gray-300 bg-white p-10 text-center text-gray-500">
+            You have no orders in this category yet.
+          </div>
         ) : (
           filtered.map((order: any) => {
             const isOpen = expanded === (order._id || order.id);
             return (
               <div
                 key={order._id || order.id}
-                className="bg-white rounded-xl border p-0 overflow-hidden shadow-sm transition-all"
+                className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm transition-all"
               >
-                <div
-                  className={`flex justify-between items-center cursor-pointer px-4 py-4 transition-colors ${
-                    isOpen ? "bg-brand-yellow/10" : "hover:bg-gray-50"
+                <button
+                  type="button"
+                  className={`flex w-full flex-col gap-4 px-4 py-4 text-left transition-colors sm:flex-row sm:items-center sm:justify-between ${
+                    isOpen ? "bg-brand-yellow/5" : "hover:bg-gray-50"
                   }`}
                   onClick={() =>
                     setExpanded(isOpen ? null : order._id || order.id)
                   }
                 >
-                  <div>
-                    <div className="font-semibold text-lg flex items-start gap-2">
-                      <div>
-                        <h2>OrderNos #{order?.orderId || ""}</h2>
-                        <span className="text-[12px] text-gray-500">
+                  <div className="flex-1 space-y-2">
+                    <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
+                      <div className="space-y-1">
+                        <p className="text-sm font-semibold text-gray-900">
+                          Order #{order?.orderId || ""}
+                        </p>
+                        <span className="block text-xs font-medium text-gray-400">
                           {order?._id || order?.id}
                         </span>
                       </div>
-
-                      <span className="ml-2 text-xs px-2 py-1 rounded bg-gray-100 text-gray-700 font-normal">
-                        {order.status || "PENDING"}
+                      <span className="inline-flex h-fit items-center rounded-full bg-gray-100 px-2.5 py-1 text-xs font-semibold uppercase tracking-wide text-gray-700">
+                        {order.status || "Pending"}
                       </span>
                     </div>
-                    <div className="text-xs text-gray-500 mt-1">
-                      {order.createdAt
-                        ? new Date(order.createdAt).toLocaleDateString()
-                        : ""}{" "}
-                      •{" "}
-                      {order.orderItems
-                        ? order.orderItems.length
-                        : order.items || 0}{" "}
-                      item(s)
+                    <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-gray-500">
+                      <span>
+                        {order.createdAt
+                          ? new Date(order.createdAt).toLocaleDateString()
+                          : ""}
+                      </span>
+                      <span className="hidden text-gray-300 sm:block">•</span>
+                      <span>
+                        {(
+                          order.orderItems?.length ||
+                          order.items ||
+                          0
+                        ).toString()}{" "}
+                        item(s)
+                      </span>
                     </div>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-gray-400">
+                  <div className="flex flex-col items-end gap-3 sm:flex-row sm:items-center sm:gap-4">
+                    <span className="text-base font-semibold text-gray-900 sm:text-sm">
                       ₦
                       {order.totalPrice
                         ? order.totalPrice.toLocaleString()
                         : order.total || ""}
                     </span>
                     <button
-                      className="inline-flex items-center gap-1 text-xs px-2 py-1 rounded bg-gray-900 text-white hover:bg-gray-700 disabled:opacity-60"
+                      className="inline-flex items-center gap-1 rounded-full bg-gray-900 px-3 py-1 text-xs font-medium text-white hover:bg-gray-700 disabled:opacity-60"
                       onClick={(e) => {
                         e.stopPropagation();
                         const id = order._id || order.id;
@@ -150,26 +179,26 @@ export default function OrdersPage() {
                       }
                       title="Download invoice PDF"
                     >
-                      <FileDown className="w-4 h-4" />
+                      <FileDown className="h-4 w-4" />
                       {downloadMutation.isPending &&
                       downloadingId === (order._id || order.id)
                         ? "Downloading..."
                         : "Invoice"}
                     </button>
                     {isOpen ? (
-                      <ChevronUp className="w-5 h-5 text-brand-yellow" />
+                      <ChevronUp className="h-5 w-5 text-brand-yellow" />
                     ) : (
-                      <ChevronDown className="w-5 h-5 text-gray-400" />
+                      <ChevronDown className="h-5 w-5 text-gray-400" />
                     )}
                   </div>
-                </div>
+                </button>
                 {isOpen && (
-                  <div className="bg-gray-50 border-t pt-4 pb-2 px-4 space-y-3 animate-fade-in">
+                  <div className="space-y-3 border-t border-gray-100 bg-gray-50 px-4 pt-4 pb-3 animate-fade-in">
                     {(order.orderItems || order.products || []).map(
                       (p: any, i: number) => (
                         <div
                           key={i}
-                          className="flex items-center gap-3 border-b last:border-b-0 pb-3 last:pb-0"
+                          className="flex items-center gap-3 border-b border-gray-100 pb-3 last:border-b-0 last:pb-0"
                         >
                           {p.product?.imageCover && (
                             <Image
@@ -177,25 +206,25 @@ export default function OrdersPage() {
                               alt={p.product?.name || ""}
                               width={48}
                               height={48}
-                              className="rounded object-cover border"
+                              className="rounded border object-cover"
                             />
                           )}
                           <div className="flex-1">
-                            <div className="font-medium text-gray-900">
+                            <div className="text-sm font-medium text-gray-900">
                               {p.name || p.product?.name || ""}
                             </div>
                             <div className="text-xs text-gray-500">
                               Qty: {p.quantity || p.qty}
                             </div>
                           </div>
-                          <div className="font-semibold text-gray-700">
+                          <div className="text-sm font-semibold text-gray-700">
                             ₦{(p.price || "").toLocaleString()}
                           </div>
                         </div>
                       )
                     )}
-                    <div className="mt-4 space-y-1 text-base">
-                      <div className="flex justify-between">
+                    <div className="grid gap-2 rounded-xl border border-gray-200 bg-white p-4 text-sm">
+                      <div className="flex justify-between text-gray-600">
                         <span>Subtotal</span>
                         <span>
                           ₦
@@ -204,7 +233,7 @@ export default function OrdersPage() {
                             : order.subtotal?.toLocaleString() || ""}
                         </span>
                       </div>
-                      <div className="flex justify-between">
+                      <div className="flex justify-between text-gray-600">
                         <span>Delivery</span>
                         <span>
                           ₦
@@ -213,7 +242,7 @@ export default function OrdersPage() {
                             : "0"}
                         </span>
                       </div>
-                      <div className="flex justify-between">
+                      <div className="flex justify-between text-gray-600">
                         <span>VAT</span>
                         <span>
                           ₦
@@ -222,7 +251,7 @@ export default function OrdersPage() {
                             : "0"}
                         </span>
                       </div>
-                      <div className="flex justify-between font-bold mt-2">
+                      <div className="flex justify-between text-base font-semibold text-gray-900">
                         <span>Total</span>
                         <span>
                           ₦

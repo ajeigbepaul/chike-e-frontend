@@ -47,6 +47,7 @@ const publicRoutes = [
   "/auth/signin",
   "/auth/signup",
   "/auth/forgot-password",
+  "/auth/reset-password", // ✅ Password reset page with token
 ];
 
 export async function middleware(request: NextRequest) {

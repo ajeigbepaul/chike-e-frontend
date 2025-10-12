@@ -20,7 +20,6 @@ import TrendingProducts from "@/components/storefront/TrendingProducts";
 import OurNewestArrivals from "@/components/storefront/OurNewestArrivals";
 import WhyUs from "@/components/storefront/WhyUs";
 import MostOrderedProducts from "@/components/storefront/MostOrdered";
-import PartnerWithUs from "@/components/storefront/PartnerWithUs";
 // import other sections as needed
 
 export default function Home() {
@@ -50,19 +49,17 @@ export default function Home() {
   // Redirect admin users to admin dashboard (but not if they just logged in from a redirect)
   useEffect(() => {
     if (session?.user?.role === "admin") {
-      // Check if the user just completed a login redirect
       const justLoggedIn = sessionStorage.getItem("just-logged-in");
 
       if (justLoggedIn) {
-        // Clear the flag and don't redirect - let them go where they intended
         sessionStorage.removeItem("just-logged-in");
+        router.replace("/admin/dashboard");
         return;
       }
 
-      // Only redirect to admin dashboard if they're navigating directly to homepage
       const timer = setTimeout(() => {
-        router.push("/admin/dashboard");
-      }, 100);
+        router.replace("/admin/dashboard");
+      }, 0);
 
       return () => clearTimeout(timer);
     }

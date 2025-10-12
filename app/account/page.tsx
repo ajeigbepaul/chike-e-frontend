@@ -1,64 +1,88 @@
 // frontend/app/account/page.tsx
-"use client"
+"use client";
 
-import  userService from "@/services/api/user";
+import userService from "@/services/api/user";
 import { useQuery } from "@tanstack/react-query";
 
 export default function AccountPage() {
-
   const { data, isLoading } = useQuery({
     queryKey: ["user"],
     queryFn: () => userService.getCurrentUser(),
-  })
-  console.log(data,"Current User")
+  });
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <div className="h-10 w-10 animate-spin rounded-full border-2 border-brand-yellow border-t-transparent" />
+      </div>
+    );
+  }
   // Mock data
   const user = {
     name: "paul ajeigbe",
     email: "pdave4krist@yahoo.com",
     address: {
       name: "paul ajeigbe",
-      details: "Nos 28, Alonge street, Almustapha, Megida, Ayobo, Lagos Iyana Ipaja (Ayobo Road), Lagos",
-      phone: "+234 8104560227"
+      details:
+        "Nos 28, Alonge street, Almustapha, Megida, Ayobo, Lagos Iyana Ipaja (Ayobo Road), Lagos",
+      phone: "+234 8104560227",
     },
     storeCredit: 0,
   };
-  
+
   return (
-    <div className="max-w-6xl mx-auto py-2">
-      <h1 className="text-2xl font-semibold mb-6">Account Overview</h1>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* Account Details */}
-        <div className="bg-white rounded-lg border p-6 flex flex-col gap-2">
-          <h2 className="font-semibold text-lg mb-2">ACCOUNT DETAILS</h2>
-          <div className="text-gray-900 font-medium">{data?.data?.user?.name}</div>
-          <div className="text-gray-500">{data?.data?.user?.email}</div>
+    <div className="space-y-6 pb-8">
+      <div className="flex flex-col gap-3 rounded-2xl bg-white p-6 shadow-sm">
+        <h1 className="text-xl font-semibold text-gray-900 sm:text-2xl">
+          Account Overview
+        </h1>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <div className="rounded-xl border border-gray-200 p-4">
+            <h2 className="text-sm font-semibold uppercase tracking-wide text-gray-500">
+              Account Details
+            </h2>
+            <div className="mt-3 text-base font-semibold text-gray-900">
+              {data?.data?.user?.name}
+            </div>
+            <div className="text-sm text-gray-500">
+              {data?.data?.user?.email}
+            </div>
+          </div>
+          <div className="rounded-xl border border-dashed border-gray-200 bg-gray-50 p-4 text-sm text-gray-500">
+            <p>
+              Keep your account information up to date to enjoy a smoother
+              checkout experience.
+            </p>
+          </div>
         </div>
-        {/* Address Book */}
-        {/* <div className="bg-white rounded-xl border p-6 flex flex-col gap-2">
-          <div className="flex items-center justify-between mb-2">
-            <h2 className="font-semibold text-lg">ADDRESS BOOK</h2>
-            <button className="text-brand-yellow hover:text-yellow-600">
-              <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M15.232 5.232l3.536 3.536M9 11l6.586-6.586a2 2 0 112.828 2.828L11.828 13.828a2 2 0 01-2.828 0L3 7.828a2 2 0 112.828-2.828L9 11z" /></svg>
-            </button>
-          </div>
-          <div className="text-gray-900 font-medium">Your default shipping address:</div>
-          <div className="text-gray-700">{user.address.name}</div>
-          <div className="text-gray-500">{user.address.details}</div>
-          <div className="text-gray-500">{user.address.phone}</div>
-        </div> */}
-        {/* Store Credit */}
-        {/* <div className="bg-white rounded-xl border p-6 flex flex-col gap-2">
-          <h2 className="font-semibold text-lg mb-2">JUMIA STORE CREDIT</h2>
-          <div className="flex items-center gap-2 text-blue-800 font-semibold">
-            <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="14" rx="2" /><path d="M16 3v4M8 3v4M2 11h20" /></svg>
-            Jumia store credit balance: ₦ {user.storeCredit}
-          </div>
-        </div> */}
-        {/* Newsletter Preferences */}
-        {/* <div className="bg-white rounded-xl border p-6 flex flex-col gap-2">
-          <h2 className="font-semibold text-lg mb-2">NEWSLETTER PREFERENCES</h2>
-          <div className="text-gray-700">Manage your email communications to stay updated with the latest news and offers.</div>
-        </div> */}
+      </div>
+
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+        <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
+          <h3 className="text-sm font-semibold uppercase tracking-wide text-gray-500">
+            Orders
+          </h3>
+          <p className="mt-2 text-sm text-gray-600">
+            Review your recent purchases, track deliveries, and download
+            invoices.
+          </p>
+        </div>
+        <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
+          <h3 className="text-sm font-semibold uppercase tracking-wide text-gray-500">
+            Wishlist
+          </h3>
+          <p className="mt-2 text-sm text-gray-600">
+            Save items you love and get quick access across devices.
+          </p>
+        </div>
+        <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
+          <h3 className="text-sm font-semibold uppercase tracking-wide text-gray-500">
+            Support
+          </h3>
+          <p className="mt-2 text-sm text-gray-600">
+            Visit the inbox to see updates or request assistance from our team.
+          </p>
+        </div>
       </div>
     </div>
   );
