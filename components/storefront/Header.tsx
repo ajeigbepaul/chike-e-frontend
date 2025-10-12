@@ -261,7 +261,7 @@ function HeaderContent() {
               <Link
                 href="/orders"
                 className={`block px-4 py-2 ${
-                  pathname === "/orders" ? "text-brand-yellow" : "text-gray-900"
+                  pathname === "/account/orders" ? "text-brand-yellow" : "text-gray-900"
                 } hover:bg-gray-100`}
                 onClick={() => setMobileMenuOpen(false)}
               >
@@ -270,7 +270,7 @@ function HeaderContent() {
               <Link
                 href="/wishlist"
                 className={`block px-4 py-2 ${
-                  pathname === "/wishlist"
+                  pathname === "/account/wishlist"
                     ? "text-brand-yellow"
                     : "text-gray-900"
                 } hover:bg-gray-100`}
@@ -279,7 +279,7 @@ function HeaderContent() {
                 Wishlist
               </Link>
               <Link
-                href="/inbox"
+                href="/account/inbox"
                 className={`block px-4 py-2 ${
                   pathname === "/inbox" ? "text-brand-yellow" : "text-gray-900"
                 } hover:bg-gray-100`}
