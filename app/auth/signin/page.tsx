@@ -54,17 +54,28 @@ function LoginContent() {
 
       const updatedSession = await getSession();
       const isAdmin = updatedSession?.user?.role === "admin";
+      const isVendor = updatedSession?.user?.role === "vendor";
 
       if (isAdmin) {
         showOverlay("Preparing admin dashboard");
       } else {
         hideOverlay();
       }
-
+       if (isVendor) {
+        showOverlay("Preparing vendor dashboard");
+      } else {
+        hideOverlay();
+      }
       toast.success("Logged in successfully!");
 
       if (isAdmin) {
         router.replace("/admin/dashboard");
+        return;
+      }
+
+      if (isVendor) {
+        router.replace("/vendor/dashboard");
+        hideOverlay();
         return;
       }
 
@@ -73,7 +84,6 @@ function LoginContent() {
         window.location.href = result.url;
       } else {
         console.log("Manual redirect to:", decodedCallbackUrl);
-
         if (decodedCallbackUrl.includes("/cart")) {
           const cartUrl = new URL(decodedCallbackUrl);
           cartUrl.searchParams.set("login_success", "1");

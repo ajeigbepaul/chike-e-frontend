@@ -34,7 +34,7 @@ export function StatsGrid() {
   const stats = [
     {
       name: 'Today Sales',
-      value: `$${(dashboardStats.todaySales?.total || 0).toLocaleString()}`,
+      value: `₦${(dashboardStats.todaySales?.total || 0).toLocaleString()}`,
       change: '0%', // You can calculate this based on previous day data
       trend: 'up' as const,
       icon: DollarSign,
