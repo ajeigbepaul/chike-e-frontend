@@ -72,8 +72,14 @@ export async function middleware(request: NextRequest) {
     return path === route || path.startsWith(route + '/');
   });
 
+  // Auth pages are public, but they must NOT short-circuit here: the block
+  // below redirects an already-signed-in visitor away from the login form,
+  // and it needs the token to do that. Letting them fall through to it is
+  // what makes that logic reachable at all.
+  const isAuthPage = path.startsWith("/auth/");
+
   // Allow public routes (including API routes, static files, etc.)
-  if (isPublicRoute || 
+  if ((isPublicRoute && !isAuthPage) ||
       path.startsWith("/_next") ||
       path.startsWith("/api") ||
       path.startsWith("/static")) {
@@ -144,9 +150,19 @@ export async function middleware(request: NextRequest) {
     // If user is already authenticated and tries to access auth pages, redirect them back
     if (token) {
       const callbackUrl = request.nextUrl.searchParams.get('callbackUrl');
-      const returnUrl = callbackUrl || '/';
-      console.log("Already authenticated, redirecting to:", returnUrl);
-      return NextResponse.redirect(new URL(returnUrl, request.url));
+      const decoded = callbackUrl ? decodeURIComponent(callbackUrl) : '';
+
+      // Only follow a same-site path that isn't itself an auth page, or we
+      // bounce straight back here and loop.
+      const safeReturn =
+        decoded.startsWith('/') &&
+        !decoded.startsWith('//') &&
+        !decoded.startsWith('/auth/')
+          ? decoded
+          : '/';
+
+      console.log("Already authenticated, redirecting to:", safeReturn);
+      return NextResponse.redirect(new URL(safeReturn, request.url));
     }
     
     return NextResponse.next();
