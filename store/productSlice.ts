@@ -2,11 +2,9 @@ import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 import { ProductFormData, CategoryType, AttributeType, Brand } from '@/types/product';
 
 const STEPS = [
-  { id: 'details', label: 'Basic Details' },
-  { id: 'dimensions', label: 'Dimensions & Weight' },
+  { id: 'details', label: 'Product details' },
   { id: 'attributes', label: 'Attributes' },
-  { id: 'variants', label: 'Variants' },
-  { id: 'bulk', label: 'Bulk Options' },
+  { id: 'options', label: 'Options' },
 ];
 
 interface ProductFormState {
@@ -55,7 +53,6 @@ const initialState: ProductFormState = {
     isBulk: false,
     minBulkQuantity: 10,
     bulkDiscountPercentage: 0,
-    variants: [],
     images: [],
     imageCover: ''
   },

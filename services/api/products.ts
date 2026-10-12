@@ -131,3 +131,25 @@ export const getProductsByTag = async (
     pagination: response.data.pagination,
   };
 };
+
+export interface Specification {
+  key: string;
+  value: string;
+}
+
+/**
+ * Upload a CSV/XLSX of product specifications and get back key/value pairs.
+ * The server only parses - nothing is persisted until the product is saved.
+ */
+export const parseAttributeSheet = async (
+  file: File
+): Promise<Specification[]> => {
+  const formData = new FormData();
+  formData.append("file", file);
+
+  const response = await api.post("/products/parse-attributes", formData, {
+    headers: { "Content-Type": "multipart/form-data" },
+  });
+
+  return response.data?.data ?? [];
+};

@@ -1,7 +1,7 @@
 // eslint-disable react-hooks/exhaustive-deps
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -19,18 +19,20 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import categoryService from "@/services/api/category";
 import {
   createProduct,
-  getProducts,
   updateProduct,
 } from "@/services/api/products";
 import brandService from "@/services/api/brand";
 import Image from "next/image";
 import vendorService from "@/services/api/vendor";
 import { useSession } from "next-auth/react";
+import { AttributeSheetImport } from "@/components/admin/AttributeSheetImport";
+
+const PRODUCT_DRAFT_KEY = "admin:product-draft:new";
 
 const STEPS = [
   {
     id: "details",
-    label: "Basic Details",
+    label: "Product details",
     required: [
       "name",
       "description",
@@ -41,10 +43,8 @@ const STEPS = [
       "priceUnit",
     ],
   },
-  { id: "dimensions", label: "Dimensions & Weight", required: [] },
   { id: "attributes", label: "Attributes", required: [] },
-  { id: "variants", label: "Variants", required: [] },
-  { id: "bulk", label: "Bulk Options", required: [] },
+  { id: "options", label: "Options", required: [] },
 ];
 
 // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -78,20 +78,78 @@ export function ProductForm({
     setAdditionalImageUrls,
     setSpecifications,
     resetForm,
-    setAccessories,
   } = useProductForm();
-  // Accessories UI state
-  const {
-    data: allProductsData = { products: [] },
-    isLoading: isProductsLoading,
-    isError: isProductsError,
-    refetch: refetchProducts,
-  } = useQuery({
-    queryKey: ["all-products-for-accessories"],
-    queryFn: async () => await getProducts(1, 1000),
-  });
-  const allProducts = allProductsData.products;
   const [isRefreshingCategories, setIsRefreshingCategories] = useState(false);
+
+  // Hold the picked files in state, not in the DOM. The wizard now submits
+  // once from the last step, by which point Radix has unmounted the details
+  // tab - so reading input.files at submit time found nothing and the server
+  // rejected the product for a missing cover image.
+  // "Next" and "Create Product" occupy the same spot, so the second click of a
+  // double-click would land on Create and submit the product the instant the
+  // last step appeared. Remember when the step changed so we can ignore that.
+  const stepChangedAt = useRef<number>(0);
+
+  const [coverImageFile, setCoverImageFile] = useState<File | null>(null);
+  const [additionalImageFiles, setAdditionalImageFiles] = useState<
+    Array<{ url: string; file: File }>
+  >([]);
+
+  // --- Draft autosave (new products only) -------------------------------
+  // Editing an existing product deliberately has no draft: a stale draft
+  // silently overwriting live data is worse than retyping.
+  const isDraftEnabled = !product;
+  const [draftRestored, setDraftRestored] = useState(false);
+  const [pendingDraft, setPendingDraft] = useState<null | {
+    formData: Partial<ProductFormData>;
+    specifications: Array<{ key: string; value: string }>;
+  }>(null);
+
+  const clearDraft = useCallback(() => {
+    try {
+      localStorage.removeItem(PRODUCT_DRAFT_KEY);
+    } catch {
+      // Private mode / blocked storage - nothing to clean up.
+    }
+  }, []);
+
+  // Look for an existing draft once on mount.
+  useEffect(() => {
+    if (!isDraftEnabled || draftRestored) return;
+    try {
+      const raw = localStorage.getItem(PRODUCT_DRAFT_KEY);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (parsed?.formData?.name || parsed?.formData?.description) {
+          setPendingDraft(parsed);
+        }
+      }
+    } catch {
+      // Corrupt or unreadable draft - ignore it.
+    }
+    setDraftRestored(true);
+  }, [isDraftEnabled, draftRestored]);
+
+  // Persist as the admin types. Images are File objects and cannot be
+  // serialised, so a restored draft keeps text only.
+  useEffect(() => {
+    if (!isDraftEnabled || !draftRestored || pendingDraft) return;
+    if (!formData.name && !formData.description) return;
+    try {
+      localStorage.setItem(
+        PRODUCT_DRAFT_KEY,
+        JSON.stringify({ formData, specifications })
+      );
+    } catch {
+      // Storage full or blocked - autosave is best-effort.
+    }
+  }, [
+    formData,
+    specifications,
+    isDraftEnabled,
+    draftRestored,
+    pendingDraft,
+  ]);
   // const [isRefreshingCategories, setIsRefreshingCategories] = useState(false);
   // Fetch categories if not provided
   const {
@@ -161,11 +219,6 @@ export function ProductForm({
         updatedAt: product.updatedAt
           ? new Date(product.updatedAt).toISOString()
           : undefined,
-        variants:
-          product.variants?.map((variant) => ({
-            ...variant,
-            attributes: variant.attributes || [],
-          })) || [],
         specifications:
           product.specifications?.map((spec) => ({
             key: spec.key || "",
@@ -241,33 +294,28 @@ export function ProductForm({
       });
       queryClient.invalidateQueries({ queryKey: ["products"] });
 
-      const currentIndex = STEPS.findIndex((step) => step.id === activeTab);
-      const isLastStep = currentIndex === STEPS.length - 1;
+      // Submitting is now an explicit, once-per-product action rather than
+      // something every "Next" triggers, so reaching here always means done.
+      clearDraft();
 
-      if (isLastStep) {
-        if (product) {
-          // Edit mode final step: redirect to products page
-          toast.success("Product updated successfully!");
-          router.push("/admin/products");
-        } else {
-          // Create mode final step: reset for a new product
-          toast.success(
-            "Product created successfully! Ready for next product."
-          );
-          resetForm();
-          if (formRef.current) {
-            const fileInputs =
-              formRef.current.querySelectorAll('input[type="file"]');
-            fileInputs.forEach(
-              (input) => ((input as HTMLInputElement).value = "")
-            );
-          }
-          setActiveTab("details");
-        }
+      if (product) {
+        // Edit mode: redirect back to the list
+        toast.success("Product updated successfully!");
+        router.push("/admin/products");
       } else {
-        // Not the last step, move to the next tab
-        toast.success("Step saved successfully.");
-        setActiveTab(STEPS[currentIndex + 1].id);
+        // Create mode: reset for the next product
+        toast.success("Product created successfully! Ready for next product.");
+        resetForm();
+        setCoverImageFile(null);
+        setAdditionalImageFiles([]);
+        if (formRef.current) {
+          const fileInputs =
+            formRef.current.querySelectorAll('input[type="file"]');
+          fileInputs.forEach(
+            (input) => ((input as HTMLInputElement).value = "")
+          );
+        }
+        setActiveTab("details");
       }
     },
     onError: (error: Error) => {
@@ -291,6 +339,12 @@ export function ProductForm({
       const currentStep = STEPS.find((step) => step.id === activeTab);
       if (currentStep?.required) {
         const missingFields = currentStep.required.filter((field) => {
+          // The cover image lives in state. Revisiting this step remounts an
+          // empty file input, so the DOM alone would wrongly report it missing.
+          if (field === "imageCover") {
+            return !coverImageFile && !coverImageUrl;
+          }
+
           const element = formRef.current?.elements.namedItem(field);
           if (!element) return false;
 
@@ -310,16 +364,42 @@ export function ProductForm({
           toast.error(
             `Please complete: ${missingFields.join(", ")} before proceeding`
           );
+          // Take the admin to the problem instead of making them hunt for it.
+          const firstBad = formRef.current?.elements.namedItem(
+            missingFields[0]
+          ) as HTMLElement | null;
+          if (firstBad?.scrollIntoView) {
+            firstBad.scrollIntoView({ behavior: "smooth", block: "center" });
+            firstBad.focus?.();
+          }
           return;
         }
       }
+      completeStep(activeTab);
     }
 
+    stepChangedAt.current = Date.now();
     setActiveTab(newTab);
   };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+
+    // Saving must be a deliberate click on Save/Create. Without this, pressing
+    // Enter in any field submits the whole product (forms submit implicitly),
+    // and because "Next" and "Create Product" occupy the same spot, a second
+    // click after advancing would fire it too.
+    const submitter = (e.nativeEvent as SubmitEvent)
+      .submitter as HTMLButtonElement | null;
+    if (submitter?.name !== "submitIntent") {
+      return;
+    }
+
+    // Too soon after arriving here to be a deliberate click.
+    if (Date.now() - stepChangedAt.current < 500) {
+      return;
+    }
+
     setIsSubmitting(true);
 
     try {
@@ -373,30 +453,19 @@ export function ProductForm({
       submissionFormData.append("weight[value]", String(weight.value));
       submissionFormData.append("weight[unit]", weight.unit);
 
-      // Add cover image
-      if (formRef.current) {
-        const coverImageInput = formRef.current.querySelector(
-          'input[name="imageCover"]'
-        ) as HTMLInputElement;
-        if (coverImageInput?.files?.[0]) {
-          submissionFormData.append("imageCover", coverImageInput.files[0]);
-        } else if (coverImageUrl && !coverImageUrl.startsWith("blob:")) {
-          // If editing and image wasn't changed, send the URL
-          submissionFormData.append("imageCoverUrl", coverImageUrl);
-        }
+      // Add cover image. Read from state, not the DOM: by the time the
+      // wizard submits, the details tab is unmounted.
+      if (coverImageFile) {
+        submissionFormData.append("imageCover", coverImageFile);
+      } else if (coverImageUrl && !coverImageUrl.startsWith("blob:")) {
+        // Editing and the image wasn't changed - send the existing URL
+        submissionFormData.append("imageCoverUrl", coverImageUrl);
       }
 
       // Add additional images
-      if (formRef.current) {
-        const imagesInput = formRef.current.querySelector(
-          'input[name="images"]'
-        ) as HTMLInputElement;
-        if (imagesInput?.files) {
-          Array.from(imagesInput.files).forEach((file) => {
-            submissionFormData.append("images", file);
-          });
-        }
-      }
+      additionalImageFiles.forEach(({ file }) => {
+        submissionFormData.append("images", file);
+      });
       // Add existing images if editing
       additionalImageUrls.forEach((url) => {
         if (!url.startsWith("blob:")) {
@@ -409,15 +478,6 @@ export function ProductForm({
         formData.colors.forEach((color, index) => {
           if (color.trim()) {
             submissionFormData.append(`colors[${index}]`, color.trim());
-          }
-        });
-      }
-
-      // Add sizes
-      if (formData.sizes) {
-        formData.sizes.forEach((size, index) => {
-          if (size.trim()) {
-            submissionFormData.append(`sizes[${index}]`, size.trim());
           }
         });
       }
@@ -441,33 +501,6 @@ export function ProductForm({
           );
         }
       });
-
-      // Add variants
-      if (formData.variants) {
-        formData.variants.forEach((variant, variantIndex) => {
-          submissionFormData.append(
-            `variants[${variantIndex}][price]`,
-            String(variant.price || 0)
-          );
-          submissionFormData.append(
-            `variants[${variantIndex}][quantity]`,
-            String(variant.quantity || 0)
-          );
-
-          variant.attributes.forEach((attr, attrIndex) => {
-            if (attr.name.trim() && attr.value.trim()) {
-              submissionFormData.append(
-                `variants[${variantIndex}][attributes][${attrIndex}][name]`,
-                attr.name
-              );
-              submissionFormData.append(
-                `variants[${variantIndex}][attributes][${attrIndex}][value]`,
-                attr.value
-              );
-            }
-          });
-        });
-      }
 
       // Add bulk options
       submissionFormData.append("isBulk", String(formData.isBulk || false));
@@ -532,6 +565,45 @@ export function ProductForm({
 
   return (
     <form ref={formRef} onSubmit={handleSubmit} className="space-y-6">
+      {pendingDraft && (
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-amber-200 bg-amber-50 px-4 py-3">
+          <div className="text-sm text-amber-900">
+            <span className="font-medium">
+              You have an unfinished product
+            </span>
+            {pendingDraft.formData?.name
+              ? ` — "${pendingDraft.formData.name}"`
+              : ""}
+            . Images need to be re-selected.
+          </div>
+          <div className="flex gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                clearDraft();
+                setPendingDraft(null);
+              }}
+            >
+              Discard
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              onClick={() => {
+                updateFormData(pendingDraft.formData);
+                setSpecifications(pendingDraft.specifications || []);
+                setPendingDraft(null);
+                toast.success("Draft restored");
+              }}
+            >
+              Resume draft
+            </Button>
+          </div>
+        </div>
+      )}
+
       <div className="space-y-2">
         <div className="flex justify-between items-center">
           <h2 className="text-lg font-semibold">
@@ -545,76 +617,9 @@ export function ProductForm({
       </div>
 
       {/* Accessories Section */}
-      {/* <Card className="mb-4">
-        <CardContent className="pt-6">
-          <div className="grid gap-4">
-            <label className="text-sm font-medium">Accessories</label>
-            {(formData.accessories || []).map((acc, i) => (
-              <div key={i} className="border p-2 rounded mb-2">
-                <div className="flex gap-2 mb-2">
-                  <Input
-                    value={acc.name}
-                    placeholder="Accessory Name"
-                    onChange={(e) => {
-                      const updated = [...(formData.accessories || [])];
-                      updated[i].name = e.target.value;
-                      setAccessories(updated);
-                    }}
-                  />
-                  <Button
-                    type="button"
-                    variant="destructive"
-                    onClick={() =>
-                      setAccessories(
-                        (formData.accessories || []).filter(
-                          (_, idx) => idx !== i
-                        )
-                      )
-                    }
-                  >
-                    <X className="h-4 w-4" />
-                  </Button>
-                </div>
-                <label className="text-xs font-medium">Select Products</label>
-                <select
-                  multiple
-                  className="w-full border rounded p-2"
-                  value={acc.products}
-                  onChange={(e) => {
-                    const selected = Array.from(e.target.selectedOptions).map(
-                      (opt) => opt.value
-                    );
-                    const updated = [...(formData.accessories || [])];
-                    updated[i].products = selected;
-                    setAccessories(updated);
-                  }}
-                >
-                  {allProducts.map((p) => (
-                    <option key={p._id} value={p._id}>
-                      {p.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            ))}
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() =>
-                setAccessories([
-                  ...(formData.accessories || []),
-                  { name: "", products: [] },
-                ])
-              }
-            >
-              Add Accessory
-            </Button>
-          </div>
-        </CardContent>
-      </Card> */}
 
       <Tabs value={activeTab} onValueChange={handleTabChange}>
-        <TabsList className="grid w-full grid-cols-6">
+        <TabsList className="grid w-full grid-cols-3">
           {STEPS.map((step) => (
             <TabsTrigger key={step.id} value={step.id}>
               {step.label}
@@ -872,6 +877,7 @@ export function ProductForm({
                       if (file) {
                         const url = URL.createObjectURL(file);
                         setCoverImageUrl(url);
+                        setCoverImageFile(file);
                       }
                     }}
                     required={!coverImageUrl}
@@ -889,6 +895,7 @@ export function ProductForm({
                         type="button"
                         onClick={() => {
                           setCoverImageUrl(null);
+                          setCoverImageFile(null);
                           if (formRef.current) {
                             const input = formRef.current.querySelector(
                               'input[name="imageCover"]'
@@ -919,10 +926,18 @@ export function ProductForm({
                         toast.error("Maximum 4 additional images allowed");
                         return;
                       }
-                      const urls = files.map((file) =>
-                        URL.createObjectURL(file)
-                      );
-                      setAdditionalImageUrls([...additionalImageUrls, ...urls]);
+                      const picked = files.map((file) => ({
+                        url: URL.createObjectURL(file),
+                        file,
+                      }));
+                      setAdditionalImageUrls([
+                        ...additionalImageUrls,
+                        ...picked.map((p) => p.url),
+                      ]);
+                      setAdditionalImageFiles([
+                        ...additionalImageFiles,
+                        ...picked,
+                      ]);
                     }}
                   />
                   <div className="grid grid-cols-4 gap-2 mt-2">
@@ -941,8 +956,16 @@ export function ProductForm({
                         <button
                           type="button"
                           onClick={() => {
+                            const removed = additionalImageUrls[index];
                             setAdditionalImageUrls(
                               additionalImageUrls.filter((_, i) => i !== index)
+                            );
+                            // Drop by url, since the urls array also holds
+                            // already-saved images that have no File.
+                            setAdditionalImageFiles(
+                              additionalImageFiles.filter(
+                                (entry) => entry.url !== removed
+                              )
                             );
                             if (formRef.current) {
                               const input = formRef.current.querySelector(
@@ -965,7 +988,137 @@ export function ProductForm({
         </TabsContent>
 
         {/* Dimensions Tab */}
-        <TabsContent value="dimensions" className="space-y-4">
+        <TabsContent value="attributes" className="space-y-4">
+          <Card>
+            <CardContent className="pt-6">
+              <div className="grid gap-4">
+                <div>
+                  <label className="text-sm font-medium">Colors</label>
+                  <div className="space-y-2">
+                    {formData.colors?.map((color, index) => (
+                      <div key={index} className="flex gap-2">
+                        <Input
+                          value={color}
+                          onChange={(e) => {
+                            const newColors = [...(formData.colors || [])];
+                            newColors[index] = e.target.value;
+                            updateFormData({ colors: newColors });
+                          }}
+                          placeholder="Enter color"
+                        />
+                        <Button
+                          type="button"
+                          variant="destructive"
+                          onClick={() => {
+                            const newColors =
+                              formData.colors?.filter((_, i) => i !== index) ||
+                              [];
+                            updateFormData({ colors: newColors });
+                          }}
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    ))}
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => {
+                        const newColors = [...(formData.colors || []), ""];
+                        updateFormData({ colors: newColors });
+                      }}
+                    >
+                      Add Color
+                    </Button>
+                    <input
+                      type="hidden"
+                      name="colors"
+                      value={formData.colors?.join(",")}
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="text-sm font-medium">Features</label>
+                  <Input
+                    name="features"
+                    placeholder="Enter features (comma-separated)"
+                    defaultValue={formData.features?.join(", ")}
+                    onChange={(e) =>
+                      updateFormData({
+                        features: e.target.value
+                          .split(",")
+                          .map((f) => f.trim()),
+                      })
+                    }
+                  />
+                </div>
+
+                <div>
+                  <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
+                    <div>
+                      <label className="text-sm font-medium">
+                        Specifications
+                      </label>
+                      <p className="text-xs text-gray-500 mt-0.5">
+                        Add them one by one, or import a sheet instead of
+                        typing each row. One value can list several entries
+                        separated by commas, e.g. Size: 2 inch, 3 inch, 4 inch.
+                      </p>
+                    </div>
+                    <AttributeSheetImport
+                      existingCount={specifications.length}
+                      onImport={(specs, mode) =>
+                        setSpecifications(
+                          mode === "append"
+                            ? [...specifications, ...specs]
+                            : specs
+                        )
+                      }
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    {specifications.map((spec, index) => (
+                      <div key={index} className="flex gap-2">
+                        <Input
+                          placeholder="Key"
+                          value={spec.key}
+                          onChange={(e) =>
+                            updateSpecification(index, "key", e.target.value)
+                          }
+                        />
+                        <Input
+                          placeholder="Value"
+                          value={spec.value}
+                          onChange={(e) =>
+                            updateSpecification(index, "value", e.target.value)
+                          }
+                        />
+                        <Button
+                          type="button"
+                          variant="destructive"
+                          onClick={() => removeSpecification(index)}
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    ))}
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={addSpecification}
+                    >
+                      Add Specification
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Variants Tab */}
+        <TabsContent value="options" className="space-y-4">
           <Card>
             <CardContent className="pt-6">
               <div className="grid gap-4">
@@ -1101,353 +1254,6 @@ export function ProductForm({
               </div>
             </CardContent>
           </Card>
-        </TabsContent>
-
-        {/* Attributes Tab */}
-        <TabsContent value="attributes" className="space-y-4">
-          <Card>
-            <CardContent className="pt-6">
-              <div className="grid gap-4">
-                <div>
-                  <label className="text-sm font-medium">Colors</label>
-                  <div className="space-y-2">
-                    {formData.colors?.map((color, index) => (
-                      <div key={index} className="flex gap-2">
-                        <Input
-                          value={color}
-                          onChange={(e) => {
-                            const newColors = [...(formData.colors || [])];
-                            newColors[index] = e.target.value;
-                            updateFormData({ colors: newColors });
-                          }}
-                          placeholder="Enter color"
-                        />
-                        <Button
-                          type="button"
-                          variant="destructive"
-                          onClick={() => {
-                            const newColors =
-                              formData.colors?.filter((_, i) => i !== index) ||
-                              [];
-                            updateFormData({ colors: newColors });
-                          }}
-                        >
-                          <X className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    ))}
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={() => {
-                        const newColors = [...(formData.colors || []), ""];
-                        updateFormData({ colors: newColors });
-                      }}
-                    >
-                      Add Color
-                    </Button>
-                    <input
-                      type="hidden"
-                      name="colors"
-                      value={formData.colors?.join(",")}
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="text-sm font-medium">Sizes</label>
-                  <div className="space-y-2">
-                    {formData.sizes?.map((size, index) => (
-                      <div key={index} className="flex gap-2">
-                        <Input
-                          value={size}
-                          onChange={(e) => {
-                            const newSizes = [...(formData.sizes || [])];
-                            newSizes[index] = e.target.value;
-                            updateFormData({ sizes: newSizes });
-                          }}
-                          placeholder="Enter size"
-                        />
-                        <Button
-                          type="button"
-                          variant="destructive"
-                          onClick={() => {
-                            const newSizes =
-                              formData.sizes?.filter((_, i) => i !== index) ||
-                              [];
-                            updateFormData({ sizes: newSizes });
-                          }}
-                        >
-                          <X className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    ))}
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={() => {
-                        const newSizes = [...(formData.sizes || []), ""];
-                        updateFormData({ sizes: newSizes });
-                      }}
-                    >
-                      Add Size
-                    </Button>
-                    <input
-                      type="hidden"
-                      name="sizes"
-                      value={formData.sizes?.join(",")}
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="text-sm font-medium">Features</label>
-                  <Input
-                    name="features"
-                    placeholder="Enter features (comma-separated)"
-                    defaultValue={formData.features?.join(", ")}
-                    onChange={(e) =>
-                      updateFormData({
-                        features: e.target.value
-                          .split(",")
-                          .map((f) => f.trim()),
-                      })
-                    }
-                  />
-                </div>
-
-                <div>
-                  <label className="text-sm font-medium">Specifications</label>
-                  <div className="space-y-2">
-                    {specifications.map((spec, index) => (
-                      <div key={index} className="flex gap-2">
-                        <Input
-                          placeholder="Key"
-                          value={spec.key}
-                          onChange={(e) =>
-                            updateSpecification(index, "key", e.target.value)
-                          }
-                        />
-                        <Input
-                          placeholder="Value"
-                          value={spec.value}
-                          onChange={(e) =>
-                            updateSpecification(index, "value", e.target.value)
-                          }
-                        />
-                        <Button
-                          type="button"
-                          variant="destructive"
-                          onClick={() => removeSpecification(index)}
-                        >
-                          <X className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    ))}
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={addSpecification}
-                    >
-                      Add Specification
-                    </Button>
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        {/* Variants Tab */}
-        <TabsContent value="variants" className="space-y-4">
-          <Card>
-            <CardContent className="pt-6">
-              <div className="space-y-4">
-                <div>
-                  <label className="text-sm font-medium">
-                    Product Variants
-                  </label>
-                  <div className="space-y-4">
-                    {formData.variants?.map((variant, index) => (
-                      <div key={index} className="p-4 border rounded-lg">
-                        <div className="grid grid-cols-2 gap-4 mb-4">
-                          <div>
-                            <label className="text-sm font-medium">Price</label>
-                            <Input
-                              type="number"
-                              min="0"
-                              step="0.01"
-                              value={variant.price}
-                              onChange={(e) => {
-                                const newVariants = [
-                                  ...(formData.variants || []),
-                                ];
-                                newVariants[index] = {
-                                  ...newVariants[index],
-                                  price: Number(e.target.value),
-                                };
-                                updateFormData({ variants: newVariants });
-                              }}
-                            />
-                          </div>
-                          <div>
-                            <label className="text-sm font-medium">
-                              Quantity
-                            </label>
-                            <Input
-                              type="number"
-                              min="0"
-                              value={variant.quantity}
-                              onChange={(e) => {
-                                const newVariants = [
-                                  ...(formData.variants || []),
-                                ];
-                                newVariants[index] = {
-                                  ...newVariants[index],
-                                  quantity: Number(e.target.value),
-                                };
-                                updateFormData({ variants: newVariants });
-                              }}
-                            />
-                          </div>
-                        </div>
-                        <div className="space-y-2">
-                          <label className="text-sm font-medium">
-                            Attributes
-                          </label>
-                          {variant.attributes.map((attr, attrIndex) => (
-                            <div key={attrIndex} className="flex gap-2">
-                              <Input
-                                placeholder="Name"
-                                value={attr.name}
-                                onChange={(e) => {
-                                  const newVariants = [
-                                    ...(formData.variants || []),
-                                  ];
-                                  const newAttributes = [
-                                    ...newVariants[index].attributes,
-                                  ];
-                                  newAttributes[attrIndex] = {
-                                    ...newAttributes[attrIndex],
-                                    name: e.target.value,
-                                  };
-                                  newVariants[index] = {
-                                    ...newVariants[index],
-                                    attributes: newAttributes,
-                                  };
-                                  updateFormData({ variants: newVariants });
-                                }}
-                              />
-                              <Input
-                                placeholder="Value"
-                                value={attr.value}
-                                onChange={(e) => {
-                                  const newVariants = [
-                                    ...(formData.variants || []),
-                                  ];
-                                  const newAttributes = [
-                                    ...newVariants[index].attributes,
-                                  ];
-                                  newAttributes[attrIndex] = {
-                                    ...newAttributes[attrIndex],
-                                    value: e.target.value,
-                                  };
-                                  newVariants[index] = {
-                                    ...newVariants[index],
-                                    attributes: newAttributes,
-                                  };
-                                  updateFormData({ variants: newVariants });
-                                }}
-                              />
-                              <Button
-                                type="button"
-                                variant="destructive"
-                                onClick={() => {
-                                  const newVariants = [
-                                    ...(formData.variants || []),
-                                  ];
-                                  const newAttributes = newVariants[
-                                    index
-                                  ].attributes.filter(
-                                    (_, i) => i !== attrIndex
-                                  );
-                                  newVariants[index] = {
-                                    ...newVariants[index],
-                                    attributes: newAttributes,
-                                  };
-                                  updateFormData({ variants: newVariants });
-                                }}
-                              >
-                                <X className="h-4 w-4" />
-                              </Button>
-                            </div>
-                          ))}
-                          <Button
-                            type="button"
-                            variant="outline"
-                            onClick={() => {
-                              const newVariants = [
-                                ...(formData.variants || []),
-                              ];
-                              const newAttributes = [
-                                ...newVariants[index].attributes,
-                                { name: "", value: "" },
-                              ];
-                              newVariants[index] = {
-                                ...newVariants[index],
-                                attributes: newAttributes,
-                              };
-                              updateFormData({ variants: newVariants });
-                            }}
-                          >
-                            Add Attribute
-                          </Button>
-                          <input
-                            type="hidden"
-                            name="variants"
-                            value={JSON.stringify(formData.variants || [])}
-                          />
-                        </div>
-                        <Button
-                          type="button"
-                          variant="destructive"
-                          className="mt-4"
-                          onClick={() => {
-                            const newVariants =
-                              formData.variants?.filter(
-                                (_, i) => i !== index
-                              ) || [];
-                            updateFormData({ variants: newVariants });
-                          }}
-                        >
-                          Remove Variant
-                        </Button>
-                      </div>
-                    ))}
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={() => {
-                        const newVariants = [...(formData.variants || [])];
-                        newVariants.push({
-                          attributes: [{ name: "", value: "" }],
-                          price: 0,
-                          quantity: 0,
-                        });
-                        updateFormData({ variants: newVariants });
-                      }}
-                    >
-                      Add Variant
-                    </Button>
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        {/* Bulk Options Tab */}
-        <TabsContent value="bulk" className="space-y-4">
           <Card>
             <CardContent className="pt-6">
               <div className="grid gap-4">
@@ -1508,6 +1314,7 @@ export function ProductForm({
             </CardContent>
           </Card>
         </TabsContent>
+
       </Tabs>
 
       <div className="flex justify-between mt-6">
@@ -1523,24 +1330,63 @@ export function ProductForm({
                 const currentIndex = STEPS.findIndex(
                   (step) => step.id === activeTab
                 );
+                stepChangedAt.current = Date.now();
                 setActiveTab(STEPS[currentIndex - 1].id);
               }}
             >
               Previous
             </Button>
           )}
-          <Button
-            type="submit"
-            disabled={isSubmitting}
-            className="min-w-[120px]"
-          >
-            {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            {isSubmitting
-              ? "Saving..."
-              : productId
-              ? "Update Product"
-              : "Create Product"}
-          </Button>
+          {/* Editors often want to change one field and save without
+              clicking through the remaining steps. */}
+          {product && activeTab !== STEPS[STEPS.length - 1].id && (
+            <Button
+              type="submit"
+              name="submitIntent"
+              value="save"
+              variant="outline"
+              disabled={isSubmitting}
+              className="min-w-[120px]"
+            >
+              {isSubmitting && (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              )}
+              {isSubmitting ? "Saving..." : "Save Changes"}
+            </Button>
+          )}
+
+          {activeTab !== STEPS[STEPS.length - 1].id ? (
+            // Advancing is local only - no network call per step.
+            <Button
+              type="button"
+              className="min-w-[120px]"
+              onClick={() => {
+                const currentIndex = STEPS.findIndex(
+                  (step) => step.id === activeTab
+                );
+                handleTabChange(STEPS[currentIndex + 1].id);
+              }}
+            >
+              Next
+            </Button>
+          ) : (
+            <Button
+              type="submit"
+              name="submitIntent"
+              value="create"
+              disabled={isSubmitting}
+              className="min-w-[160px] bg-green-600 hover:bg-green-700"
+            >
+              {isSubmitting && (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              )}
+              {isSubmitting
+                ? "Saving..."
+                : product
+                ? "Update Product"
+                : "Create Product"}
+            </Button>
+          )}
         </div>
       </div>
     </form>
