@@ -15,8 +15,6 @@ export default function ProductCard({
   onAddToCart,
   blurDataURL,
   priority = false,
-  isLoggedIn = false,
-  onRequireLogin,
   quantity = 1,
   moq = 1,
 }: {
@@ -32,17 +30,34 @@ export default function ProductCard({
   onAddToCart?: () => void;
   blurDataURL?: string;
   priority?: boolean;
+  /** @deprecated Favouriting no longer requires an account. Ignored. */
   isLoggedIn?: boolean;
+  /** @deprecated Favouriting no longer requires an account. Ignored. */
   onRequireLogin?: () => void;
   quantity?: number;
   moq?: number;
 }) {
+  // Several callers pass product.imageCover straight through, and a product
+  // without one yields src="" - which makes the browser refetch the page.
+  const imageSrc =
+    typeof image === "string" && image.trim() !== ""
+      ? image
+      : "/default-product.jpg";
+
   return (
     <div className="group relative bg-white rounded-2xl border border-gray-100 overflow-hidden hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
+      {/* Whole-card link. A stretched overlay rather than wrapping the card,
+          which would nest the eye link and the buttons inside an anchor. */}
+      <Link
+        href={`/product/${id}`}
+        className="absolute inset-0 z-10"
+        aria-label={title}
+      />
+
       {/* Image Container */}
       <div className="relative h-64 w-full overflow-hidden">
         <Image
-          src={image}
+          src={imageSrc}
           alt={title}
           fill
           className="object-cover transition-transform duration-500 group-hover:scale-110"
@@ -58,7 +73,7 @@ export default function ProductCard({
         />
 
         {/* Overlay gradient for better text readability */}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+        <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
 
         {/* Out of stock badge */}
         {quantity === 0 && (
@@ -72,16 +87,17 @@ export default function ProductCard({
           {/* Wishlist button - ONLY require login for wishlist */}
           <button
             type="button"
-            className="bg-white/90 backdrop-blur-sm rounded-full p-2.5 text-gray-600 hover:text-red-500 hover:bg-white transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-110"
+            aria-label={
+              isFavorite ? `Remove ${title} from favourites` : `Add ${title} to favourites`
+            }
+            aria-pressed={Boolean(isFavorite)}
+            className="bg-white/90 backdrop-blur-sm rounded-full p-3 text-gray-600 hover:text-red-500 hover:bg-white transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-110"
             onClick={(e) => {
               e.preventDefault();
               e.stopPropagation();
-              if (isLoggedIn) {
-                onFavoriteToggle?.();
-              } else if (onRequireLogin) {
-                // ✅ ONLY wishlist requires login
-                onRequireLogin();
-              }
+              // Favouriting no longer requires an account - guests are kept
+              // in localStorage and merged into the account on sign-in.
+              onFavoriteToggle?.();
             }}
           >
             <Heart
@@ -95,7 +111,8 @@ export default function ProductCard({
           {/* Quick view button */}
           <Link
             href={`/product/${id}`}
-            className="bg-white/90 backdrop-blur-sm rounded-full p-2.5 text-gray-600 hover:text-brand-yellow hover:bg-white transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-110"
+            aria-label={`Quick view ${title}`}
+            className="bg-white/90 backdrop-blur-sm rounded-full p-3 text-gray-600 hover:text-brand-yellow hover:bg-white transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-110"
             onClick={(e) => e.stopPropagation()}
           >
             <Eye className="w-4 h-4" />
@@ -103,7 +120,7 @@ export default function ProductCard({
         </div>
 
         {/* Add to cart button overlay */}
-        <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent p-4 transform translate-y-full group-hover:translate-y-0 transition-transform duration-300">
+        <div className="absolute bottom-0 left-0 right-0 z-20 bg-gradient-to-t from-black/80 via-black/40 to-transparent p-4 transform translate-y-0 md:translate-y-full md:group-hover:translate-y-0 transition-transform duration-300">
           <button
             type="button"
             className={`w-full py-3 px-4 rounded-xl font-semibold text-sm transition-all duration-200 flex items-center justify-center gap-2 ${
@@ -150,11 +167,9 @@ export default function ProductCard({
         </div>
 
         {/* Product title */}
-        <Link href={`/product/${id}`} className="block">
-          <h3 className="text-[16px] font-bold text-gray-900 mb-3 line-clamp-2 hover:text-brand-yellow transition-colors duration-200">
-            {title}
-          </h3>
-        </Link>
+        <h3 className="text-[16px] font-bold text-gray-900 mb-3 line-clamp-2 group-hover:text-brand-yellow transition-colors duration-200">
+          {title}
+        </h3>
 
         {/* Price and delivery info */}
         <div className="flex items-center justify-between">

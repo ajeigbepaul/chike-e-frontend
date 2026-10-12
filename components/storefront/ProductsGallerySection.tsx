@@ -7,11 +7,10 @@ import type { Category } from "@/app/admin/categories/types";
 import ProductCard, { ProductCardSkeleton } from "./ProductCard";
 import { getProducts } from "@/services/api/products";
 import type { Product } from "@/types/product";
-import wishlistService from "@/services/api/wishlist";
+import useWishlist from "@/hooks/useWishlist";
 import toast from "react-hot-toast";
 import { useDispatch } from "react-redux";
 import { addToCart } from "@/store/cartSlice";
-import { useSession } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import brandService from "@/services/api/brand";
 // import { useToast } from '@/components/ui/use-toast';
@@ -239,59 +238,8 @@ function ProductGalleryContent({
   // const products: Product[] = productsResponse?.products || [];
 
   // const { toast } = useToast();
-  const [wishlist, setWishlist] = useState<Set<string>>(new Set());
-
-  // Fetch wishlist on mount
-  useEffect(() => {
-    (async () => {
-      try {
-        const res = await wishlistService.getWishlist();
-        // Assuming res.data is an array of wishlist items with productId or product._id
-        const ids = (res.data || []).map(
-          (item: any) =>
-            item.productId?._id ||
-            item.productId ||
-            item.product?._id ||
-            item.product
-        );
-        setWishlist(new Set(ids));
-      } catch {
-        // Optionally show error toast
-      }
-    })();
-  }, []);
-
-  const handleFavoriteToggle = async (productId: string) => {
-    if (wishlist.has(productId)) {
-      // Remove from wishlist
-      setWishlist((prev) => {
-        const newSet = new Set(prev);
-        newSet.delete(productId);
-        return newSet;
-      });
-      try {
-        await wishlistService.removeFromWishlist(productId);
-        toast.success("Removed from wishlist");
-      } catch (error: any) {
-        toast.error(error.message);
-        setWishlist((prev) => new Set(prev).add(productId)); // revert
-      }
-    } else {
-      // Add to wishlist
-      setWishlist((prev) => new Set(prev).add(productId));
-      try {
-        await wishlistService.addToWishlist(productId);
-        toast.success("Added to wishlist");
-      } catch (error: any) {
-        toast.error(error.message);
-        setWishlist((prev) => {
-          const newSet = new Set(prev);
-          newSet.delete(productId);
-          return newSet;
-        }); // revert
-      }
-    }
-  };
+  const { ids: wishlistIds, toggle: handleFavoriteToggle } = useWishlist();
+  const wishlist = useMemo(() => new Set(wishlistIds), [wishlistIds]);
 
   // Fetch brands from backend
   const { data: brandsResponse = [] } = useQuery({
@@ -411,8 +359,6 @@ function ProductGalleryContent({
 
   const dispatch = useDispatch();
 
-  const { data: session } = useSession();
-  const isLoggedIn = !!session;
 
   return (
     <div className="max-w-6xl mx-auto px-2 flex flex-col ">
@@ -725,9 +671,7 @@ function ProductGalleryContent({
                     );
                     toast.success("Added to cart");
                   }}
-                  isLoggedIn={isLoggedIn}
-                  onRequireLogin={() => router.push("/auth/signin")}
-                  quantity={product.quantity || 0}
+                      quantity={product.quantity || 0}
                   moq={product.moq || 1}
                 />
               ))

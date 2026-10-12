@@ -51,6 +51,11 @@ const OurNewestArrivals = ({
           {/* Swiper slider */}
           <div className="flex-1 w-full h-80 md:h-[420px] rounded-2xl overflow-hidden">
             <Swiper
+        // Touch taps on cards were being swallowed: Swiper cancels clicks once
+        // a drag starts, and a finger always drifts a little.
+        threshold={8}
+        preventClicks={false}
+        preventClicksPropagation={false}
               modules={[Navigation]}
               navigation={{
                 prevEl: prevRef.current,

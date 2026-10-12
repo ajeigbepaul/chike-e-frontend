@@ -51,6 +51,11 @@ const TrendingProducts = ({
         </div>
       </div>
       <Swiper
+        // Touch taps on cards were being swallowed: Swiper cancels clicks once
+        // a drag starts, and a finger always drifts a little.
+        threshold={8}
+        preventClicks={false}
+        preventClicksPropagation={false}
         modules={[Navigation]}
         navigation={{
           prevEl: prevRef.current,

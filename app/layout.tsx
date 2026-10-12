@@ -6,10 +6,11 @@ import { ClientProviders } from "@/components/ClientProviders";
 import { Header } from "@/components/storefront/Header";
 import Footer from "@/components/storefront/Footer";
 import { usePathname } from "next/navigation";
-import { useEffect, Suspense } from "react";
+import { useEffect, useState, Suspense } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { RootState } from "@/store/store";
 import { setCart } from "@/store/cartSlice";
+import { setWishlist } from "@/store/wishlistSlice";
 import PartnerWithUs from "@/components/storefront/PartnerWithUs";
 import VendorHeader from "@/components/vendor/VendorHeader";
 import { CategoryNavigation } from "@/components/storefront/CategoryNavigation";
@@ -52,6 +53,38 @@ function CartPersistenceWatcher() {
   return null;
 }
 
+function WishlistPersistenceWatcher() {
+  const dispatch = useDispatch();
+  const ids = useSelector((state: RootState) => state.wishlist.ids);
+  const [hydrated, setHydrated] = useState(false);
+
+  // Load guest favourites from localStorage on mount (client only)
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const data = localStorage.getItem("wishlist");
+        if (data) dispatch(setWishlist(JSON.parse(data)));
+      } catch {
+        // Corrupt or blocked storage - start empty.
+      }
+      setHydrated(true);
+    }
+  }, [dispatch]);
+
+  // Save on change, but not before the initial read, or the first render
+  // would overwrite stored favourites with an empty list.
+  useEffect(() => {
+    if (!hydrated || typeof window === "undefined") return;
+    try {
+      localStorage.setItem("wishlist", JSON.stringify(ids));
+    } catch {
+      // Storage full or blocked - persistence is best-effort.
+    }
+  }, [ids, hydrated]);
+
+  return null;
+}
+
 // Removed Botpress widget in favor of custom ChatWidget
 
 export default function RootLayout({
@@ -77,6 +110,7 @@ export default function RootLayout({
             {isVendor && <VendorHeader />}
             <main className="flex-grow">
               <CartPersistenceWatcher />
+              <WishlistPersistenceWatcher />
               {children}
             </main>
             <div className="w-full">

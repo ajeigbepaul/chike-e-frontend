@@ -8,6 +8,7 @@ import { toast } from "react-hot-toast";
 import Link from "next/link";
 import { Eye, EyeOff } from "lucide-react";
 import { useLoadingOverlayContext } from "@/components/ClientProviders";
+import { mergeGuestWishlist } from "@/hooks/useWishlist";
 
 function LoginContent() {
   const searchParams = useSearchParams();
@@ -53,6 +54,10 @@ function LoginContent() {
       await update();
 
       const updatedSession = await getSession();
+
+      // Push anything favourited as a guest up to the account BEFORE any
+      // redirect - the window.location.href branch below would abort it.
+      await mergeGuestWishlist();
       const isAdmin = updatedSession?.user?.role === "admin";
       const isVendor = updatedSession?.user?.role === "vendor";
 

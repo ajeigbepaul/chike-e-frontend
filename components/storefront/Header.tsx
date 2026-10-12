@@ -15,6 +15,7 @@ import {
 import { useDispatch, useSelector } from "react-redux";
 import { RootState } from "@/store/store";
 import { clearCart } from "@/store/cartSlice";
+import { clearWishlist } from "@/store/wishlistSlice";
 import { DropdownMenu } from "./DropdownMenu";
 import { SearchSuggestions } from "./SearchSuggestions";
 import { CategoryDropdown } from "./CategoryDropdown";
@@ -24,7 +25,6 @@ import { useSession, signOut } from "next-auth/react";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import categoryService from "@/services/api/category";
-import wishlistService from "@/services/api/wishlist";
 import { Badge } from "@/components/ui/badge";
 import notificationService from "@/services/api/notification";
 
@@ -75,13 +75,10 @@ function HeaderContent() {
     },
   });
 
-  // Fetch wishlist using React Query for global sync
-  const { data: wishlistData } = useQuery({
-    queryKey: ["wishlist"],
-    queryFn: () => wishlistService.getWishlist(),
-    enabled: !!session,
-  });
-  const wishlistCount = wishlistData?.data?.length || 0;
+  // Count from the wishlist slice so guests see their own favourites too.
+  const wishlistCount = useSelector(
+    (state: RootState) => state.wishlist.ids.length
+  );
 
   // Fetch unread notifications count
   const { data: unreadCount } = useQuery({
@@ -92,8 +89,10 @@ function HeaderContent() {
 
   const handleSignOut = async () => {
     dispatch(clearCart());
+    dispatch(clearWishlist());
     if (typeof window !== "undefined") {
       localStorage.removeItem("cart");
+      localStorage.removeItem("wishlist");
     }
     await signOut({ callbackUrl: "/" });
   };

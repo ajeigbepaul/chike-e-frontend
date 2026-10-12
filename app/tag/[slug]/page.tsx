@@ -1,9 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useParams, useSearchParams, useRouter } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
-import { useSession } from "next-auth/react";
 import { useDispatch } from "react-redux";
 import { toast } from "react-hot-toast";
 import api from "@/services/api";
@@ -12,7 +11,7 @@ import { Breadcrumb } from "@/components/ui/breadcrumb";
 import { Badge } from "@/components/ui/badge";
 import Spinner from "@/components/Spinner";
 import { addToCart } from "@/store/cartSlice";
-import wishlistService from "@/services/api/wishlist";
+import useWishlist from "@/hooks/useWishlist";
 
 interface Product {
   _id: string;
@@ -58,15 +57,14 @@ export default function TagPage() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const dispatch = useDispatch();
-  const { data: session } = useSession();
   const [currentPage, setCurrentPage] = useState(1);
-  const [wishlist, setWishlist] = useState<Set<string>>(new Set());
+  const { ids: wishlistIds, toggle: handleFavoriteToggle } = useWishlist();
+  const wishlist = useMemo(() => new Set(wishlistIds), [wishlistIds]);
 
   // Extract tag from slug (remove 'tag-' prefix if present)
   const tagSlug = params.slug as string;
   const tag = tagSlug.startsWith("tag-") ? tagSlug.slice(4) : tagSlug;
 
-  const isLoggedIn = !!session;
 
   // Get page from URL params
   useEffect(() => {
@@ -74,56 +72,11 @@ export default function TagPage() {
     setCurrentPage(page);
   }, [searchParams]);
 
-  // Fetch wishlist data
-  const { data: wishlistData } = useQuery({
-    queryKey: ["wishlist"],
-    queryFn: wishlistService.getWishlist,
-    enabled: isLoggedIn,
-  });
-
-  // Update wishlist state when data changes
-  useEffect(() => {
-    if (wishlistData?.data) {
-      setWishlist(new Set(wishlistData.data.map((item: any) => item._id)));
-    }
-  }, [wishlistData]);
-
   const { data, isLoading, error } = useQuery({
     queryKey: ["products-by-tag", tag, currentPage],
     queryFn: () => getProductsByTag(tag, currentPage),
     enabled: !!tag,
   });
-
-  // Wishlist toggle handler
-  const handleFavoriteToggle = async (productId: string) => {
-    if (wishlist.has(productId)) {
-      setWishlist((prev) => {
-        const newSet = new Set(prev);
-        newSet.delete(productId);
-        return newSet;
-      });
-      try {
-        await wishlistService.removeFromWishlist(productId);
-        toast.success("Removed from wishlist");
-      } catch (error: any) {
-        toast.error(error.message);
-        setWishlist((prev) => new Set(prev).add(productId)); // revert
-      }
-    } else {
-      setWishlist((prev) => new Set(prev).add(productId));
-      try {
-        await wishlistService.addToWishlist(productId);
-        toast.success("Added to wishlist");
-      } catch (error: any) {
-        toast.error(error.message);
-        setWishlist((prev) => {
-          const newSet = new Set(prev);
-          newSet.delete(productId);
-          return newSet;
-        }); // revert
-      }
-    }
-  };
 
   // Add to cart handler
   const handleAddToCart = (product: Product) => {
@@ -137,11 +90,6 @@ export default function TagPage() {
       })
     );
     toast.success("Added to cart");
-  };
-
-  // Login requirement handler
-  const handleRequireLogin = () => {
-    router.push("/auth/signin");
   };
 
   const handlePageChange = (newPage: number) => {
@@ -226,8 +174,6 @@ export default function TagPage() {
                   isFavorite={wishlist.has(product._id)}
                   onFavoriteToggle={() => handleFavoriteToggle(product._id)}
                   onAddToCart={() => handleAddToCart(product)}
-                  isLoggedIn={isLoggedIn}
-                  onRequireLogin={handleRequireLogin}
                   quantity={product.quantity || 0}
                 />
               ))}

@@ -100,7 +100,7 @@ export default function WishlistPage() {
                 }
               />
               <button
-                className="absolute left-2 top-2 rounded-full border border-red-400 bg-white px-3 py-1 text-xs font-medium text-red-500 transition hover:bg-red-50"
+                className="absolute left-2 top-2 z-20 rounded-full border border-red-400 bg-white px-3 py-1 text-xs font-medium text-red-500 transition hover:bg-red-50"
                 onClick={() => removeMutation.mutate(item.productId._id)}
               >
                 Remove

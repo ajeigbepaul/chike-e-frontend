@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import advertService from "@/services/api/advert";
 import { useSession } from "next-auth/react";
@@ -8,7 +8,7 @@ import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
 import { useDispatch } from "react-redux";
 import { addToCart } from "@/store/cartSlice";
-import wishlistService from "@/services/api/wishlist";
+import useWishlist from "@/hooks/useWishlist";
 import { getProducts, getMostOrderedProducts } from "@/services/api/products";
 import type { Product } from "@/types/product";
 
@@ -70,7 +70,13 @@ export default function Home() {
   const [trending, setTrending] = useState<Product[]>([]);
   const [newest, setNewest] = useState<Product[]>([]);
   const [mostOrdered, setMostOrdered] = useState<Product[]>([]);
-  const [wishlist, setWishlist] = useState<Set<string>>(new Set());
+  // Children take a Set and a product object; the hook works in ids.
+  const { ids: wishlistIds, toggle: toggleFavorite } = useWishlist();
+  const wishlist = useMemo(() => new Set(wishlistIds), [wishlistIds]);
+  const handleToggleWishlist = useCallback(
+    (product: any) => toggleFavorite(product?._id),
+    [toggleFavorite]
+  );
 
   // Fetch all product data
   useEffect(() => {
@@ -100,20 +106,6 @@ export default function Home() {
     });
   }, []);
 
-  // Fetch wishlist for logged-in user
-  useEffect(() => {
-    if (isLoggedIn) {
-      wishlistService.getWishlist().then((res) => {
-        const ids = (res.data || []).map(
-          (item: any) => item.product?._id || item.productId?._id || item._id
-        );
-        setWishlist(new Set(ids));
-      });
-    } else {
-      setWishlist(new Set());
-    }
-  }, [isLoggedIn]);
-
   // Add to cart handler
   const handleAddToCart = useCallback(
     (product: any) => {
@@ -131,45 +123,6 @@ export default function Home() {
       toast.success("Added to cart");
     },
     [dispatch]
-  );
-
-  // Wishlist toggle handler
-  const handleToggleWishlist = useCallback(
-    async (product: any) => {
-      if (!isLoggedIn) {
-        router.push("/auth/signin");
-        return;
-      }
-      const id = product._id;
-      if (wishlist.has(id)) {
-        setWishlist((prev) => {
-          const newSet = new Set(prev);
-          newSet.delete(id);
-          return newSet;
-        });
-        try {
-          await wishlistService.removeFromWishlist(id);
-          toast.success("Removed from wishlist");
-        } catch (error: any) {
-          toast.error(error.message);
-          setWishlist((prev) => new Set(prev).add(id)); // revert
-        }
-      } else {
-        setWishlist((prev) => new Set(prev).add(id));
-        try {
-          await wishlistService.addToWishlist(id);
-          toast.success("Added to wishlist");
-        } catch (error: any) {
-          toast.error(error.message);
-          setWishlist((prev) => {
-            const newSet = new Set(prev);
-            newSet.delete(id);
-            return newSet;
-          }); // revert
-        }
-      }
-    },
-    [isLoggedIn, router, wishlist]
   );
 
   // Login redirect

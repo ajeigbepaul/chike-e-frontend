@@ -2,8 +2,10 @@ import type { Product } from '@/types/product';
 import { useQuery } from '@tanstack/react-query';
 import { getRelatedProducts } from '@/services/api/products';
 import ProductCard from '@/components/storefront/ProductCard';
+import useWishlist from '@/hooks/useWishlist';
 
 export default function ProductMoreLikeThis({ product }: { product: Product }) {
+  const { isFavorite, toggle: toggleFavorite } = useWishlist();
   const { data: related, isLoading, isError } = useQuery({
     queryKey: ['related-products', product._id],
     queryFn: () => getRelatedProducts(product._id),
@@ -29,8 +31,8 @@ export default function ProductMoreLikeThis({ product }: { product: Product }) {
                 unit={p.priceUnit}
                 rating={p.rating || 0}
                 reviews={p.reviews ? p.reviews.length.toString() : '0'}
-                isFavorite={false}
-                onFavoriteToggle={() => {}}
+                isFavorite={isFavorite(p._id)}
+                onFavoriteToggle={() => toggleFavorite(p._id)}
               />
             </div>
           ))}

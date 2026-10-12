@@ -9,11 +9,10 @@ import { getProducts } from "@/services/api/products";
 import { ChevronDown, ChevronUp, Box } from "lucide-react";
 import { useState, useMemo, useEffect, JSX } from "react";
 import ProductCard from "@/components/storefront/ProductCard";
-import wishlistService from "@/services/api/wishlist";
+import useWishlist from "@/hooks/useWishlist";
 import { useDispatch } from "react-redux";
 import { addToCart } from "@/store/cartSlice";
 import toast from "react-hot-toast";
-import { useSession } from "next-auth/react";
 import { Category } from "@/app/admin/categories/types";
 
 // Helper function to build category tree
@@ -103,10 +102,9 @@ export default function CategoryPage() {
   const params = useParams();
   const router = useRouter();
   const dispatch = useDispatch();
-  const { data: session } = useSession();
   const categorySlug = typeof params?.slug === "string" ? params.slug : "";
-  const [wishlist, setWishlist] = useState<Set<string>>(new Set());
-  const isLoggedIn = !!session;
+  const { ids: wishlistIds, toggle: handleFavoriteToggle } = useWishlist();
+  const wishlist = useMemo(() => new Set(wishlistIds), [wishlistIds]);
 
   // Fetch all categories
   const { data: categoriesData, isLoading: categoriesLoading } = useQuery({
@@ -236,8 +234,6 @@ export default function CategoryPage() {
                     );
                     toast.success("Added to cart!");
                   }}
-                  isLoggedIn={isLoggedIn}
-                  onRequireLogin={() => router.push("/auth/signin")}
                   quantity={product.quantity || 0}
                 />
               ))}
@@ -255,53 +251,6 @@ export default function CategoryPage() {
         )}
       </div>
     );
-  };
-
-  // Fetch wishlist on mount
-  useEffect(() => {
-    (async () => {
-      try {
-        const res = await wishlistService.getWishlist();
-        const ids = (res.data || []).map(
-          (item: any) =>
-            item.productId?._id ||
-            item.productId ||
-            item.product?._id ||
-            item.product
-        );
-        setWishlist(new Set(ids));
-      } catch {
-        // Optionally show error toast
-      }
-    })();
-  }, []);
-
-  const handleFavoriteToggle = async (productId: string) => {
-    if (wishlist.has(productId)) {
-      // Remove from wishlist
-      setWishlist((prev) => {
-        const newSet = new Set(prev);
-        newSet.delete(productId);
-        return newSet;
-      });
-      try {
-        await wishlistService.removeFromWishlist(productId);
-      } catch (error: any) {
-        setWishlist((prev) => new Set(prev).add(productId)); // revert
-      }
-    } else {
-      // Add to wishlist
-      setWishlist((prev) => new Set(prev).add(productId));
-      try {
-        await wishlistService.addToWishlist(productId);
-      } catch (error: any) {
-        setWishlist((prev) => {
-          const newSet = new Set(prev);
-          newSet.delete(productId);
-          return newSet;
-        }); // revert
-      }
-    }
   };
 
   // Filtering logic - Get products for this category and subcategories
@@ -439,8 +388,6 @@ export default function CategoryPage() {
                         );
                         toast.success("Added to cart!");
                       }}
-                      isLoggedIn={isLoggedIn}
-                      onRequireLogin={() => router.push("/auth/signin")}
                       quantity={product.quantity || 0}
                     />
                   ))}

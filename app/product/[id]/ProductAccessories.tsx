@@ -6,8 +6,10 @@ import { addToCart } from '@/store/cartSlice';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import toast from 'react-hot-toast';
+import useWishlist from '@/hooks/useWishlist';
 
 export default function ProductAccessories({ product }: { product: Product }) {
+  const { isFavorite, toggle: toggleFavorite } = useWishlist();
   const [activeTab, setActiveTab] = useState(0);
   const dispatch = useDispatch();
   const { data: session } = useSession();
@@ -60,11 +62,9 @@ export default function ProductAccessories({ product }: { product: Product }) {
             unit={productData.priceUnit}
             rating={productData.rating || 0}
             reviews={productData.reviews ? productData.reviews.length.toString() : '0'}
-            isFavorite={false} // You can implement wishlist logic here
-            onFavoriteToggle={() => {}} // Implement wishlist toggle
+            isFavorite={isFavorite(productData._id)}
+            onFavoriteToggle={() => toggleFavorite(productData._id)}
             onAddToCart={() => handleAddToCart(productData)}
-            isLoggedIn={isLoggedIn}
-            onRequireLogin={()=>{}}
             quantity={productData.quantity || 0}
           />
         ))}
