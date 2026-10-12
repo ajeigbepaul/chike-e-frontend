@@ -41,7 +41,15 @@ export default function ProductDetailsPage() {
     <div className="max-w-6xl mx-auto px-4 py-10">
       <Breadcrumb productData={product} />
       <div className="flex flex-col md:flex-row gap-10">
-        <ProductGallery images={product.images || [product.imageCover]} />
+        {/* `||` doesn't catch images: [] - an empty array is truthy - which
+            left several products rendering an empty src. */}
+        <ProductGallery
+          images={
+            product.images?.length ? product.images : [product.imageCover]
+          }
+          productId={product._id}
+          productName={product.name}
+        />
         <div className="flex-1">
           <ProductInfo product={product} />
         </div>

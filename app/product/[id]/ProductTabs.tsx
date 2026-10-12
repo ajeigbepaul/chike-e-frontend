@@ -35,10 +35,49 @@ export default function ProductTabs({ product }: { product: Product }) {
           <p className="mb-4">{product.summary || product.description}</p>
           {product.specifications && product.specifications.length > 0 && (
             <div className="mb-4">
-              <div className="font-semibold mb-1">Key Features:</div>
-              <ul className="list-disc pl-6">
+              <div className="font-semibold mb-2">Specifications:</div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8">
                 {product.specifications.map((spec, i) => (
-                  <li key={i}>{spec.key}: {spec.value}</li>
+                  <div
+                    key={i}
+                    className="flex justify-between gap-4 py-2 border-b border-gray-200"
+                  >
+                    <span className="font-medium text-gray-600">
+                      {spec.key}
+                    </span>
+                    <span className="text-gray-900 text-right">
+                      {spec.value}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Sizes and features were being captured by admins but never shown
+              to customers. */}
+          {product.sizes && product.sizes.length > 0 && (
+            <div className="mb-4">
+              <div className="font-semibold mb-2">Available sizes:</div>
+              <div className="flex flex-wrap gap-2">
+                {product.sizes.map((size, i) => (
+                  <span
+                    key={i}
+                    className="border border-gray-300 rounded-full px-3 py-1 text-sm text-gray-800"
+                  >
+                    {size}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {product.features && product.features.length > 0 && (
+            <div className="mb-4">
+              <div className="font-semibold mb-2">Key features:</div>
+              <ul className="list-disc pl-6 space-y-1">
+                {product.features.map((feature, i) => (
+                  <li key={i}>{feature}</li>
                 ))}
               </ul>
             </div>
