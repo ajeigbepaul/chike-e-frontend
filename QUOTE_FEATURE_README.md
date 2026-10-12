@@ -127,7 +127,11 @@ The frontend expects these backend endpoints to be implemented:
 - Urgency level indicators
 
 ### Security Considerations
-- Form data is validated on both client and server
+- Form data is validated on both client and server:
+  client rules live in `lib/quoteSchema.ts` (zod, used by `RequestQuoteDialog`),
+  and `POST /api/v1/quotes` mirrors them with express-validator chains in
+  `backend/routes/quoteRoutes.js`, backed by schema constraints in
+  `backend/models/quote.model.js`
 - Authentication required for admin functions
 - Input sanitization to prevent XSS
 - Rate limiting recommended for quote submissions

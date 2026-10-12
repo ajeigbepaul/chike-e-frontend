@@ -59,12 +59,15 @@ export const useQuoteState = (productId: string, productName: string): UseQuoteS
         throw new Error('User not authenticated');
       }
 
+      // Session identity goes LAST. Spreading `data` after it let the form's
+      // own name/email fields override the signed-in user, despite the Omit<>
+      // on this argument claiming they were excluded.
       const quoteRequest: QuoteRequest = {
+        ...data,
         productId,
         productName,
         customerEmail: session.user.email,
         customerName: session.user.name,
-        ...data,
       };
 
       return submitQuoteRequest(quoteRequest);

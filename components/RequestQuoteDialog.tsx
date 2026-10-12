@@ -1,7 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { buildQuoteSchema } from "@/lib/quoteSchema";
 import { useMutation } from "@tanstack/react-query";
 import toast from "react-hot-toast";
 import {
@@ -33,32 +36,28 @@ interface RequestQuoteDialogProps {
   isLoading?: boolean;
 }
 
-interface QuoteFormData {
-  quantity: number;
-  customerName: string;
-  customerEmail: string;
-  customerPhone?: string;
-  company?: string;
-  message?: string;
-  expectedPrice?: number;
-  urgency: 'low' | 'medium' | 'high';
-  serialnos:string;
-}
+type QuoteFormData = z.infer<ReturnType<typeof buildQuoteSchema>>;
 
 export default function RequestQuoteDialog({ product, children, onSubmitQuote, isLoading }: RequestQuoteDialogProps) {
   const [open, setOpen] = useState(false);
   
+  const moq = Math.max(1, Math.floor(product.moq ?? 1));
+  const quoteSchema = useMemo(() => buildQuoteSchema(moq), [moq]);
+
   const form = useForm<QuoteFormData>({
+    resolver: zodResolver(quoteSchema),
+    // Stay quiet until a field is left, then correct live as it is fixed.
+    mode: "onTouched",
+    reValidateMode: "onChange",
     defaultValues: {
-      quantity: 1,
+      quantity: String(moq),
       customerName: "",
       customerEmail: "",
       customerPhone: "",
       company: "",
       message: "",
-      expectedPrice: 0,
+      expectedPrice: "",
       urgency: "medium",
-      serialnos: "",
     },
   });
 
@@ -75,42 +74,35 @@ export default function RequestQuoteDialog({ product, children, onSubmitQuote, i
   });
 
   const onSubmit = async (data: QuoteFormData) => {
+    // Validated as text; the API takes numbers. Optional fields go as
+    // undefined rather than "" so they are omitted, not stored blank.
+    const payload = {
+      quantity: Number(data.quantity),
+      customerName: data.customerName,
+      customerEmail: data.customerEmail,
+      customerPhone: data.customerPhone || undefined,
+      company: data.company || undefined,
+      message: data.message || undefined,
+      expectedPrice: data.expectedPrice ? Number(data.expectedPrice) : undefined,
+      urgency: data.urgency,
+    };
+
     if (onSubmitQuote) {
       // Use external submission handler
       try {
-        await onSubmitQuote({
-          quantity: data.quantity,
-          customerName: data.customerName,
-          customerEmail: data.customerEmail,
-          customerPhone: data.customerPhone,
-          company: data.company,
-          message: data.message,
-          expectedPrice: data.expectedPrice,
-          urgency: data.urgency,
-          serialnos: data.serialnos,
-        });
+        await onSubmitQuote(payload);
         setOpen(false);
         form.reset();
-      } catch (error) {
+      } catch {
         // Error handling is done in the hook
       }
     } else {
       // Use internal submission (legacy behavior)
-      const quoteRequest: QuoteRequest = {
+      quoteMutation.mutate({
         productId: product._id,
         productName: product.name,
-        quantity: data.quantity,
-        customerName: data.customerName,
-        customerEmail: data.customerEmail,
-        customerPhone: data.customerPhone,
-        company: data.company,
-        message: data.message,
-        expectedPrice: data.expectedPrice,
-        urgency: data.urgency,
-        serialnos: product.serialNumber || "",
-      };
-
-      quoteMutation.mutate(quoteRequest);
+        ...payload,
+      });
     }
   };
 
@@ -152,18 +144,25 @@ export default function RequestQuoteDialog({ product, children, onSubmitQuote, i
               <FormField
                 control={form.control}
                 name="quantity"
-                rules={{ 
-                  required: "Quantity is required", 
-                  min: { value: 1, message: "Quantity must be at least 1" }
-                }}
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Quantity *</FormLabel>
                     <FormControl>
-                      <Input 
-                        type="number" 
-                        {...field} 
-                        onChange={(e) => field.onChange(Number(e.target.value))}
+                      <Input
+                        type="text"
+                        inputMode="numeric"
+                        autoComplete="off"
+                        {...field}
+                        onChange={(e) =>
+                          // Digits only, so "2.5" and "abc" can't be typed.
+                          field.onChange(e.target.value.replace(/[^\d]/g, ""))
+                        }
+                        onBlur={(e) => {
+                          // Tidy "05" to "5" rather than scolding the user.
+                          const digits = e.target.value.replace(/^0+(?=\d)/, "");
+                          if (digits !== e.target.value) field.onChange(digits);
+                          field.onBlur();
+                        }}
                       />
                     </FormControl>
                     <FormMessage />
@@ -197,7 +196,6 @@ export default function RequestQuoteDialog({ product, children, onSubmitQuote, i
               <FormField
                 control={form.control}
                 name="customerName"
-                rules={{ required: "Name is required" }}
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Full Name *</FormLabel>
@@ -212,13 +210,6 @@ export default function RequestQuoteDialog({ product, children, onSubmitQuote, i
               <FormField
                 control={form.control}
                 name="customerEmail"
-                rules={{ 
-                  required: "Email is required",
-                  pattern: {
-                    value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
-                    message: "Invalid email address"
-                  }
-                }}
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Email Address *</FormLabel>
@@ -268,12 +259,27 @@ export default function RequestQuoteDialog({ product, children, onSubmitQuote, i
                 <FormItem>
                   <FormLabel>Expected Price per Unit (₦)</FormLabel>
                   <FormControl>
-                    <Input 
-                      type="number" 
-                      step="0.01"
+                    <Input
+                      type="text"
+                      inputMode="decimal"
+                      autoComplete="off"
                       placeholder="Optional: Your expected price"
                       {...field}
-                      onChange={(e) => field.onChange(e.target.value ? Number(e.target.value) : undefined)}
+                      onChange={(e) =>
+                        // Digits and at most one decimal point.
+                        field.onChange(
+                          e.target.value
+                            .replace(/[^\d.]/g, "")
+                            .replace(/(\..*)\./g, "$1")
+                        )
+                      }
+                      onBlur={(e) => {
+                        const tidied = e.target.value
+                          .replace(/^0+(?=\d)/, "")
+                          .replace(/\.$/, "");
+                        if (tidied !== e.target.value) field.onChange(tidied);
+                        field.onBlur();
+                      }}
                     />
                   </FormControl>
                   <FormMessage />
