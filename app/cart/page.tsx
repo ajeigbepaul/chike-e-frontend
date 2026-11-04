@@ -129,7 +129,7 @@ function CartPageContent() {
       </Suspense>
       <div className="flex flex-col md:flex-row gap-8">
         {/* Cart Items List */}
-        <div className="flex-1 bg-white rounded-xl shadow p-6">
+        <div className="w-full md:w-3/4 bg-white rounded-xl shadow p-3 sm:p-6">
           <h2 className="text-2xl font-bold mb-6">
             Your cart ({cart.length} Item{cart.length !== 1 ? "s" : ""})
           </h2>
@@ -145,12 +145,12 @@ function CartPageContent() {
                 return (
                   <div
                     key={item.id}
-                    className="flex items-center gap-4 bg-white rounded-lg border p-4 relative"
+                    className="flex flex-wrap items-start gap-3 sm:gap-4 bg-white rounded-lg border p-3 sm:p-4 relative"
                   >
                     {/* Checkbox (optional) */}
-                    <input type="checkbox" className="mr-2" />
+                    <input type="checkbox" className="mt-2 shrink-0 sm:mr-2" />
                     {/* Product Image */}
-                    <div className="w-20 h-20 relative flex-shrink-0">
+                    <div className="w-16 h-16 sm:w-20 sm:h-20 relative flex-shrink-0">
                       <Image
                         src={item.image}
                         alt={item.name}
@@ -159,9 +159,9 @@ function CartPageContent() {
                       />
                     </div>
                     {/* Product Info */}
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className="text-yellow-400 flex items-center gap-1 text-sm font-semibold">
+                    <div className="flex-1 min-w-0 pt-1">
+                      <div className="flex items-start gap-2 mb-1 min-w-0">
+                        <span className="text-yellow-400 flex flex-wrap items-center gap-1 text-sm font-semibold min-w-0">
                           <Star className="w-4 h-4" fill="#F7B50E" />
                           {averageRating > 0
                             ? averageRating.toFixed(1)
@@ -177,12 +177,12 @@ function CartPageContent() {
                           )}
                         </span>
                       </div>
-                      <div className="font-bold text-lg truncate mb-1">
+                      <div className="font-bold text-lg break-words mb-1">
                         {item.name}
                       </div>
-                      <div className="text-gray-700 font-semibold mb-1">
-                        ₦{item.price.toLocaleString()}/ m3{" "}
-                        <span className="text-xs text-gray-400 ml-2">
+                      <div className="text-gray-700 font-semibold mb-1 break-words">
+                        ₦{item.price.toLocaleString()}/ m3
+                        <span className="text-xs text-gray-400 block sm:inline sm:ml-2">
                           Delivery: 7 - 9 days
                         </span>
                       </div>
@@ -236,7 +236,7 @@ function CartPageContent() {
                       </div>
                     </div>
                     {/* Quantity Selector */}
-                    <div className="flex items-center gap-2">
+                    <div className="flex w-full items-center justify-end gap-2 pr-1 sm:pr-2">
                       <button
                         className="px-2 py-1 rounded border border-gray-300 bg-white text-lg disabled:opacity-50"
                         onClick={() =>
@@ -302,7 +302,7 @@ function CartPageContent() {
           )}
         </div>
         {/* Cart Details */}
-        <div className="w-full md:w-[350px] bg-white rounded-xl shadow p-6 flex flex-col gap-6">
+        <div className="w-full lg:w-1/4 bg-white rounded-xl shadow p-6 flex flex-col gap-6">
           <div>
             <h3 className="text-lg font-bold mb-4">Cart Details</h3>
             <div className="flex justify-between mb-2 text-gray-700">

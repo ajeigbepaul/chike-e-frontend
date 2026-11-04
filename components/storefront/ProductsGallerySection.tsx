@@ -1,6 +1,6 @@
 "use client";
 import React, { useState, useMemo, useEffect, Suspense } from "react";
-import { ChevronDown, ChevronUp, Box } from "lucide-react";
+import { ChevronDown, ChevronUp, Box, SlidersHorizontal } from "lucide-react";
 import categoryService from "@/services/api/category";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import type { Category } from "@/app/admin/categories/types";
@@ -363,147 +363,153 @@ function ProductGalleryContent({
   return (
     <div className="max-w-6xl mx-auto px-2 flex flex-col ">
       {/* Header with total and filter */}
-      <div className="w-full flex flex-wrap items-center justify-between gap-4 py-4">
-        <div>
+      <div className="w-full space-y-4 py-4">
+        <div className="flex flex-wrap items-center justify-between gap-3">
           <h2 className="text-xl font-semibold">
             {filteredProducts.length} products
           </h2>
+          {hasActiveFilters && (
+            <button
+              onClick={resetFilters}
+              className="text-sm font-medium text-gray-500 underline-offset-4 hover:text-gray-900 hover:underline"
+            >
+              Clear all filters
+            </button>
+          )}
         </div>
-        <div className="flex flex-col gap-2 items-end w-full sm:w-auto">
+        <div className="w-full rounded-2xl border border-gray-200 bg-white p-3 shadow-sm">
+          <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-gray-800">
+            <SlidersHorizontal className="h-4 w-4 text-brand-yellow" />
+            Filter and sort
+          </div>
           {/* Filter chips row */}
           {hasActiveFilters && (
-            <div className="flex flex-wrap gap-2 mb-1">
+            <div className="mb-3 flex flex-wrap gap-2">
               {selectedBrand !== "All" && (
-                <span className="bg-brand-yellow/90 text-gray-900 px-3 py-1 rounded-full text-xs flex items-center gap-1">
+                <span className="flex items-center gap-1 rounded-full bg-yellow-50 px-3 py-1 text-xs font-medium text-gray-800 ring-1 ring-brand-yellow/40">
                   Brand: {getBrandLabel(selectedBrand)}
                   <button
-                    onClick={() => setSelectedBrand("All")}
-                    className="ml-1 text-gray-700 hover:text-red-600"
+                    onClick={() => updateUrlFilter("brand", "All")}
+                    className="ml-1 text-gray-500 hover:text-red-600"
+                    aria-label="Remove brand filter"
                   >
                     &times;
                   </button>
                 </span>
               )}
               {selectedColor !== "All" && (
-                <span className="bg-brand-yellow/90 text-gray-900 px-3 py-1 rounded-full text-xs flex items-center gap-1">
+                <span className="flex items-center gap-1 rounded-full bg-yellow-50 px-3 py-1 text-xs font-medium text-gray-800 ring-1 ring-brand-yellow/40">
                   Color: {getColorLabel(selectedColor)}
                   <button
-                    onClick={() => setSelectedColor("All")}
-                    className="ml-1 text-gray-700 hover:text-red-600"
+                    onClick={() => updateUrlFilter("color", "All")}
+                    className="ml-1 text-gray-500 hover:text-red-600"
+                    aria-label="Remove color filter"
                   >
                     &times;
                   </button>
                 </span>
               )}
               {selectedReview !== "All" && (
-                <span className="bg-brand-yellow/90 text-gray-900 px-3 py-1 rounded-full text-xs flex items-center gap-1">
+                <span className="flex items-center gap-1 rounded-full bg-yellow-50 px-3 py-1 text-xs font-medium text-gray-800 ring-1 ring-brand-yellow/40">
                   {getReviewLabel(selectedReview)}
                   <button
-                    onClick={() => setSelectedReview("All")}
-                    className="ml-1 text-gray-700 hover:text-red-600"
+                    onClick={() => updateUrlFilter("review", "All")}
+                    className="ml-1 text-gray-500 hover:text-red-600"
+                    aria-label="Remove review filter"
                   >
                     &times;
                   </button>
                 </span>
               )}
               {selectedPrice !== "All" && (
-                <span className="bg-brand-yellow/90 text-gray-900 px-3 py-1 rounded-full text-xs flex items-center gap-1">
+                <span className="flex items-center gap-1 rounded-full bg-yellow-50 px-3 py-1 text-xs font-medium text-gray-800 ring-1 ring-brand-yellow/40">
                   {getPriceLabel(selectedPrice)}
                   <button
-                    onClick={() => setSelectedPrice("All")}
-                    className="ml-1 text-gray-700 hover:text-red-600"
+                    onClick={() => updateUrlFilter("price", "All")}
+                    className="ml-1 text-gray-500 hover:text-red-600"
+                    aria-label="Remove price filter"
                   >
                     &times;
                   </button>
                 </span>
               )}
-              <button
-                onClick={resetFilters}
-                className="ml-2 px-3 py-1 rounded bg-gray-200 text-gray-700 hover:bg-brand-yellow hover:text-white transition text-xs font-medium"
-              >
-                Clear All
-              </button>
             </div>
           )}
-          <div className="flex flex-wrap gap-2 items-center justify-end w-full">
+          <div className="grid w-full grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-4">
             {/* Color filter */}
-            <select
-              className={`w-[120px] border rounded-full bg-[#F3F3F3] px-3 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-brand-yellow ${
-                selectedColor !== "All"
-                  ? "border-brand-yellow bg-yellow-50 font-semibold"
-                  : "border-gray-300"
-              }`}
-              value={selectedColor}
-              onChange={(e) => {
-                setSelectedColor(e.target.value);
-                updateUrlFilter("color", e.target.value);
-              }}
-            >
-              <option value="All">All Colors</option>
-              {colorOptions
-                .filter((opt) => opt !== "All")
-                .map((opt) => (
-                  <option key={opt} value={opt}>
-                    {opt}
-                  </option>
-                ))}
-            </select>
+            <label className="flex items-center gap-2 rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-500 focus-within:border-brand-yellow focus-within:ring-2 focus-within:ring-brand-yellow/20">
+              <span className="shrink-0">Color</span>
+              <select
+                className="min-w-0 flex-1 bg-transparent font-medium text-gray-800 outline-none"
+                value={selectedColor}
+                onChange={(e) => {
+                  setSelectedColor(e.target.value);
+                  updateUrlFilter("color", e.target.value);
+                }}
+              >
+                <option value="All">All colors</option>
+                {colorOptions
+                  .filter((opt) => opt !== "All")
+                  .map((opt) => (
+                    <option key={opt} value={opt}>
+                      {opt}
+                    </option>
+                  ))}
+              </select>
+            </label>
             {/* Brand filter */}
-            <select
-              className={`w-[120px] border rounded-full bg-[#F3F3F3] px-3 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-brand-yellow ${
-                selectedBrand !== "All"
-                  ? "border-brand-yellow bg-yellow-50 font-semibold"
-                  : "border-gray-300"
-              }`}
-              value={selectedBrand}
-              onChange={(e) => {
-                setSelectedBrand(e.target.value);
-                updateUrlFilter("brand", e.target.value);
-              }}
-            >
-              <option value="All">All Brands</option>
-              {brandOptions
-                .filter((opt) => opt.value !== "All")
-                .map((opt) => (
-                  <option key={opt.value} value={opt.value}>
-                    {opt.label}
-                  </option>
-                ))}
-            </select>
+            <label className="flex items-center gap-2 rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-500 focus-within:border-brand-yellow focus-within:ring-2 focus-within:ring-brand-yellow/20">
+              <span className="shrink-0">Brand</span>
+              <select
+                className="min-w-0 flex-1 bg-transparent font-medium text-gray-800 outline-none"
+                value={selectedBrand}
+                onChange={(e) => {
+                  setSelectedBrand(e.target.value);
+                  updateUrlFilter("brand", e.target.value);
+                }}
+              >
+                <option value="All">All brands</option>
+                {brandOptions
+                  .filter((opt) => opt.value !== "All")
+                  .map((opt) => (
+                    <option key={opt.value} value={opt.value}>
+                      {opt.label}
+                    </option>
+                  ))}
+              </select>
+            </label>
             {/* Review sort */}
-            <select
-              className={`w-[150px] border rounded-full bg-[#F3F3F3] px-3 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-brand-yellow ${
-                selectedReview !== "All"
-                  ? "border-brand-yellow bg-yellow-50 font-semibold"
-                  : "border-gray-300"
-              }`}
-              value={selectedReview}
-              onChange={(e) => {
-                setSelectedReview(e.target.value);
-                updateUrlFilter("review", e.target.value);
-              }}
-            >
-              <option value="All">All Reviews</option>
-              <option value="review-desc">Review: High to Low</option>
-              <option value="review-asc">Review: Low to High</option>
-            </select>
+            <label className="flex items-center gap-2 rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-500 focus-within:border-brand-yellow focus-within:ring-2 focus-within:ring-brand-yellow/20">
+              <span className="shrink-0">Reviews</span>
+              <select
+                className="min-w-0 flex-1 bg-transparent font-medium text-gray-800 outline-none"
+                value={selectedReview}
+                onChange={(e) => {
+                  setSelectedReview(e.target.value);
+                  updateUrlFilter("review", e.target.value);
+                }}
+              >
+                <option value="All">Recommended</option>
+                <option value="review-desc">High to low</option>
+                <option value="review-asc">Low to high</option>
+              </select>
+            </label>
             {/* Price sort */}
-            <select
-              className={`w-[150px] border rounded-full bg-[#F3F3F3] px-3 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-brand-yellow ${
-                selectedPrice !== "All"
-                  ? "border-brand-yellow bg-yellow-50 font-semibold"
-                  : "border-gray-300"
-              }`}
-              value={selectedPrice}
-              onChange={(e) => {
-                setSelectedPrice(e.target.value);
-                updateUrlFilter("price", e.target.value);
-              }}
-            >
-              <option value="All">All Prices</option>
-              <option value="price-desc">Price: High to Low</option>
-              <option value="price-asc">Price: Low to High</option>
-            </select>
+            <label className="flex items-center gap-2 rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-500 focus-within:border-brand-yellow focus-within:ring-2 focus-within:ring-brand-yellow/20">
+              <span className="shrink-0">Price</span>
+              <select
+                className="min-w-0 flex-1 bg-transparent font-medium text-gray-800 outline-none"
+                value={selectedPrice}
+                onChange={(e) => {
+                  setSelectedPrice(e.target.value);
+                  updateUrlFilter("price", e.target.value);
+                }}
+              >
+                <option value="All">Any price</option>
+                <option value="price-desc">High to low</option>
+                <option value="price-asc">Low to high</option>
+              </select>
+            </label>
           </div>
         </div>
       </div>
