@@ -124,11 +124,9 @@ export function CategoryDropdown({
       >
         {categoryList.map((category) => {
           const currentPath = [...parentPath, category._id];
-          const shouldShow =
-            level === 0 ||
-            (isMobile
-              ? activePath.includes(category._id)
-              : isInHoverPath(category._id));
+          const shouldShow = isMobile
+            ? activePath.includes(category._id)
+            : level === 0 || isInHoverPath(category._id);
 
           return (
             <div

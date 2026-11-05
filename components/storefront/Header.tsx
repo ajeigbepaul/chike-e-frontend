@@ -83,9 +83,23 @@ function HeaderContent() {
   // Fetch unread notifications count
   const { data: unreadCount } = useQuery({
     queryKey: ["unread-notifications"],
-    queryFn: notificationService.getUnreadCount,
+    queryFn: () => notificationService.getUnreadCount("order"),
     enabled: !!session,
+    refetchInterval: 30000,
   });
+  const { data: unreadQuoteCount = 0 } = useQuery({
+    queryKey: ["unread-quote-notifications"],
+    queryFn: () => notificationService.getUnreadByType("quote"),
+    enabled: !!session,
+    refetchInterval: 30000,
+  });
+
+  const notificationBadge = (count: number) =>
+    count > 0 ? (
+      <span className="ml-2 inline-flex min-w-5 animate-pulse items-center justify-center rounded-full bg-red-500 px-1.5 py-0.5 text-xs font-bold text-white shadow-[0_0_10px_rgba(239,68,68,0.7)]">
+        {count}
+      </span>
+    ) : null;
 
   const handleSignOut = async () => {
     dispatch(clearCart());
@@ -284,7 +298,18 @@ function HeaderContent() {
                 } hover:bg-gray-100`}
                 onClick={() => setMobileMenuOpen(false)}
               >
-                Inbox
+                Inbox {notificationBadge(unreadCount || 0)}
+              </Link>
+              <Link
+                href="/account/quote"
+                className={`block px-4 py-2 ${
+                  pathname === "/account/quote"
+                    ? "text-brand-yellow"
+                    : "text-gray-900"
+                } hover:bg-gray-100`}
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                Quotes {notificationBadge(unreadQuoteCount)}
               </Link>
               <button
                 className="w-full flex items-center px-4 py-2 text-gray-900 hover:bg-gray-100"
@@ -442,18 +467,11 @@ function HeaderContent() {
                   </Link>
                   <Link
                     href="/account/inbox"
-                    className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-brand-yellow/10 relative"
+                    className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-brand-yellow/10"
                   >
                     <Bell className="mr-2 h-4 w-4" />
                     Inbox
-                    {unreadCount > 0 && (
-                      <Badge
-                        variant="secondary"
-                        className="ml-2 bg-red-500 text-white"
-                      >
-                        {unreadCount}
-                      </Badge>
-                    )}
+                    {notificationBadge(unreadCount || 0)}
                   </Link>
                   <Link
                     href="/account/quote"
@@ -461,6 +479,7 @@ function HeaderContent() {
                   >
                     <ShoppingBag className="mr-2 h-4 w-4" />
                     Quotes
+                    {notificationBadge(unreadQuoteCount)}
                   </Link>
                   <button
                     className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-brand-yellow/10"

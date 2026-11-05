@@ -148,6 +148,7 @@ export default function Home() {
     subtitle: advert.subTitle, // Transform subTitle to subtitle
     description: advert.description,
     cta: advert.cta,
+    ctaRoute: advert.ctaRoute,
     image: advert.image,
   }));
   console.log(featured, "This are the featured products");

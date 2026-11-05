@@ -18,6 +18,7 @@ interface HeroSectionProps {
     subtitle?: string;
     description?: string;
     cta?: string;
+    ctaRoute?: string;
     image: string;
   }>;
 }
@@ -34,14 +35,14 @@ const HeroSection = ({ heroSlides }: HeroSectionProps) => {
   if (!mounted) return null;
 
   return (
-    <section className="relative md:h-screen h-[60vh] w-full bg-gray-100">
+    <section className="relative h-[220px] w-full bg-gray-100 md:h-screen">
       {/* Custom navigation arrows */}
       <div
         ref={prevRef}
-        className="absolute z-30 left-6 top-1/2 -translate-y-1/2 w-12 h-12 flex items-center justify-center rounded-full bg-white text-gray-900 shadow-lg cursor-pointer transition hover:bg-brand-yellow"
+        className="absolute left-3 top-1/2 z-30 hidden h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-white text-gray-900 shadow-lg transition hover:bg-brand-yellow md:flex sm:left-6 sm:h-12 sm:w-12"
       >
         <svg
-          className="w-6 h-6"
+          className="h-5 w-5 sm:h-6 sm:w-6"
           fill="none"
           stroke="currentColor"
           strokeWidth={2}
@@ -56,10 +57,10 @@ const HeroSection = ({ heroSlides }: HeroSectionProps) => {
       </div>
       <div
         ref={nextRef}
-        className="absolute z-30 right-6 top-1/2 -translate-y-1/2 w-12 h-12 flex items-center justify-center rounded-full bg-white text-gray-900 shadow-lg cursor-pointer transition hover:bg-brand-yellow"
+        className="absolute right-3 top-1/2 z-30 hidden h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-white text-gray-900 shadow-lg transition hover:bg-brand-yellow md:flex sm:right-6 sm:h-12 sm:w-12"
       >
         <svg
-          className="w-6 h-6"
+          className="h-5 w-5 sm:h-6 sm:w-6"
           fill="none"
           stroke="currentColor"
           strokeWidth={2}
@@ -99,27 +100,27 @@ const HeroSection = ({ heroSlides }: HeroSectionProps) => {
                 src={image.image}
                 alt={image.title}
                 fill
-                className="object-cover"
+                className="object-cover object-center"
                 priority
               />
-              <div className="absolute inset-0 bg-black/40 flex flex-col items-start justify-center px-4 sm:px-8 md:px-12 lg:px-16 xl:px-24">
+              <div className="absolute inset-0 flex flex-col items-start justify-center bg-black/40 px-8 py-8 sm:px-8 md:px-12 md:py-12 lg:px-16 xl:px-24">
                 <div className="max-w-3xl">
-                  <h2 className="text-white text-xl sm:text-2xl md:text-4xl lg:text-5xl xl:text-6xl font-bold mb-2 sm:mb-3 md:mb-4 leading-tight">
+                  <h2 className="mb-5 text-2xl font-bold leading-tight text-white md:mb-4 md:text-4xl lg:text-5xl xl:text-6xl">
                     {image.title}
                   </h2>
                   {image.subtitle && (
-                    <h3 className="text-brand-yellow text-base sm:text-lg md:text-xl lg:text-2xl font-semibold mb-2 sm:mb-3 md:mb-4">
+                    <h3 className="mb-2 hidden text-base font-semibold leading-snug text-brand-yellow md:mb-4 md:block md:text-xl lg:text-2xl">
                       {image.subtitle}
                     </h3>
                   )}
                   {image.description && (
-                    <p className="text-white text-sm sm:text-base md:text-lg lg:text-xl mb-4 sm:mb-5 md:mb-6 leading-relaxed">
+                    <p className="mb-4 hidden text-sm leading-relaxed text-white md:mb-6 md:block md:text-lg lg:text-xl">
                       {image.description}
                     </p>
                   )}
                   {image.cta && (
-                    <Link href={"/products"}>
-                      <button className="bg-white hover:bg-yellow-500 text-gray-900 font-semibold sm:font-bold py-2 px-5 sm:py-3 sm:px-8 md:py-3 md:px-10 rounded-full text-sm sm:text-base md:text-lg transition-colors duration-300 shadow-lg hover:shadow-xl">
+                    <Link href={image.ctaRoute || "/products"}>
+                      <button className="rounded-full bg-white px-5 py-2 text-sm font-semibold text-gray-900 shadow-lg transition-colors duration-300 hover:bg-yellow-500 hover:shadow-xl sm:px-8 sm:py-3 sm:text-base md:px-10 md:py-3 md:text-lg">
                         {image.cta}
                       </button>
                     </Link>

@@ -30,6 +30,9 @@ const AdvertForm = ({
     initialData?.description ?? ""
   );
   const [cta, setCta] = useState(initialData?.cta ?? "");
+  const [ctaRoute, setCtaRoute] = useState<Advert["ctaRoute"]>(
+    initialData?.ctaRoute ?? "/category/indoor"
+  );
   const [image, setImage] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string>(
     initialData?.image ?? ""
@@ -68,6 +71,7 @@ const AdvertForm = ({
     formData.append("subTitle", subTitle);
     formData.append("description", description);
     formData.append("cta", cta);
+    formData.append("ctaRoute", ctaRoute ?? "/category/indoor");
     // Only send a file when one was picked, so the backend leaves the
     // existing image untouched on a text-only edit.
     if (image) formData.append("image", image);
@@ -113,6 +117,22 @@ const AdvertForm = ({
               onChange={(e) => setCta(e.target.value)}
               placeholder="e.g. Shop Now, Learn More"
             />
+          </div>
+          <div>
+            <label className="block font-medium mb-1 text-gray-700">
+              CTA destination
+            </label>
+            <select
+              value={ctaRoute}
+              onChange={(e) =>
+                setCtaRoute(e.target.value as Advert["ctaRoute"])
+              }
+              className="flex h-10 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm outline-none focus:border-brand-yellow focus:ring-2 focus:ring-brand-yellow/20"
+            >
+              <option value="/category/indoor">Indoor</option>
+              <option value="/category/outdoor">Outdoor</option>
+              <option value="/category/construction">Construction</option>
+            </select>
           </div>
         </div>
 

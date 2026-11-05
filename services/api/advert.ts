@@ -7,6 +7,7 @@ export interface Advert {
   subTitle: string;
   description: string;
   cta?: string;
+  ctaRoute?: "/category/indoor" | "/category/outdoor" | "/category/construction";
   createdAt?: string;
   updatedAt?: string;
 }

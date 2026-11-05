@@ -21,7 +21,9 @@ import {
   CheckCircle,
   AlertTriangle,
   ImageIcon,
+  Mail,
 } from "lucide-react";
+import notificationService from "@/services/api/notification";
 
 import { cn } from "@/lib/utils";
 
@@ -44,11 +46,16 @@ export default function AccountQuoteHistory() {
     queryFn: () => getQuotesForUser(userEmail!, page, 10),
     enabled: !!userEmail,
   });
+  const { data: unreadQuoteIds = [] } = useQuery({
+    queryKey: ["user-unread-quote-ids"],
+    queryFn: notificationService.getUnreadQuoteIds,
+    refetchInterval: 5000,
+  });
 
   const sendMessageMutation = useMutation({
     mutationFn: ({ quoteId, content }: { quoteId: string; content: string }) =>
       patchQuoteMessage(quoteId, {
-        sender: session?.user?.name || "Customer",
+        sender: "user",
         content,
       }),
     onSuccess: (updatedQuote) => {
@@ -148,7 +155,30 @@ export default function AccountQuoteHistory() {
               quotes.map((quote) => (
                 <button
                   key={quote._id}
-                  onClick={() => setSelectedQuote(quote)}
+                  onClick={() => {
+                    setSelectedQuote(quote);
+                    notificationService.getNotifications().then((items) =>
+                      Promise.all(
+                        items
+                          .filter(
+                            (item: any) =>
+                              !item.read &&
+                              item.type === "quote" &&
+                              String(item.quote) === quote._id
+                          )
+                          .map((item: any) =>
+                            notificationService.markAsRead(item._id)
+                          )
+                      )
+                    ).then(() => {
+                      queryClient.invalidateQueries({
+                        queryKey: ["user-unread-quote-ids"],
+                      });
+                      queryClient.invalidateQueries({
+                        queryKey: ["unread-quote-notifications"],
+                      });
+                    });
+                  }}
                   className={cn(
                     "w-full rounded-2xl border p-4 text-left transition-shadow",
                     selectedQuote?._id === quote._id
@@ -162,6 +192,12 @@ export default function AccountQuoteHistory() {
                         <span className="text-brand-blue">
                           #{quote._id.slice(-6)}
                         </span>
+                        {unreadQuoteIds.includes(quote._id) && (
+                          <span className="inline-flex items-center gap-1 rounded-full bg-red-50 px-2 py-1 text-xs font-semibold text-red-600">
+                            <Mail className="h-3 w-3 animate-pulse" />
+                            New message
+                          </span>
+                        )}
                         <span
                           className={cn(
                             "rounded-full border px-2 py-0.5",

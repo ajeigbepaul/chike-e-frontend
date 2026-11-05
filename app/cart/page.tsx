@@ -266,7 +266,7 @@ function CartPageContent() {
                             updateQuantity({ id: item.id, quantity: val })
                           );
                         }}
-                        className="text-center border rounded px-2 py-2 w-10"
+                        className="w-16 shrink-0 rounded border px-1 py-2 text-center sm:w-14"
                       />
                       <button
                         className="px-2 py-1 rounded border border-gray-300 bg-white text-lg disabled:opacity-50"

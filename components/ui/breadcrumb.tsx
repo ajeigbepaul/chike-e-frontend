@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import categoryService from "@/services/api/category";
+import type { Category } from "@/app/admin/categories/types";
 
 interface BreadcrumbItem {
   label: string;
@@ -18,6 +19,7 @@ interface BreadcrumbProps {
     category?: {
       name: string;
       _id: string;
+      slug?: string;
     } | string;
     categoryName?: string;
     name: string;
@@ -28,6 +30,10 @@ export function Breadcrumb({ items = [], showHome = true, productData }: Breadcr
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const categoryId = searchParams.get("category");
+  const productCategoryId =
+    productData && typeof productData.category === "object"
+      ? productData.category._id
+      : undefined;
 
   // Fetch category data using useQuery
   const { data: categoryData } = useQuery({
@@ -36,7 +42,11 @@ export function Breadcrumb({ items = [], showHome = true, productData }: Breadcr
     enabled: !!categoryId && pathname === "/products",
   });
 
-  console.log("Category data from service:", categoryData);
+  const { data: allCategoriesData } = useQuery({
+    queryKey: ["categories"],
+    queryFn: () => categoryService.getAllCategories(),
+    enabled: pathname.startsWith("/product/") && !!productCategoryId,
+  });
 
   // Generate breadcrumbs from pathname if no items provided
   const generateBreadcrumbs = (): BreadcrumbItem[] => {
@@ -88,20 +98,38 @@ export function Breadcrumb({ items = [], showHome = true, productData }: Breadcr
 
     // For product detail pages, add category breadcrumb after "Products"
     if (paths[0] === "product" && paths.length > 1 && productData) {
-      // Get category name from product data
-      let categoryName = "";
-      if (typeof productData.category === "object" && productData.category?.name) {
-        categoryName = productData.category.name;
-      } else if (productData.categoryName) {
-        categoryName = productData.categoryName;
+      const categories = allCategoriesData?.data || [];
+      const categoryMap = new Map(
+        categories.map((category: Category) => [category._id, category])
+      );
+      const categoryChain: Category[] = [];
+      let currentCategory = productCategoryId
+        ? categoryMap.get(productCategoryId)
+        : undefined;
+
+      while (currentCategory) {
+        categoryChain.unshift(currentCategory);
+        currentCategory = currentCategory.parent
+          ? categoryMap.get(currentCategory.parent)
+          : undefined;
       }
 
-      if (categoryName) {
-        // Insert category breadcrumb between "Products" and product name
-        breadcrumbs.splice(1, 0, {
-          label: categoryName,
-          href: "/products", // Link back to products page
-        });
+      if (categoryChain.length === 0 && typeof productData.category === "object") {
+        categoryChain.push(productData.category as Category);
+      }
+
+      if (categoryChain.length > 0) {
+        breadcrumbs.splice(
+          1,
+          0,
+          ...categoryChain.map((category, index) => ({
+            label: category.name,
+            href:
+              index === categoryChain.length - 1
+                ? `/products?category=${category._id}`
+                : undefined,
+          }))
+        );
       }
     }
 
@@ -112,7 +140,7 @@ export function Breadcrumb({ items = [], showHome = true, productData }: Breadcr
         : categoryId;
       breadcrumbs.push({
         label: categoryName || categoryId, // Use fetched name or fallback to ID
-        href: "/products", // Route back to products page without category filter
+        href: undefined,
       });
     }
 

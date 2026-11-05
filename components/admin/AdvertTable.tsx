@@ -72,17 +72,17 @@ export function AdvertTable({ adverts, isLoading }: AdvertTableProps) {
 
   return (
     <>
-      <div className="rounded-md border">
-        <Table>
+      <div className="w-full min-w-0 overflow-hidden rounded-md border">
+        <Table className="w-full table-fixed">
           <TableHeader>
             <TableRow>
-              <TableHead className="w-[80px]">Image</TableHead>
-              <TableHead>Title</TableHead>
-              <TableHead>SubTitle</TableHead>
-              <TableHead>Description</TableHead>
-              <TableHead>CTA</TableHead>
-              <TableHead>Created</TableHead>
-              <TableHead className="w-[120px]">Actions</TableHead>
+              <TableHead className="w-[7%]">Image</TableHead>
+              <TableHead className="w-[18%]">Title</TableHead>
+              <TableHead className="w-[20%]">SubTitle</TableHead>
+              <TableHead className="w-[20%]">Description</TableHead>
+              <TableHead className="w-[11%]">CTA</TableHead>
+              <TableHead className="w-[12%]">Created</TableHead>
+              <TableHead className="w-[12%]">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -113,19 +113,25 @@ export function AdvertTable({ adverts, isLoading }: AdvertTableProps) {
                       className="w-16 h-8 object-cover rounded border"
                     />
                   </TableCell>
-                  <TableCell className="font-medium">{advert.title}</TableCell>
-                  <TableCell>{advert.subTitle}</TableCell>
-                  <TableCell className="max-w-[280px] truncate text-gray-600">
+                  <TableCell className="max-w-0 truncate font-medium">
+                    {advert.title}
+                  </TableCell>
+                  <TableCell className="max-w-0 truncate">
+                    {advert.subTitle}
+                  </TableCell>
+                  <TableCell className="max-w-0 truncate text-gray-600">
                     {advert.description}
                   </TableCell>
-                  <TableCell>{advert.cta || "—"}</TableCell>
-                  <TableCell className="whitespace-nowrap text-gray-600">
+                  <TableCell className="max-w-0 truncate">
+                    {advert.cta || "—"}
+                  </TableCell>
+                  <TableCell className="truncate text-gray-600">
                     {advert.createdAt
                       ? format(new Date(advert.createdAt), "MMM d, yyyy")
                       : "—"}
                   </TableCell>
                   <TableCell>
-                    <div className="flex space-x-1">
+                    <div className="flex min-w-0 space-x-1">
                       <Button
                         variant="outline"
                         size="sm"
@@ -177,7 +183,7 @@ export function AdvertTable({ adverts, isLoading }: AdvertTableProps) {
 
           {advertToView && (
             <div className="space-y-4">
-              <div className="relative w-full aspect-[2/1] rounded-lg overflow-hidden bg-gray-100">
+              <div className="relative w-full aspect-[4/1] rounded-lg overflow-hidden bg-gray-100">
                 <Image
                   src={advertToView.image}
                   alt={advertToView.title}
@@ -185,18 +191,12 @@ export function AdvertTable({ adverts, isLoading }: AdvertTableProps) {
                   className="object-cover"
                 />
                 <div className="absolute inset-0 bg-black/40" />
-                <div className="absolute inset-0 flex flex-col justify-center p-8 text-white">
-                  <p className="text-sm md:text-base font-medium text-brand-yellow">
-                    {advertToView.subTitle}
-                  </p>
-                  <h2 className="text-2xl md:text-4xl font-bold mt-1">
+                <div className="absolute inset-0 flex flex-col justify-center p-6 text-white">
+                  <h2 className="text-2xl font-bold">
                     {advertToView.title}
                   </h2>
-                  <p className="mt-2 text-sm md:text-base max-w-lg text-gray-100">
-                    {advertToView.description}
-                  </p>
                   {advertToView.cta && (
-                    <span className="mt-4 inline-block w-fit bg-brand-yellow text-black font-semibold px-5 py-2 rounded">
+                    <span className="mt-3 inline-block w-fit rounded bg-brand-yellow px-5 py-2 font-semibold text-black">
                       {advertToView.cta}
                     </span>
                   )}

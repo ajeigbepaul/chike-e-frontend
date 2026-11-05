@@ -5,6 +5,7 @@ import { cn } from "@/lib/utils";
 import { useQuery } from "@tanstack/react-query";
 import categoryService from "@/services/api/category";
 import { CategoryDropdown } from "./CategoryDropdown";
+import { ChevronRight } from "lucide-react";
 import { Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 // We'll get main categories from the API instead of hardcoded data
@@ -104,10 +105,10 @@ export function CategoryNavigation({ className }: CategoryNavigationProps) {
                 onCategorySelect={handleHeaderCategorySelect}
                 trigger={
                   <button
-                    className={`p-1 font-semibold cursor-pointer text-brand-yellow pr-3 transition-colors focus:outline-none`}
+                    className="flex items-center gap-1 pr-3 font-semibold text-brand-yellow transition-colors focus:outline-none"
                   >
                     All Category
-                    {/* <ChevronDown className="h-4 w-4" /> */}
+                    <ChevronRight className="h-4 w-4" />
                   </button>
                 }
               />

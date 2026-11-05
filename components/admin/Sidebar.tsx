@@ -17,6 +17,9 @@ import {
   FileText,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useQuery } from "@tanstack/react-query";
+import notificationService from "@/services/api/notification";
+import { useSession } from "next-auth/react";
 
 type NavItem = {
   name: string;
@@ -30,7 +33,30 @@ type NavItem = {
 
 export function Sidebar() {
   const pathname = usePathname();
+  const { data: session } = useSession();
   const [openSubmenus, setOpenSubmenus] = useState<Record<string, boolean>>({});
+  const { data: quoteCount = 0 } = useQuery({
+    queryKey: ["admin-unread-quote-notifications"],
+    queryFn: () => notificationService.getUnreadByType("quote"),
+    enabled: !!session,
+    refetchInterval: 5000,
+  });
+  const { data: orderCount = 0 } = useQuery({
+    queryKey: ["admin-unread-order-notifications"],
+    queryFn: () => notificationService.getUnreadByType("order"),
+    enabled: !!session,
+    refetchInterval: 5000,
+  });
+
+  const countFor = (name: string) =>
+    name === "Quotes" ? quoteCount : name === "Orders" ? orderCount : 0;
+
+  const notificationBadge = (count: number) =>
+    count > 0 ? (
+      <span className="inline-flex min-w-5 animate-pulse items-center justify-center rounded-full bg-red-500 px-1.5 py-0.5 text-xs font-bold text-white shadow-[0_0_10px_rgba(239,68,68,0.7)]">
+        {count}
+      </span>
+    ) : null;
 
   const navItems: NavItem[] = [
     {
@@ -169,7 +195,10 @@ export function Sidebar() {
                     >
                       {item.icon}
                     </span>
-                    <span className="text-sm font-medium">{item.name}</span>
+                    <span className="flex items-center gap-2 text-sm font-medium">
+                      {item.name}
+                      {notificationBadge(countFor(item.name))}
+                    </span>
                   </div>
                   <span className="text-gray-500">
                     {openSubmenus[item.name] ? (
@@ -197,7 +226,10 @@ export function Sidebar() {
                     >
                       {item.icon}
                     </span>
-                    <span className="text-sm font-medium">{item.name}</span>
+                    <span className="flex items-center gap-2 text-sm font-medium">
+                      {item.name}
+                      {notificationBadge(countFor(item.name))}
+                    </span>
                   </div>
                 </Link>
               )}

@@ -26,7 +26,11 @@ export default function InboxPage() {
   const markAsReadMutation = useMutation({
     mutationFn: (id: string) => notificationService.markAsRead(id),
     onSuccess: () =>
-      queryClient.invalidateQueries({ queryKey: ["notifications"] }),
+      Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["notifications"] }),
+        queryClient.invalidateQueries({ queryKey: ["unread-notifications"] }),
+        queryClient.invalidateQueries({ queryKey: ["unread-quote-notifications"] }),
+      ]),
   });
   const [openId, setOpenId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState("all");
@@ -40,9 +44,10 @@ export default function InboxPage() {
 
   const filtered =
     activeTab === "all"
-      ? notifications
+      ? notifications.filter((notification: any) => notification.type !== "quote")
       : notifications.filter(
           (n: any) =>
+            n.type !== "quote" &&
             (n.status || "").replace(" ", "-").toLowerCase() === activeTab
         );
 
@@ -107,7 +112,9 @@ export default function InboxPage() {
                   <div className="flex-1 space-y-2">
                     <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
                       <p className="text-sm font-semibold text-gray-900">
-                        Order #{msg.order}
+                        {msg.type === "quote"
+                          ? "Quote update"
+                          : `Order #${msg.order}`}
                       </p>
                       <span className="inline-flex h-fit items-center rounded-full bg-gray-100 px-2.5 py-1 text-xs font-semibold uppercase tracking-wide text-gray-700">
                         {status}
@@ -134,7 +141,11 @@ export default function InboxPage() {
                   <div className="space-y-3 border-t border-gray-100 bg-gray-50 px-4 pt-4 pb-3 text-sm text-gray-700 animate-fade-in">
                     <p>{msg.message}</p>
                     <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-gray-400">
-                      <span>Order: #{msg.order}</span>
+                      <span>
+                        {msg.type === "quote"
+                          ? "Quote notification"
+                          : `Order: #${msg.order}`}
+                      </span>
                       <span className="hidden text-gray-300 sm:block">•</span>
                       <span>Status: {status}</span>
                     </div>

@@ -5,6 +5,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
 import { getQuoteRequests, patchQuoteMessage, updateQuoteStatus, QuoteResponse } from '@/services/api/quote';
 import QuoteConversation from '@/components/QuoteConversation';
+import notificationService from '@/services/api/notification';
 import {
   FileText,
   User,
@@ -35,6 +36,11 @@ export default function AdminQuoteHistory() {
   const { data, isLoading, isError, error } = useQuery({
     queryKey: ['allQuotes', page],
     queryFn: () => getQuoteRequests(page, 10),
+  });
+  const { data: unreadQuoteIds = [] } = useQuery({
+    queryKey: ['admin-unread-quote-ids'],
+    queryFn: notificationService.getUnreadQuoteIds,
+    refetchInterval: 5000,
   });
 
   const updateStatusMutation = useMutation({
@@ -78,8 +84,9 @@ export default function AdminQuoteHistory() {
   });
 
   const handleSendMessage = (message: string) => {
-    if (selectedQuote) {
-      sendMessageMutation.mutate({ quoteId: selectedQuote._id, content: message });
+    const content = message.trim();
+    if (selectedQuote && content) {
+      sendMessageMutation.mutate({ quoteId: selectedQuote._id, content });
     }
   };
 
@@ -203,12 +210,34 @@ export default function AdminQuoteHistory() {
                   setSelectedQuote(quote);
                   setApprovedPrice(quote.approvedPrice);
                   setApprovedQuantity(quote.approvedQuantity || quote.quantity);
+                  const notifications = notificationService.getNotifications();
+                  notifications.then((items) =>
+                    Promise.all(
+                      items
+                        .filter(
+                          (item: any) =>
+                            !item.read &&
+                            item.type === 'quote' &&
+                            String(item.quote) === quote._id
+                        )
+                        .map((item: any) => notificationService.markAsRead(item._id))
+                    )
+                  ).then(() => {
+                    queryClient.invalidateQueries({ queryKey: ['admin-unread-quote-ids'] });
+                    queryClient.invalidateQueries({ queryKey: ['admin-unread-quote-notifications'] });
+                  });
                 }}
               >
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-2">
                       <span className="font-bold text-brand-blue">#{quote._id.slice(-6)}</span>
+                      {unreadQuoteIds.includes(quote._id) && (
+                        <span className="inline-flex items-center gap-1 rounded-full bg-red-50 px-2 py-1 text-xs font-semibold text-red-600">
+                          <Mail className="h-3 w-3 animate-pulse" />
+                          New quote
+                        </span>
+                      )}
                       <span className={`text-xs font-semibold px-2 py-1 rounded-full border ${getStatusColor(quote.status)}`}>
                         {quote.status}
                       </span>

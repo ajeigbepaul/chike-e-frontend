@@ -194,6 +194,7 @@ export const patchQuoteMessage = async (
     console.error('Error patching quote message:', error);
     throw new Error(
       error.response?.data?.message ||
+      error.response?.data?.errors?.map((item: { message?: string }) => item.message).filter(Boolean).join(', ') ||
       error.message ||
       'Failed to patch quote message'
     );
