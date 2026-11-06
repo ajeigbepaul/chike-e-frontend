@@ -47,9 +47,21 @@ export function Sidebar() {
     enabled: !!session,
     refetchInterval: 5000,
   });
+  const { data: vendorCount = 0 } = useQuery({
+    queryKey: ["admin-unread-vendor-notifications"],
+    queryFn: () => notificationService.getUnreadByType("vendor"),
+    enabled: !!session,
+    refetchInterval: 5000,
+  });
 
   const countFor = (name: string) =>
-    name === "Quotes" ? quoteCount : name === "Orders" ? orderCount : 0;
+    name === "Quotes"
+      ? quoteCount
+      : name === "Orders"
+      ? orderCount
+      : name === "Vendors"
+      ? vendorCount
+      : 0;
 
   const notificationBadge = (count: number) =>
     count > 0 ? (

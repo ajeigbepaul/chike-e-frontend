@@ -32,6 +32,7 @@ import { format } from "date-fns";
 import Spinner from "@/components/Spinner";
 import { useState } from "react";
 import toast from "react-hot-toast";
+import notificationService from "@/services/api/notification";
 
 // Dynamically import the dialog component with no SSR
 const VendorInviteDialog = dynamic(
@@ -77,6 +78,11 @@ export default function VendorsPage() {
 
   const vendors = data || [];
   const pendingInvitations: VendorInvitation[] = invitationsData || [];
+  const { data: unreadVendorIds = [] } = useQuery({
+    queryKey: ["admin-unread-vendor-ids"],
+    queryFn: notificationService.getUnreadVendorIds,
+    refetchInterval: 5000,
+  });
 
   // Merge vendors and invitations for display
   const allRows = [
@@ -126,8 +132,25 @@ export default function VendorsPage() {
     try {
       const response = await vendorService.approveVendorRequest(id);
       if (response.success) {
+        const notifications = await notificationService.getNotifications();
+        await Promise.all(
+          notifications
+            .filter(
+              (notification: any) =>
+                !notification.read &&
+                notification.type === "vendor" &&
+                String(notification.vendor) === id
+            )
+            .map((notification: any) =>
+              notificationService.markAsRead(notification._id)
+            )
+        );
         toast.success("Vendor request approved and invitation sent successfully");
         queryClient.invalidateQueries({ queryKey: ["pending-invitations"] });
+        queryClient.invalidateQueries({ queryKey: ["admin-unread-vendor-ids"] });
+        queryClient.invalidateQueries({
+          queryKey: ["admin-unread-vendor-notifications"],
+        });
       } else {
         throw new Error(response.message || "Failed to approve request");
       }
@@ -257,6 +280,12 @@ export default function VendorsPage() {
                       : "-"}
                   </TableCell>
                   <TableCell>
+                    {row.isInvitation && unreadVendorIds.includes(row.id) && (
+                      <span className="mb-2 inline-flex items-center gap-1 rounded-full bg-red-50 px-2 py-1 text-xs font-semibold text-red-600">
+                        <Mail className="h-3 w-3 animate-pulse" />
+                        New vendor
+                      </span>
+                    )}
                     {row.isInvitation ? (
                       <div className="flex gap-2">
                         {row.status === "request" ? (

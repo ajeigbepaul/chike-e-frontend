@@ -9,12 +9,14 @@ export const markAsRead = async (id: string) => {
   await api.patch(`/notifications/${id}/read`);
 };
 
-export const getUnreadCount = async (type: 'order' | 'quote' = 'order') => {
+export type NotificationType = 'order' | 'quote' | 'vendor';
+
+export const getUnreadCount = async (type: NotificationType = 'order') => {
   const response = await api.get(`/notifications/unread-count?type=${type}`);
   return response.data.data.count;
 };
 
-export const getUnreadByType = async (type: 'order' | 'quote') => {
+export const getUnreadByType = async (type: NotificationType) => {
   const response = await api.get(`/notifications/unread-count?type=${type}`);
   return response.data.data.count;
 };
@@ -37,11 +39,30 @@ export const getUnreadQuoteIds = async (): Promise<string[]> => {
     .filter((quoteId: string | undefined): quoteId is string => !!quoteId);
 };
 
+export const getUnreadVendorIds = async (): Promise<string[]> => {
+  const notifications = await getNotifications();
+  return notifications
+    .filter((notification: { type?: string; vendor?: string | { _id?: string }; read?: boolean }) => {
+      const vendorId =
+        typeof notification.vendor === 'string'
+          ? notification.vendor
+          : notification.vendor?._id;
+      return notification.type === 'vendor' && !notification.read && !!vendorId;
+    })
+    .map((notification: { vendor?: string | { _id?: string } }) =>
+      typeof notification.vendor === 'string'
+        ? notification.vendor
+        : notification.vendor?._id
+    )
+    .filter((vendorId: string | undefined): vendorId is string => !!vendorId);
+};
+
 const notificationService = {
   getNotifications,
   markAsRead,
   getUnreadCount,
   getUnreadByType,
   getUnreadQuoteIds,
+  getUnreadVendorIds,
 };
 export default notificationService; 
