@@ -21,6 +21,7 @@ import { Card } from "@/components/ui/card";
 import { toast } from "react-hot-toast";
 import vendorService, { VendorOnboardingRequest } from "@/services/api/vendor";
 import Spinner from "@/components/Spinner";
+import { Eye, EyeOff, LockKeyhole, MapPin, Phone } from "lucide-react";
 
 const onboardingSchema = z
   .object({
@@ -43,6 +44,8 @@ function VendorOnboardingContent() {
   const [isVerifying, setIsVerifying] = useState(true);
   const [invitation, setInvitation] = useState<any>(null);
   const [directOnboarding, setDirectOnboarding] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const form = useForm<z.infer<typeof onboardingSchema>>({
     resolver: zodResolver(onboardingSchema),
@@ -172,19 +175,22 @@ function VendorOnboardingContent() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full space-y-8">
-        <div>
-          <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
+    <div className="min-h-[calc(100vh-4rem)] bg-gradient-to-br from-[#fffaf0] via-white to-[#f7f8fa] px-4 py-8 sm:px-6 sm:py-12">
+      <div className="mx-auto w-full max-w-2xl space-y-8">
+        <div className="text-center">
+          <p className="mb-3 text-sm font-semibold uppercase tracking-[0.2em] text-brand-yellow">
+            Vendor onboarding
+          </p>
+          <h2 className="text-2xl font-extrabold text-gray-900 sm:text-4xl">
             Complete Your Registration
           </h2>
-          <p className="mt-2 text-center text-sm text-gray-600">
+          <p className="mx-auto mt-3 max-w-lg text-sm leading-6 text-gray-600 sm:text-base">
             Welcome, {welcomeName}! Please complete your vendor profile.
           </p>
         </div>
-        <Card className="p-6">
+        <Card className="overflow-hidden border-gray-200 bg-white p-5 shadow-xl shadow-gray-200/50 sm:p-8">
           <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
               <FormField
                 control={form.control}
                 name="password"
@@ -192,7 +198,22 @@ function VendorOnboardingContent() {
                   <FormItem>
                     <FormLabel>Password</FormLabel>
                     <FormControl>
-                      <Input type="password" {...field} />
+                      <div className="relative">
+                        <LockKeyhole className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+                        <Input
+                          type={showPassword ? "text" : "password"}
+                          className="h-11 pl-10 pr-11"
+                          {...field}
+                        />
+                        <button
+                          type="button"
+                          aria-label={showPassword ? "Hide password" : "Show password"}
+                          onClick={() => setShowPassword((visible) => !visible)}
+                          className="absolute right-2 top-1/2 -translate-y-1/2 rounded-md p-2 text-gray-500 hover:bg-gray-100 hover:text-gray-900"
+                        >
+                          {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                        </button>
+                      </div>
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -205,7 +226,22 @@ function VendorOnboardingContent() {
                   <FormItem>
                     <FormLabel>Confirm Password</FormLabel>
                     <FormControl>
-                      <Input type="password" {...field} />
+                      <div className="relative">
+                        <LockKeyhole className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+                        <Input
+                          type={showConfirmPassword ? "text" : "password"}
+                          className="h-11 pl-10 pr-11"
+                          {...field}
+                        />
+                        <button
+                          type="button"
+                          aria-label={showConfirmPassword ? "Hide confirm password" : "Show confirm password"}
+                          onClick={() => setShowConfirmPassword((visible) => !visible)}
+                          className="absolute right-2 top-1/2 -translate-y-1/2 rounded-md p-2 text-gray-500 hover:bg-gray-100 hover:text-gray-900"
+                        >
+                          {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                        </button>
+                      </div>
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -218,7 +254,10 @@ function VendorOnboardingContent() {
                   <FormItem>
                     <FormLabel>Phone Number</FormLabel>
                     <FormControl>
-                      <Input {...field} />
+                      <div className="relative">
+                        <Phone className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+                        <Input className="h-11 pl-10" {...field} />
+                      </div>
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -231,7 +270,10 @@ function VendorOnboardingContent() {
                   <FormItem>
                     <FormLabel>Address</FormLabel>
                     <FormControl>
-                      <Textarea {...field} />
+                      <div className="relative">
+                        <MapPin className="pointer-events-none absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                        <Textarea className="min-h-24 pl-10" {...field} />
+                      </div>
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -244,13 +286,17 @@ function VendorOnboardingContent() {
                   <FormItem>
                     <FormLabel>Bio</FormLabel>
                     <FormControl>
-                      <Textarea {...field} />
+                      <Textarea className="min-h-24" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
-              <Button type="submit" className="w-full" disabled={isLoading}>
+              <Button
+                type="submit"
+                className="h-11 w-full bg-brand-yellow font-semibold text-gray-900 shadow-sm hover:bg-brand-yellow/90"
+                disabled={isLoading}
+              >
                 {isLoading ? (
                   <>
                     {/* <Spinner className="mr-2 h-2 w-2" /> */}

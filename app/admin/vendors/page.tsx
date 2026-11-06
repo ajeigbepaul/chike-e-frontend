@@ -48,6 +48,7 @@ export default function VendorsPage() {
   const queryClient = useQueryClient();
   const [search, setSearch] = useState("");
   const [showInviteDialog, setShowInviteDialog] = useState(false);
+  const [resendingInvitationId, setResendingInvitationId] = useState<string | null>(null);
 
   const { data, isLoading, isError, error, refetch } = useQuery({
     queryKey: ["vendors"],
@@ -165,13 +166,19 @@ export default function VendorsPage() {
   };
 
   const resendMutation = useMutation({
-    mutationFn: (id: string) => vendorService.resendInvitation(id),
+    mutationFn: (id: string) => {
+      setResendingInvitationId(id);
+      return vendorService.resendInvitation(id);
+    },
     onSuccess: (data) => {
       toast.success(data.message || "Invitation resent successfully");
       queryClient.invalidateQueries({ queryKey: ["pending-invitations"] });
     },
     onError: (error: any) => {
       toast.error(error.message || "Failed to resend invitation");
+    },
+    onSettled: () => {
+      setResendingInvitationId(null);
     },
   });
 
@@ -301,11 +308,11 @@ export default function VendorsPage() {
                           <button
                             className="inline-flex items-center px-2 py-1 text-xs font-medium rounded bg-blue-100 text-blue-800 hover:bg-blue-200 transition"
                             onClick={() => resendMutation.mutate(row.id)}
-                            disabled={resendMutation.isPending}
+                            disabled={resendingInvitationId === row.id}
                             title="Resend Invitation"
                           >
                             <Mail className="h-4 w-4 mr-1" />
-                            {resendMutation.isPending ? "Resending..." : "Resend"}
+                            {resendingInvitationId === row.id ? "Resending..." : "Resend"}
                           </button>
                         )}
                         <button
