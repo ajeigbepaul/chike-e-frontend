@@ -28,6 +28,7 @@ import {
   DollarSign,
   RefreshCw,
   Plus,
+  ArrowUpRight,
 } from "lucide-react";
 import vendorService from "@/services/api/vendor";
 
@@ -367,11 +368,21 @@ export default function VendorDashboard() {
   return (
     <>
       {/* <VendorHeader /> */}
-      <div className="p-6 space-y-6">
-        <div className="flex justify-between items-center">
-          <h1 className="text-2xl font-bold">Vendor Dashboard</h1>
+      <div className="mx-auto w-full max-w-7xl space-y-8">
+        <div className="flex flex-col gap-4 border-b border-gray-200 pb-6 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <p className="text-sm font-semibold uppercase tracking-[0.16em] text-brand-yellow">
+              Overview
+            </p>
+            <h1 className="mt-1 text-2xl font-bold tracking-tight text-gray-900 sm:text-3xl">
+              Vendor Dashboard
+            </h1>
+            <p className="mt-2 text-sm text-gray-500">
+              Monitor your products, orders, and sales performance.
+            </p>
+          </div>
           <div className="flex gap-2">
-            <Button variant="outline" onClick={handleRefresh}>
+            <Button variant="outline" onClick={handleRefresh} className="border-gray-300">
               <RefreshCw className="h-4 w-4 mr-2" />
               Refresh
             </Button>
@@ -379,53 +390,59 @@ export default function VendorDashboard() {
         </div>
 
         {/* Stats Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+          <Card className="border-gray-200 shadow-sm">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
+              <CardTitle className="text-sm font-medium text-gray-500">
                 Total Products
               </CardTitle>
-              <Package className="h-4 w-4 text-muted-foreground" />
+              <span className="rounded-lg bg-brand-yellow/15 p-2 text-brand-yellow">
+                <Package className="h-4 w-4" />
+              </span>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">
+              <div className="text-3xl font-bold tracking-tight text-gray-900">
                 {dashboardData?.stats?.totalProducts || 0}
               </div>
-              <p className="text-xs text-muted-foreground">
+              <p className="mt-1 text-xs text-gray-500">
                 {dashboardData?.stats?.lowStockProducts || 0} low in stock
               </p>
             </CardContent>
           </Card>
 
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">
+          <Card className="border-gray-200 shadow-sm">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
+              <CardTitle className="text-sm font-medium text-gray-500">
                 Total Orders
               </CardTitle>
-              <ShoppingCart className="h-4 w-4 text-muted-foreground" />
+              <span className="rounded-lg bg-blue-50 p-2 text-blue-600">
+                <ShoppingCart className="h-4 w-4" />
+              </span>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">
+              <div className="text-3xl font-bold tracking-tight text-gray-900">
                 {dashboardData?.stats?.totalOrders || 0}
               </div>
-              <p className="text-xs text-muted-foreground">
+              <p className="mt-1 text-xs text-gray-500">
                 {dashboardData?.stats?.pendingOrders || 0} pending orders
               </p>
             </CardContent>
           </Card>
 
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">
+          <Card className="border-gray-200 shadow-sm">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
+              <CardTitle className="text-sm font-medium text-gray-500">
                 Total Revenue
               </CardTitle>
-              <DollarSign className="h-4 w-4 text-muted-foreground" />
+              <span className="rounded-lg bg-emerald-50 p-2 text-emerald-600">
+                <DollarSign className="h-4 w-4" />
+              </span>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">
-                #{(dashboardData?.stats?.totalRevenue || 0).toFixed(2)}
+              <div className="text-3xl font-bold tracking-tight text-gray-900">
+                ₦{(dashboardData?.stats?.totalRevenue || 0).toLocaleString()}
               </div>
-              <p className="text-xs text-muted-foreground">
+              <p className="mt-1 text-xs text-gray-500">
                 {dashboardData?.stats?.totalSales || 0} total sales
               </p>
             </CardContent>
@@ -436,18 +453,23 @@ export default function VendorDashboard() {
         <VendorProductsGrid />
 
         {/* Recent Orders */}
-        <Card>
+        <Card className="overflow-hidden border-gray-200 shadow-sm">
           <CardHeader>
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div>
-                <CardTitle>Recent Orders</CardTitle>
-                <CardDescription>
+                <CardTitle className="text-lg">Recent Orders</CardTitle>
+                <CardDescription className="mt-1">
                   Latest orders from your customers
                 </CardDescription>
               </div>
+              <Button variant="ghost" size="sm" onClick={handleViewAllOrders} className="w-fit text-brand-yellow hover:text-brand-yellow/80">
+                View all <ArrowUpRight className="ml-1 h-4 w-4" />
+              </Button>
             </div>
           </CardHeader>
-          <CardContent>
+          <CardContent className="p-0">
+            {dashboardData?.recentOrders?.length ? (
+            <div className="overflow-x-auto">
             <Table>
               <TableHeader>
                 <TableRow>
@@ -493,6 +515,16 @@ export default function VendorDashboard() {
                 ))}
               </TableBody>
             </Table>
+            </div>
+            ) : (
+              <div className="flex flex-col items-center justify-center border-t border-gray-100 px-6 py-12 text-center">
+                <span className="rounded-full bg-gray-100 p-3 text-gray-400">
+                  <ShoppingCart className="h-6 w-6" />
+                </span>
+                <p className="mt-3 font-medium text-gray-900">No orders yet</p>
+                <p className="mt-1 text-sm text-gray-500">Orders from your customers will appear here.</p>
+              </div>
+            )}
           </CardContent>
         </Card>
 
