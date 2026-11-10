@@ -11,6 +11,7 @@ import {
   Bell,
   LogIn,
   Heart,
+  Store,
 } from "lucide-react";
 import { useDispatch, useSelector } from "react-redux";
 import { RootState } from "@/store/store";
@@ -27,10 +28,14 @@ import { useQuery } from "@tanstack/react-query";
 import categoryService from "@/services/api/category";
 import { Badge } from "@/components/ui/badge";
 import notificationService from "@/services/api/notification";
+import vendorService from "@/services/api/vendor";
 
 function HeaderContent() {
   const dispatch = useDispatch();
-  const { data: session } = useSession();
+  const { data: session, update: updateSession } = useSession();
+  const sessionRoles = session?.user?.roles || [session?.user?.role || ""];
+  const hasVendorRole =
+    sessionRoles.includes("vendor") || session?.user?.role === "vendor";
   const cartItems = useSelector((state: RootState) => state.cart.items);
   const cartItemCount = cartItems.reduce(
     (total, item) => total + item.quantity,
@@ -93,6 +98,21 @@ function HeaderContent() {
     enabled: !!session,
     refetchInterval: 30000,
   });
+  const { data: vendorProfileAvailable = false } = useQuery({
+    queryKey: ["vendor-profile-access", session?.user?.id],
+    queryFn: async () => (await vendorService.getProfile()).success,
+    enabled: !!session?.user,
+    refetchInterval: 30000,
+    retry: false,
+  });
+
+  useEffect(() => {
+    if (vendorProfileAvailable && !hasVendorRole) {
+      updateSession().catch((error) => {
+        console.error("Failed to refresh account roles:", error);
+      });
+    }
+  }, [vendorProfileAvailable, hasVendorRole, updateSession]);
 
   const notificationBadge = (count: number) =>
     count > 0 ? (
@@ -311,6 +331,19 @@ function HeaderContent() {
               >
                 Quotes {notificationBadge(unreadQuoteCount)}
               </Link>
+              {hasVendorRole && (
+                <Link
+                  href="/vendor/dashboard"
+                  className={`block px-4 py-2 ${
+                    pathname.startsWith("/vendor")
+                      ? "text-brand-yellow"
+                      : "text-gray-900"
+                  } hover:bg-gray-100`}
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  Vendor Dashboard
+                </Link>
+              )}
               <button
                 className="w-full flex items-center px-4 py-2 text-gray-900 hover:bg-gray-100"
                 onClick={() => {
@@ -481,6 +514,15 @@ function HeaderContent() {
                     Quotes
                     {notificationBadge(unreadQuoteCount)}
                   </Link>
+                  {hasVendorRole && (
+                    <Link
+                      href="/vendor/dashboard"
+                      className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-brand-yellow/10"
+                    >
+                      <Store className="mr-2 h-4 w-4" />
+                      Vendor Dashboard
+                    </Link>
+                  )}
                   <button
                     className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-brand-yellow/10"
                     onClick={handleSignOut}

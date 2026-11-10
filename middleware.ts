@@ -215,12 +215,15 @@ export async function middleware(request: NextRequest) {
 
   // Get user role from token
   const userRole = token.role as string;
+  const userRoles = Array.isArray(token.roles)
+    ? (token.roles as string[])
+    : [userRole];
   console.log("User role:", userRole);
   console.log("Current path:", path);
 
   // Role-based access control
   if (path.startsWith("/admin")) {
-    if (userRole !== "admin") {
+    if (!userRoles.includes("admin")) {
       console.log("Non-admin user trying to access admin route");
       return NextResponse.redirect(new URL("/unauthorized", request.url));
     }
@@ -229,7 +232,7 @@ export async function middleware(request: NextRequest) {
   }
 
   if (path.startsWith("/vendor") && !path.startsWith("/vendor/onboarding")) {
-    if (userRole !== "vendor") {
+    if (!userRoles.includes("vendor")) {
       console.log("Non-vendor user trying to access vendor route");
       return NextResponse.redirect(new URL("/unauthorized", request.url));
     }
@@ -241,7 +244,7 @@ export async function middleware(request: NextRequest) {
   const [matchingRoute, params] = findMatchingRoute(path);
   if (matchingRoute) {
     const allowedRoles = protectedRoutes[matchingRoute];
-    if (!allowedRoles.includes(userRole)) {
+    if (!allowedRoles.some((role) => userRoles.includes(role))) {
       console.log("User role not allowed for route");
       return NextResponse.redirect(new URL("/unauthorized", request.url));
     }

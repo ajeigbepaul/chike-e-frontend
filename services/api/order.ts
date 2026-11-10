@@ -29,20 +29,6 @@ export const updateOrderStatus = async (
   return response.data.data.order;
 };
 
-export const updateOrderPaymentReference = async (
-  orderId: string,
-  paymentReference: string
-) => {
-  console.log("Updating order payment reference:", {
-    orderId,
-    paymentReference,
-  });
-  const response = await api.patch(`/orders/${orderId}/payment-reference`, {
-    paymentReference,
-  });
-  return response.data.data.order;
-};
-
 export const initializePayment = async (
   orderId: string,
   paymentGateway: string = "paystack"
@@ -58,29 +44,11 @@ export const verifyPayment = async (
   reference: string,
   paymentGateway: string = "paystack"
 ) => {
-  console.log("=== FRONTEND PAYMENT VERIFICATION ===");
-  console.log("Reference:", reference);
-  console.log("Payment Gateway:", paymentGateway);
-  console.log("API Base URL:", process.env.NEXT_PUBLIC_API_URL);
-  console.log(
-    "Full URL will be:",
-    `${process.env.NEXT_PUBLIC_API_URL}/payments/verify`
-  );
-
-  try {
-    const response = await api.post("/payments/verify", {
-      reference,
-      paymentGateway,
-    });
-    console.log("Payment verification successful:", response.data);
-    return response.data.data.order;
-  } catch (error: any) {
-    console.error("Payment verification failed:", error);
-    console.error("Error response:", error.response?.data);
-    console.error("Error status:", error.response?.status);
-    console.error("Error config:", error.config);
-    throw error;
-  }
+  const response = await api.post("/payments/verify", {
+    reference,
+    paymentGateway,
+  });
+  return response.data.data.order;
 };
 
 export const getCheckoutInfo = async () => {
@@ -111,7 +79,6 @@ const orderService = {
   getAllOrders,
   getOrderById,
   updateOrderStatus,
-  updateOrderPaymentReference,
   initializePayment,
   verifyPayment,
   getCheckoutInfo,

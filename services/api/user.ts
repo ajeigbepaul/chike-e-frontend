@@ -5,6 +5,7 @@ export interface User {
   name: string;
   email: string;
   role: string;
+  roles?: string[];
   phone?: string;
   wishlist: string[];
   isEmailVerified: boolean;

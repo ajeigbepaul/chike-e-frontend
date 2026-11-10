@@ -146,7 +146,12 @@ export default function VendorsPage() {
               notificationService.markAsRead(notification._id)
             )
         );
-        toast.success("Vendor request approved and invitation sent successfully");
+        if (response.data?.data?.emailSent === false) {
+          toast.error(response.message);
+        } else {
+          toast.success(response.message);
+        }
+        queryClient.invalidateQueries({ queryKey: ["vendors"] });
         queryClient.invalidateQueries({ queryKey: ["pending-invitations"] });
         queryClient.invalidateQueries({ queryKey: ["admin-unread-vendor-ids"] });
         queryClient.invalidateQueries({

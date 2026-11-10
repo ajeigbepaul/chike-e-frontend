@@ -119,79 +119,79 @@ export default function OrdersPage() {
                 key={order._id || order.id}
                 className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm transition-all"
               >
-                <button
-                  type="button"
-                  className={`flex w-full flex-col gap-4 px-4 py-4 text-left transition-colors sm:flex-row sm:items-center sm:justify-between ${
-                    isOpen ? "bg-brand-yellow/5" : "hover:bg-gray-50"
+                <div
+                  className={`flex flex-col gap-3 p-4 sm:flex-row sm:items-center ${
+                    isOpen ? "bg-brand-yellow/5" : ""
                   }`}
-                  onClick={() =>
-                    setExpanded(isOpen ? null : order._id || order.id)
-                  }
                 >
-                  <div className="flex-1 space-y-2">
-                    <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
-                      <div className="space-y-1">
-                        <p className="text-sm font-semibold text-gray-900">
-                          Order #{order?.orderId || ""}
-                        </p>
-                        <span className="block text-xs font-medium text-gray-400">
-                          {order?._id || order?.id}
+                  <button
+                    type="button"
+                    aria-expanded={isOpen}
+                    className="flex min-w-0 flex-1 items-center justify-between gap-4 text-left"
+                    onClick={() =>
+                      setExpanded(isOpen ? null : order._id || order.id)
+                    }
+                  >
+                    <div className="min-w-0 flex-1 space-y-2">
+                      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
+                        <div className="space-y-1">
+                          <p className="text-sm font-semibold text-gray-900">
+                            Order #{order?.orderId || ""}
+                          </p>
+                          <span className="block text-xs font-medium text-gray-400">
+                            {order?._id || order?.id}
+                          </span>
+                        </div>
+                        <span className="inline-flex h-fit w-fit items-center rounded-full bg-gray-100 px-2.5 py-1 text-xs font-semibold uppercase tracking-wide text-gray-700">
+                          {order.status || "Pending"}
                         </span>
                       </div>
-                      <span className="inline-flex h-fit items-center rounded-full bg-gray-100 px-2.5 py-1 text-xs font-semibold uppercase tracking-wide text-gray-700">
-                        {order.status || "Pending"}
-                      </span>
+                      <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-gray-500">
+                        <span>
+                          {order.createdAt
+                            ? new Date(order.createdAt).toLocaleDateString()
+                            : ""}
+                        </span>
+                        <span className="hidden text-gray-300 sm:block">•</span>
+                        <span>
+                          {(order.orderItems?.length || order.items || 0).toString()}{" "}
+                          item(s)
+                        </span>
+                      </div>
                     </div>
-                    <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-gray-500">
-                      <span>
-                        {order.createdAt
-                          ? new Date(order.createdAt).toLocaleDateString()
-                          : ""}
+                    <div className="flex shrink-0 items-center gap-3">
+                      <span className="text-base font-semibold text-gray-900 sm:text-sm">
+                        ₦
+                        {order.totalPrice
+                          ? order.totalPrice.toLocaleString()
+                          : order.total || ""}
                       </span>
-                      <span className="hidden text-gray-300 sm:block">•</span>
-                      <span>
-                        {(
-                          order.orderItems?.length ||
-                          order.items ||
-                          0
-                        ).toString()}{" "}
-                        item(s)
-                      </span>
+                      {isOpen ? (
+                        <ChevronUp className="h-5 w-5 text-brand-yellow" />
+                      ) : (
+                        <ChevronDown className="h-5 w-5 text-gray-400" />
+                      )}
                     </div>
-                  </div>
-                  <div className="flex flex-col items-end gap-3 sm:flex-row sm:items-center sm:gap-4">
-                    <span className="text-base font-semibold text-gray-900 sm:text-sm">
-                      ₦
-                      {order.totalPrice
-                        ? order.totalPrice.toLocaleString()
-                        : order.total || ""}
-                    </span>
-                    <button
-                      className="inline-flex items-center gap-1 rounded-full bg-gray-900 px-3 py-1 text-xs font-medium text-white hover:bg-gray-700 disabled:opacity-60"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        const id = order._id || order.id;
-                        downloadMutation.mutate(id);
-                      }}
-                      disabled={
-                        downloadMutation.isPending &&
-                        downloadingId === (order._id || order.id)
-                      }
-                      title="Download invoice PDF"
-                    >
-                      <FileDown className="h-4 w-4" />
-                      {downloadMutation.isPending &&
+                  </button>
+                  <button
+                    type="button"
+                    className="inline-flex shrink-0 items-center justify-center gap-1 self-end rounded-full bg-gray-900 px-3 py-1.5 text-xs font-medium text-white hover:bg-gray-700 disabled:cursor-not-allowed disabled:opacity-60 sm:self-auto"
+                    onClick={() =>
+                      downloadMutation.mutate(order._id || order.id)
+                    }
+                    disabled={
+                      downloadMutation.isPending &&
                       downloadingId === (order._id || order.id)
-                        ? "Downloading..."
-                        : "Invoice"}
-                    </button>
-                    {isOpen ? (
-                      <ChevronUp className="h-5 w-5 text-brand-yellow" />
-                    ) : (
-                      <ChevronDown className="h-5 w-5 text-gray-400" />
-                    )}
-                  </div>
-                </button>
+                    }
+                    title="Download invoice PDF"
+                  >
+                    <FileDown className="h-4 w-4" />
+                    {downloadMutation.isPending &&
+                    downloadingId === (order._id || order.id)
+                      ? "Downloading..."
+                      : "Invoice"}
+                  </button>
+                </div>
                 {isOpen && (
                   <div className="space-y-3 border-t border-gray-100 bg-gray-50 px-4 pt-4 pb-3 animate-fade-in">
                     {(order.orderItems || order.products || []).map(

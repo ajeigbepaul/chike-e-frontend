@@ -1,22 +1,20 @@
 import Image from "next/image";
 import { Lightbulb, Headphones, Store } from "lucide-react";
 import { useState } from "react";
+import Link from "next/link";
+import { useSession } from "next-auth/react";
 import {
   Dialog,
   DialogTrigger,
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogDescription,
   DialogFooter,
   DialogClose,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { useMutation, UseMutationResult } from "@tanstack/react-query";
-import vendorService, {
-  VendorInviteRequest,
-  ApiResponse,
-} from "@/services/api/vendor";
+import { useMutation } from "@tanstack/react-query";
+import vendorService, { VendorInviteRequest } from "@/services/api/vendor";
 
 const features = [
   {
@@ -37,10 +35,12 @@ const features = [
 ];
 
 export default function PartnerWithUs() {
+  const { data: session } = useSession();
   const [open, setOpen] = useState(false);
-  const [email, setEmail] = useState("");
-  const [name, setName] = useState("");
-
+  const [applicantName, setApplicantName] = useState("");
+  const [applicantEmail, setApplicantEmail] = useState("");
+  const sessionRoles = session?.user?.roles || [session?.user?.role || ""];
+  const hasVendorRole = sessionRoles.includes("vendor");
   const {
     mutate: submitInvite,
     isPending,
@@ -48,26 +48,22 @@ export default function PartnerWithUs() {
     isError,
     error,
     reset,
-  }: UseMutationResult<
-    ApiResponse,
-    Error,
-    VendorInviteRequest,
-    unknown
-  > = useMutation({
-    mutationFn: (data: VendorInviteRequest) =>
-      vendorService.requestVendorInvite(data),
-    onSuccess: () => {
-      setEmail("");
-      setName("");
-    },
-    onError: () => {
-      // Do not clear form on error
+  } = useMutation({
+    mutationFn: async (
+      applicant: Pick<VendorInviteRequest, "name" | "email"> | undefined
+    ) => {
+      const response = await vendorService.requestVendorInvite(applicant);
+      if (!response.success) throw new Error(response.message);
     },
   });
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    submitInvite({ email, name });
+    if (session?.user) {
+      submitInvite(undefined);
+    } else {
+      submitInvite({ name: applicantName, email: applicantEmail });
+    }
   };
 
   // Reset mutation state when modal is closed
@@ -112,47 +108,102 @@ export default function PartnerWithUs() {
           </DialogTrigger>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>Request Vendor Invitation</DialogTitle>
+              <DialogTitle>Request Vendor Access</DialogTitle>
             </DialogHeader>
             {isSuccess && !isError ? (
               <div className="text-green-600 text-center py-4">
-                Thank you! We’ve received your request. Our team will contact
-                you soon.
+                Thank you! We’ve received your request. The admin team will
+                review it and email you when a decision is made.
               </div>
+            ) : hasVendorRole ? (
+              <div className="space-y-4 text-center">
+                <p className="text-sm text-gray-600">
+                  This account already has vendor access.
+                </p>
+                <DialogFooter className="sm:justify-center">
+                  <Link
+                    href="/vendor/dashboard"
+                    className="rounded bg-brand-yellow px-6 py-2 font-semibold text-gray-900 hover:bg-yellow-500"
+                    onClick={() => setOpen(false)}
+                  >
+                    Go to Vendor Dashboard
+                  </Link>
+                </DialogFooter>
+              </div>
+            ) : session?.user?.role === "admin" ? (
+              <p className="text-center text-sm text-gray-600">
+                Vendor requests are available to customer accounts.
+              </p>
             ) : (
               <form onSubmit={handleSubmit} className="space-y-4">
-                <div>
-                  <label
-                    className="block text-sm font-medium mb-1"
-                    htmlFor="name"
-                  >
-                    Name
-                  </label>
-                  <Input
-                    id="name"
-                    type="text"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    placeholder="Your name"
-                    required
-                  />
-                </div>
-                <div>
-                  <label
-                    className="block text-sm font-medium mb-1"
-                    htmlFor="email"
-                  >
-                    Email
-                  </label>
-                  <Input
-                    id="email"
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder="you@example.com"
-                    required
-                  />
-                </div>
+                {session?.user ? (
+                  <>
+                    <div className="rounded-lg border border-gray-200 bg-gray-50 p-4 text-left">
+                      <p className="text-sm font-semibold text-gray-900">
+                        Requesting with your account
+                      </p>
+                      <p className="mt-2 text-sm text-gray-600">
+                        {session.user.name}
+                      </p>
+                      <p className="text-sm text-gray-600">{session.user.email}</p>
+                    </div>
+                    <p className="text-sm text-gray-600">
+                      Vendor access will be added to this account after admin
+                      approval. You can continue using your customer account as
+                      usual.
+                    </p>
+                  </>
+                ) : (
+                  <>
+                    <p className="text-sm text-gray-600">
+                      Not registered yet? Submit your name and email. If
+                      approved, the admin team will send an invitation to this
+                      address so you can create your account.
+                      {" "}Already registered?{" "}
+                      <Link
+                        href="/auth/signin"
+                        className="font-semibold text-brand-yellow hover:underline"
+                        onClick={() => setOpen(false)}
+                      >
+                        Sign in
+                      </Link>
+                      {" "}to request access with your account.
+                    </p>
+                    <div>
+                      <label className="mb-1 block text-sm font-medium text-gray-900" htmlFor="applicant-name">
+                        Name
+                      </label>
+                      <Input
+                        id="applicant-name"
+                        type="text"
+                        autoComplete="name"
+                        value={applicantName}
+                        onChange={(event) => setApplicantName(event.target.value)}
+                        required
+                        minLength={2}
+                        maxLength={100}
+                        className="text-gray-900"
+                        placeholder="Your name"
+                      />
+                    </div>
+                    <div>
+                      <label className="mb-1 block text-sm font-medium text-gray-900" htmlFor="applicant-email">
+                        Email
+                      </label>
+                      <Input
+                        id="applicant-email"
+                        type="email"
+                        autoComplete="email"
+                        value={applicantEmail}
+                        onChange={(event) => setApplicantEmail(event.target.value)}
+                        required
+                        maxLength={254}
+                        className="text-gray-900"
+                        placeholder="you@example.com"
+                      />
+                    </div>
+                  </>
+                )}
                 {isError && (
                   <div className="text-red-500 text-sm">
                     {error instanceof Error

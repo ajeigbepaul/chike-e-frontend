@@ -25,8 +25,8 @@ import { Eye, EyeOff, LockKeyhole, MapPin, Phone } from "lucide-react";
 
 const onboardingSchema = z
   .object({
-    password: z.string().min(8, "Password must be at least 8 characters"),
-    confirmPassword: z.string(),
+    password: z.string().optional(),
+    confirmPassword: z.string().optional(),
     phone: z.string().min(1, "Phone number is required"),
     address: z.string().min(1, "Address is required"),
     bio: z.string().min(1, "Bio is required"),
@@ -39,7 +39,11 @@ const onboardingSchema = z
 function VendorOnboardingContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { data: session, status: sessionStatus } = useSession();
+  const {
+    data: session,
+    status: sessionStatus,
+    update: updateSession,
+  } = useSession();
   const [isLoading, setIsLoading] = useState(false);
   const [isVerifying, setIsVerifying] = useState(true);
   const [invitation, setInvitation] = useState<any>(null);
@@ -103,9 +107,12 @@ function VendorOnboardingContent() {
       let response;
       if (token) {
         // Invitation onboarding
+        if (!invitation?.existingAccount && (data.password?.length || 0) < 8) {
+          throw new Error("Password must be at least 8 characters");
+        }
         const onboardingData: VendorOnboardingRequest = {
           token,
-          password: data.password,
+          ...(data.password ? { password: data.password } : {}),
           phone: data.phone,
           address: data.address,
           bio: data.bio,
@@ -129,7 +136,12 @@ function VendorOnboardingContent() {
         throw new Error(response.message || "Failed to complete onboarding");
       }
       toast.success("Registration completed successfully");
-      router.push("/auth/signin");
+      if (session?.user) {
+        await updateSession();
+        router.push("/vendor/dashboard");
+      } else {
+        router.push("/auth/signin");
+      }
     } catch (error: any) {
       console.error("Error completing vendor onboarding:", error);
       toast.error(error.message || "Failed to complete registration");
@@ -191,62 +203,66 @@ function VendorOnboardingContent() {
         <Card className="overflow-hidden border-gray-200 bg-white p-5 shadow-xl shadow-gray-200/50 sm:p-8">
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
-              <FormField
-                control={form.control}
-                name="password"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Password</FormLabel>
-                    <FormControl>
-                      <div className="relative">
-                        <LockKeyhole className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-                        <Input
-                          type={showPassword ? "text" : "password"}
-                          className="h-11 pl-10 pr-11"
-                          {...field}
-                        />
-                        <button
-                          type="button"
-                          aria-label={showPassword ? "Hide password" : "Show password"}
-                          onClick={() => setShowPassword((visible) => !visible)}
-                          className="absolute right-2 top-1/2 -translate-y-1/2 rounded-md p-2 text-gray-500 hover:bg-gray-100 hover:text-gray-900"
-                        >
-                          {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                        </button>
-                      </div>
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="confirmPassword"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Confirm Password</FormLabel>
-                    <FormControl>
-                      <div className="relative">
-                        <LockKeyhole className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-                        <Input
-                          type={showConfirmPassword ? "text" : "password"}
-                          className="h-11 pl-10 pr-11"
-                          {...field}
-                        />
-                        <button
-                          type="button"
-                          aria-label={showConfirmPassword ? "Hide confirm password" : "Show confirm password"}
-                          onClick={() => setShowConfirmPassword((visible) => !visible)}
-                          className="absolute right-2 top-1/2 -translate-y-1/2 rounded-md p-2 text-gray-500 hover:bg-gray-100 hover:text-gray-900"
-                        >
-                          {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                        </button>
-                      </div>
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+              {!invitation?.existingAccount && (
+                <FormField
+                  control={form.control}
+                  name="password"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Password</FormLabel>
+                      <FormControl>
+                        <div className="relative">
+                          <LockKeyhole className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+                          <Input
+                            type={showPassword ? "text" : "password"}
+                            className="h-11 pl-10 pr-11"
+                            {...field}
+                          />
+                          <button
+                            type="button"
+                            aria-label={showPassword ? "Hide password" : "Show password"}
+                            onClick={() => setShowPassword((visible) => !visible)}
+                            className="absolute right-2 top-1/2 -translate-y-1/2 rounded-md p-2 text-gray-500 hover:bg-gray-100 hover:text-gray-900"
+                          >
+                            {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                          </button>
+                        </div>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              )}
+              {!invitation?.existingAccount && (
+                <FormField
+                  control={form.control}
+                  name="confirmPassword"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Confirm Password</FormLabel>
+                      <FormControl>
+                        <div className="relative">
+                          <LockKeyhole className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+                          <Input
+                            type={showConfirmPassword ? "text" : "password"}
+                            className="h-11 pl-10 pr-11"
+                            {...field}
+                          />
+                          <button
+                            type="button"
+                            aria-label={showConfirmPassword ? "Hide confirm password" : "Show confirm password"}
+                            onClick={() => setShowConfirmPassword((visible) => !visible)}
+                            className="absolute right-2 top-1/2 -translate-y-1/2 rounded-md p-2 text-gray-500 hover:bg-gray-100 hover:text-gray-900"
+                          >
+                            {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                          </button>
+                        </div>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              )}
               <FormField
                 control={form.control}
                 name="phone"

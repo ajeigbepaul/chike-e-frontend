@@ -8,7 +8,6 @@ import {
   clearCart,
   calculateSubtotal,
   calculateVAT,
-  calculateTotalWithVAT,
 } from "@/store/cartSlice";
 import {
   clearCheckout,
@@ -31,7 +30,6 @@ import { Button } from "@/components/ui/button";
 import { CheckCircle, ChevronRight, AlertCircle } from "lucide-react";
 import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
-import { useSearchParams } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { validateCoupon } from "@/services/api/promotion";
 import { useQuery, useMutation } from "@tanstack/react-query";
@@ -53,7 +51,6 @@ const PaystackPayment = dynamic(
 );
 
 function CheckoutContent() {
-  const searchParams = useSearchParams();
   const dispatch = useDispatch();
   const router = useRouter();
   const { items } = useSelector((state: RootState) => state.cart);
@@ -359,6 +356,7 @@ function CheckoutContent() {
         taxPrice: vat,
         shippingPrice: Delivery,
         totalPrice: total,
+        couponCode: discount > 0 ? coupon.trim() : undefined,
       };
 
       // Create order first

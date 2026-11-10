@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { toast } from 'react-hot-toast';
-import { verifyPayment, updateOrderPaymentReference } from '@/services/api/order';
+import { initializePayment, verifyPayment } from '@/services/api/order';
 
 interface PaystackPaymentProps {
   email: string | undefined;
@@ -25,7 +25,6 @@ export const PaystackPayment: React.FC<PaystackPaymentProps> = ({
   children
 }) => {
   const [isClient, setIsClient] = useState(false);
-  const [paymentReference] = useState(`order-${orderId}-${Date.now()}`);
   const [isProcessing, setIsProcessing] = useState(false);
   const publicKey = process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY;
   
@@ -34,17 +33,6 @@ export const PaystackPayment: React.FC<PaystackPaymentProps> = ({
     setIsClient(true);
   }, []);
   
-  // Debug logging
-  console.log('=== PAYSTACK COMPONENT RENDERED ===');
-  console.log('Public Key:', publicKey ? 'Set' : 'Missing');
-  console.log('Email:', email);
-  console.log('Amount (Naira):', amount);
-  console.log('Amount (Kobo):', Math.round(amount * 100));
-  console.log('Order ID:', orderId);
-  console.log('Component rendered for order:', orderId);
-  console.log('Is Client:', isClient);
-  console.log('=== END PAYSTACK DEBUG ===');
-
   // Don't render on server side
   if (!isClient) {
     return (
@@ -58,69 +46,64 @@ export const PaystackPayment: React.FC<PaystackPaymentProps> = ({
   }
 
   const handlePayment = async () => {
-    console.log('Payment button clicked');
-    
     if (!publicKey) {
-      console.error('Missing Paystack public key');
       toast.error('Payment system not configured. Please add your Paystack public key to environment variables.');
       return;
     }
 
     if (!email || !amount || amount <= 0) {
-      console.error('Invalid payment details:', { email, amount });
       toast.error('Invalid payment details');
       return;
     }
 
-    // First, update the order with the payment reference
     try {
-      console.log('Updating order with payment reference...');
-      await updateOrderPaymentReference(orderId, paymentReference);
-      console.log('Order updated successfully with payment reference');
       setIsProcessing(true);
+      const initializedPayment = await initializePayment(orderId, 'paystack');
+      if (!initializedPayment?.reference || !initializedPayment?.amount) {
+        throw new Error('Payment could not be initialized. Please try again.');
+      }
+      if (typeof window !== 'undefined' && (window as any).PaystackPop) {
+        openPaystackPopup(initializedPayment.reference, initializedPayment.amount);
+      } else {
+        const script = document.createElement('script');
+        script.src = 'https://js.paystack.co/v1/inline.js';
+        script.onload = () =>
+          openPaystackPopup(initializedPayment.reference, initializedPayment.amount);
+        script.onerror = () => {
+          setIsProcessing(false);
+          toast.error('Unable to load payment. Please try again.');
+        };
+        document.head.appendChild(script);
+      }
     } catch (error) {
-      console.error('Failed to update order with payment reference:', error);
-      toast.error('Failed to prepare payment. Please try again.');
-      return;
-    }
-
-    // Use Paystack Popup directly
-    if (typeof window !== 'undefined' && (window as any).PaystackPop) {
-      openPaystackPopup();
-    } else {
-      // Load Paystack script if not already loaded
-      const script = document.createElement('script');
-      script.src = 'https://js.paystack.co/v1/inline.js';
-      script.onload = () => openPaystackPopup();
-      document.head.appendChild(script);
+      setIsProcessing(false);
+      toast.error(error instanceof Error ? error.message : 'Failed to prepare payment. Please try again.');
     }
   };
 
-  const openPaystackPopup = () => {
-    console.log('Opening Paystack popup...');
-    
+  const openPaystackPopup = (reference: string, serverAmount: number) => {
     const handler = (window as any).PaystackPop.setup({
       key: publicKey,
       email: email || 'user@example.com',
-      amount: Math.round(amount * 100),
+      amount: Math.round(serverAmount * 100),
       currency: 'NGN',
-      ref: paymentReference,
+      ref: reference,
       channels: ['card', 'bank_transfer'], // Include both payment methods
       callback: function(response: any) {
-        console.log('Payment successful, response:', response);
         (async () => {
           try {
             await verifyPayment(response.reference, 'paystack');
+            setIsProcessing(false);
             toast.success('Payment successful!');
             onSuccess();
-          } catch (error: any) {
-            console.error('Payment verification failed:', error);
+          } catch {
+            setIsProcessing(false);
             toast.error('Payment verification failed. Please contact support.');
           }
         })();
       },
       onClose: function() {
-        console.log('Payment window closed');
+        setIsProcessing(false);
         onClose();
       },
       // Additional configuration to ensure proper display

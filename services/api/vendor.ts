@@ -10,7 +10,7 @@ export interface VendorInviteRequest {
 
 export interface VendorOnboardingRequest {
   token: string;
-  password: string;
+  password?: string;
   phone: string;
   address: string;
   bio: string;
@@ -50,7 +50,7 @@ export interface VendorStatusUpdateRequest {
 
 export interface VendorDirectOnboardingRequest {
   userId: string;
-  password: string;
+  password?: string;
   phone: string;
   address: string;
   bio: string;
@@ -109,7 +109,7 @@ const vendorService = {
       return {
         success: true,
         message: "Invitation verified successfully",
-        data: response.data,
+        data: response.data.data,
       };
     } catch (error) {
       const axiosError = error as AxiosError<any>;
@@ -390,14 +390,15 @@ const vendorService = {
   },
 
   /**
-   * Request a vendor invitation (public form)
-   * @param inviteData Vendor invite request data
+   * Request vendor access for either a public applicant or signed-in account
    */
   requestVendorInvite: async (
-    inviteData: VendorInviteRequest
+    applicant?: Pick<VendorInviteRequest, "name" | "email">
   ): Promise<ApiResponse> => {
     try {
-      const response = await api.post("/vendors/request-invite", inviteData);
+      const response = applicant
+        ? await api.post("/vendors/request-invite", applicant)
+        : await api.post("/vendors/request-invite/account");
       return {
         success: true,
         message: response.data?.message || "Request submitted successfully",

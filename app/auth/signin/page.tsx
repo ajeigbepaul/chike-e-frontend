@@ -59,7 +59,9 @@ function LoginContent() {
       // redirect - the window.location.href branch below would abort it.
       await mergeGuestWishlist();
       const isAdmin = updatedSession?.user?.role === "admin";
-      const isVendor = updatedSession?.user?.role === "vendor";
+      const isVendor =
+        updatedSession?.user?.roles?.includes("vendor") ||
+        updatedSession?.user?.role === "vendor";
 
       if (isAdmin) {
         showOverlay("Preparing admin dashboard");

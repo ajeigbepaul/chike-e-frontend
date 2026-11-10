@@ -13,6 +13,7 @@ declare module "next-auth" {
   interface User {
     accessToken?: string;
     role: string;
+    roles?: string[];
     isVerified?: boolean;
   }
   interface Session {
@@ -20,6 +21,7 @@ declare module "next-auth" {
     user: {
       id: string;
       role: string;
+      roles?: string[];
       isVerified?: boolean;
     } & DefaultSession["user"];
   }
@@ -31,6 +33,7 @@ declare module "next-auth/jwt" {
     user: {
       id: string;
       role: string;
+      roles?: string[];
       isVerified?: boolean;
     } & DefaultSession["user"];
   }
@@ -98,6 +101,12 @@ export const authOptions: NextAuthOptions = {
             email: user.email,
             name: user.name,
             role: user.role || "user", // Ensure role is set, default to "user"
+            roles: [
+              ...new Set([
+                user.role || "user",
+                ...(user.roles || responseData.data?.roles || []),
+              ]),
+            ],
             isVerified: user.isVerified ?? true, // Use nullish coalescing to ensure boolean
             accessToken: token, // Include the JWT token
           };
@@ -136,12 +145,24 @@ export const authOptions: NextAuthOptions = {
     }),
   ],
   callbacks: {
-    async jwt({ token, user }) {
+    async jwt({ token, user, trigger }) {
       if (user) {
         token.id = user.id;
         token.role = user.role;
+        token.roles = [...new Set([user.role, ...(user.roles || [])])];
         token.isVerified = user.isVerified;
         token.accessToken = user.accessToken;
+      }
+      if (trigger === "update" && token.accessToken) {
+        const response = await axios.get(`${API_URL}/auth/session`, {
+          headers: { Authorization: `Bearer ${token.accessToken}` },
+          timeout: 10000,
+        });
+        const user = response.data?.user;
+        if (user) {
+          token.role = user.role || "user";
+          token.roles = [...new Set([user.role || "user", ...(user.roles || [])])];
+        }
       }
       return token;
     },
@@ -151,6 +172,7 @@ export const authOptions: NextAuthOptions = {
           ...session.user,
           id: token.id,
           role: token.role,
+          roles: [...new Set([token.role, ...(token.roles || [])])],
           isVerified: token.isVerified ?? true,
         };
         session.accessToken = token.accessToken as string;

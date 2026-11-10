@@ -165,24 +165,25 @@ export default function UsersPage() {
                   <TableCell className="font-medium">{user.name}</TableCell>
                   <TableCell>{user.email}</TableCell>
                   <TableCell>
-                    <Badge
-                      variant={
-                        user.role === "admin"
-                          ? "default"
-                          : user.role === "vendor"
-                          ? "secondary"
-                          : "destructive"
-                      }
-                      className={
-                        user.role === "admin"
-                          ? "bg-blue-100 text-blue-800 border-blue-200"
-                          : user.role === "vendor"
-                          ? "bg-green-100 text-green-800 border-green-200"
-                          : "bg-gray-100 text-gray-800 border-gray-200"
-                      }
-                    >
-                      {user.role}
-                    </Badge>
+                    <div className="flex flex-wrap gap-1">
+                      {[...new Set([user.role, ...(user.roles || [])])].map(
+                        (role) => (
+                          <Badge
+                            key={role}
+                            variant={role === "admin" ? "default" : "secondary"}
+                            className={
+                              role === "admin"
+                                ? "border-blue-200 bg-blue-100 text-blue-800"
+                                : role === "vendor"
+                                ? "border-green-200 bg-green-100 text-green-800"
+                                : "border-gray-200 bg-gray-100 text-gray-800"
+                            }
+                          >
+                            {role}
+                          </Badge>
+                        )
+                      )}
+                    </div>
                   </TableCell>
                   <TableCell>
                     <Badge
